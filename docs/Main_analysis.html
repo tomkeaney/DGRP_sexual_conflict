@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="Thomas Keaney and Luke Holman" />
+
+
+<title>Intralocus sexual conflict in the DGRP</title>
+
+<script src="site_libs/jquery-3.5.1/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/readable.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<script src="site_libs/navigation-1.1/codefolding.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<script src="site_libs/htmlwidgets-1.5.3/htmlwidgets.js"></script>
+<link href="site_libs/datatables-css-0.0.0/datatables-crosstalk.css" rel="stylesheet" />
+<script src="site_libs/datatables-binding-0.18/datatables.js"></script>
+<link href="site_libs/dt-core-1.10.20/css/jquery.dataTables.min.css" rel="stylesheet" />
+<link href="site_libs/dt-core-1.10.20/css/jquery.dataTables.extra.css" rel="stylesheet" />
+<script src="site_libs/dt-core-1.10.20/js/jquery.dataTables.min.js"></script>
+<link href="site_libs/dt-ext-scroller-1.10.20/css/scroller.dataTables.min.css" rel="stylesheet" />
+<script src="site_libs/dt-ext-scroller-1.10.20/js/dataTables.scroller.min.js"></script>
+<script src="site_libs/pdfmake-1.10.20/pdfmake.js"></script>
+<script src="site_libs/pdfmake-1.10.20/vfs_fonts.js"></script>
+<link href="site_libs/dt-ext-buttons-1.10.20/css/buttons.dataTables.min.css" rel="stylesheet" />
+<script src="site_libs/dt-ext-buttons-1.10.20/js/dataTables.buttons.min.js"></script>
+<script src="site_libs/dt-ext-buttons-1.10.20/js/buttons.flash.min.js"></script>
+<script src="site_libs/dt-ext-buttons-1.10.20/js/buttons.html5.min.js"></script>
+<script src="site_libs/dt-ext-buttons-1.10.20/js/buttons.colVis.min.js"></script>
+<script src="site_libs/dt-ext-buttons-1.10.20/js/buttons.print.min.js"></script>
+<link href="site_libs/crosstalk-1.1.1/css/crosstalk.css" rel="stylesheet" />
+<script src="site_libs/crosstalk-1.1.1/js/crosstalk.min.js"></script>
+<link href="site_libs/font-awesome-5.1.0/css/all.css" rel="stylesheet" />
+<link href="site_libs/font-awesome-5.1.0/css/v4-shims.css" rel="stylesheet" />
+
+<link rel="icon" href="https://github.com/workflowr/workflowr-assets/raw/master/img/reproducible.png">
+<!-- Add a small amount of space between sections. -->
+<style type="text/css">
+div.section {
+  padding-top: 12px;
+}
+</style>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.tab('show');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "&#xe258;";
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+<style type="text/css">
+.code-folding-btn { margin-bottom: 4px; }
+</style>
+
+
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row">
+<div class="col-sm-12 col-md-4 col-lg-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-sm-12 col-md-8 col-lg-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Intralocus sexual conflict in the DGRP</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li>
+  <a href="Main_analysis.html">Main analysis</a>
+</li>
+<li>
+  <a href="license.html">License</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="https://github.com/tomkeaney/DGRP_sexual_conflict">
+    <span class="fab fa-github"></span>
+     
+    Source code
+  </a>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+<div class="btn-group pull-right float-right">
+<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<ul class="dropdown-menu dropdown-menu-right" style="min-width: 50px;">
+<li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
+<li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
+</ul>
+</div>
+
+
+
+<h1 class="title toc-ignore">Intralocus sexual conflict in the DGRP</h1>
+<h4 class="author">Thomas Keaney and Luke Holman</h4>
+<h4 class="date">25/06/2021</h4>
+
+</div>
+
+
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-report" data-toggle="collapse" data-target="#workflowr-report">
+<span class="glyphicon glyphicon-list" aria-hidden="true"></span> workflowr <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span>
+</button>
+</p>
+<div id="workflowr-report" class="collapse">
+<ul class="nav nav-tabs">
+<li class="active">
+<a data-toggle="tab" href="#summary">Summary</a>
+</li>
+<li>
+<a data-toggle="tab" href="#checks"> Checks <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> </a>
+</li>
+<li>
+<a data-toggle="tab" href="#versions">Past versions</a>
+</li>
+</ul>
+<div class="tab-content">
+<div id="summary" class="tab-pane fade in active">
+<p>
+<strong>Last updated:</strong> 2021-07-07
+</p>
+<p>
+<strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 7 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 0
+</p>
+<p>
+<strong>Knit directory:</strong> <code>DGRP_sexual_conflict/</code> <span class="glyphicon glyphicon-question-sign" aria-hidden="true" title="This is the local directory in which the code in this file was executed."> </span>
+</p>
+<p>
+This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis was created with <a
+  href="https://github.com/jdblischak/workflowr">workflowr</a> (version 1.6.2). The <em>Checks</em> tab describes the reproducibility checks that were applied when the results were created. The <em>Past versions</em> tab lists the development history.
+</p>
+<hr>
+</div>
+<div id="checks" class="tab-pane fade">
+<div id="workflowr-checks" class="panel-group">
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguptodate"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>R Markdown file:</strong> up-to-date </a>
+</p>
+</div>
+<div id="strongRMarkdownfilestronguptodate" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great! Since the R Markdown file has been committed to the Git repository, you know the exact version of the code that produced these results.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongEnvironmentstrongempty"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Environment:</strong> empty </a>
+</p>
+</div>
+<div id="strongEnvironmentstrongempty" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! The global environment was empty. Objects defined in the global environment can affect the analysis in your R Markdown file in unknown ways. For reproduciblity it’s best to always run the code in an empty environment.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSeedstrongcodesetseed20210706code"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Seed:</strong> <code>set.seed(20210706)</code> </a>
+</p>
+</div>
+<div id="strongSeedstrongcodesetseed20210706code" class="panel-collapse collapse">
+<div class="panel-body">
+<p>The command <code>set.seed(20210706)</code> was run prior to running the code in the R Markdown file. Setting a seed ensures that any results that rely on randomness, e.g. subsampling or permutations, are reproducible.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSessioninformationstrongrecorded"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Session information:</strong> recorded </a>
+</p>
+</div>
+<div id="strongSessioninformationstrongrecorded" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Recording the operating system, R version, and package versions is critical for reproducibility.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongCachestrongnone"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Cache:</strong> none </a>
+</p>
+</div>
+<div id="strongCachestrongnone" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Nice! There were no cached chunks for this analysis, so you can be confident that you successfully produced the results during this run.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongFilepathsstrongrelative"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>File paths:</strong> relative </a>
+</p>
+</div>
+<div id="strongFilepathsstrongrelative" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Using relative paths to the files within your workflowr project makes it easier to run your code on other machines.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomtomkeaneyDGRPsexualconflicttree42b8f12ec94d1089c153f97f0e4090edd191a279targetblank42b8f12a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/tomkeaney/DGRP_sexual_conflict/tree/42b8f12ec94d1089c153f97f0e4090edd191a279" target="_blank">42b8f12</a> </a>
+</p>
+</div>
+<div id="strongRepositoryversionstrongahrefhttpsgithubcomtomkeaneyDGRPsexualconflicttree42b8f12ec94d1089c153f97f0e4090edd191a279targetblank42b8f12a" class="panel-collapse collapse">
+<div class="panel-body">
+<p>
+Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility.
+</p>
+<p>
+The results in this page were generated with repository version <a href="https://github.com/tomkeaney/DGRP_sexual_conflict/tree/42b8f12ec94d1089c153f97f0e4090edd191a279" target="_blank">42b8f12</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
+</p>
+<p>
+Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
+</p>
+<pre><code>
+Ignored files:
+    Ignored:    .DS_Store
+    Ignored:    .Rhistory
+    Ignored:    .Rproj.user/
+
+Untracked files:
+    Untracked:  data/all.dgrp.phenos_unscaled.csv
+
+Unstaged changes:
+    Modified:   analysis/_site.yml
+
+</code></pre>
+<p>
+Note that any generated files, e.g. HTML, png, CSS, etc., are not included in this status report because it is ok for generated content to have uncommitted changes.
+</p>
+</div>
+</div>
+</div>
+</div>
+<hr>
+</div>
+<div id="versions" class="tab-pane fade">
+
+<p>
+These are the previous versions of the repository in which changes were made to the R Markdown (<code>analysis/Main_analysis.Rmd</code>) and HTML (<code>docs/Main_analysis.html</code>) files. If you’ve configured a remote Git repository (see <code>?wflow_git_remote</code>), click on the hyperlinks in the table below to view the files as they were in that past version.
+</p>
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+File
+</th>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+<th>
+Message
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/tomkeaney/DGRP_sexual_conflict/blob/42b8f12ec94d1089c153f97f0e4090edd191a279/analysis/Main_analysis.Rmd" target="_blank">42b8f12</a>
+</td>
+<td>
+tkeaney
+</td>
+<td>
+2021-07-07
+</td>
+<td>
+Get the site up and running
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+</div>
+</div>
+</div>
+<div id="load-packages-and-the-data" class="section level1">
+<h1>Load packages and the data</h1>
+<p>First load the packages</p>
+<pre class="r"><code>library(tidyverse)
+library(googlesheets4) # for reading google sheets
+library(pheatmap) # for heatmaps
+library(RColorBrewer) # for custom colours
+library(rcartocolor) # cool colours
+library(wesanderson) # cool colours
+library(kableExtra) # for scrolling tables
+library(pander) # more tables
+library(patchwork) # for cool plots
+library(brms) # for bayesian models
+library(tidybayes) # for more bayesian things
+library(shiny) # for interactive app
+library(DT) # for interactive tables
+library(broom) # convert results of functions into tables
+library(ggExtra) # for marginal plots
+library(ggtips) # for hovering tooltips in R shiny</code></pre>
+<p>Now load the data. Correlation analysis is not robust when sample sizes are small, so we only include traits that have been measured in 80+ lines.</p>
+<pre class="r"><code>DGRP_data &lt;- read_csv(&quot;data/all.dgrp.phenos_unscaled.csv&quot;)
+
+# Now subset - we are left with 905 traits from an original 1119
+
+DGRP_subset &lt;- DGRP_data %&gt;% 
+  group_by(Trait) %&gt;% 
+  filter(length(line) &gt; 80) %&gt;% 
+  ungroup()
+
+# This next section changes the format of the data. Each row represents a single line, while each column represents a trait and contains the lines trait mean. Scaling is also applied to each trait value, so that each trait has a mean of 0 and an SD of 1. This makes the variation found for each trait broadly comparable with all other traits.
+
+DGRP_subset_scaled &lt;- 
+  split(DGRP_subset, DGRP_subset$Trait) %&gt;% # split divides the data into trait groups
+  lapply(function(x){
+    trait_name &lt;- x$Trait[1]
+    x &lt;- x[,c(1,4)]
+    names(x) &lt;- c(&quot;line&quot;, &quot;value&quot;)
+    x &lt;- x %&gt;% 
+      group_by(line) %&gt;% 
+      summarise(mean = mean(value))
+    names(x) &lt;- c(&quot;line&quot;, trait_name)
+    x}) %&gt;% 
+  purrr::reduce(full_join, by = &quot;line&quot;, match = &quot;first&quot;) %&gt;% 
+  mutate_at(vars(-(&quot;line&quot;)), ~ as.numeric(scale(.x))) # this is the scaling step</code></pre>
+<p><span class="math inline">\(~\)</span></p>
+<div id="calculate-the-intersex-genetic-correlation-rafm-for-fitness" class="section level2">
+<h2>Calculate the intersex genetic correlation (r<sup>A</sup><sub><em>fm</em></sub>) for fitness</h2>
+<pre class="r"><code># Note that because we are using standarised data, the intercept will always = 0 and the sigma = 1 (we have no predictors so sigma just predicts the population SD). We make the intercept 0 because we have standardised the mean for every trait to = 0. We fix sigma to 0, which makes our estimate more precise. We make sigma = 0 rather than 1 because brms by default actually models the log of sigma. log(1) = 1, so lets set sigma to 0.
+
+rfm_model_uni &lt;- 
+  brm(data = DGRP_subset_scaled, 
+      family = gaussian,
+      female.fitness.early ~ 0 + male.fitness.early,
+      prior = c(prior(normal(0, 1), class = b),
+                prior(normal(0, 1), class = sigma)),
+      chains = 4, cores = 4, 
+      seed = 1)
+
+fixef(rfm_model_uni)
+
+rfm_model_multi &lt;- 
+  brm(data = DGRP_subset_scaled, 
+      family = gaussian,
+      bf(mvbind(female.fitness.early, male.fitness.early) ~ 0, sigma ~ 0) + set_rescor(TRUE),
+      prior(lkj(2), class = rescor),
+      chains = 4, cores = 4, 
+      seed = 1)
+
+get_rescor &lt;- function(fit) {
+  posterior_samples(fit) %&gt;% 
+    select(starts_with(&quot;rescor&quot;)) %&gt;% 
+    set_names(&quot;rfm for fitness&quot;) %&gt;% 
+    gather(label, rho) %&gt;% 
+    select(rho, label)
+}
+
+posterior_summary(rfm_model_multi)</code></pre>
+</div>
+<div id="plot-rafm-for-fitness" class="section level2">
+<h2>Plot r<sup>A</sup><sub><em>fm</em></sub> for fitness</h2>
+<pre class="r"><code>DGRP_no_line &lt;- 
+  DGRP_subset_scaled %&gt;% 
+  select(-line)
+
+pos_colour &lt;- wes_palette(&quot;Zissou1&quot;)[4]
+neg_colour &lt;- wes_palette(&quot;Zissou1&quot;)[2]
+
+fitness_regression_plot &lt;- function(a, b, c, d) {
+  ggplot(data = a, aes(x = b, y = c)) +
+    #geom_hex(bins = 20) +
+    #scale_fill_carto_c(palette = &quot;Temps&quot;) +
+    geom_point(shape = 21, alpha = 0.75, size = 3, fill = d, show.legend = FALSE) +
+    geom_smooth(method = &#39;lm&#39;, color=&#39;black&#39;) +
+    geom_hline(yintercept = 0, linetype = 2) +
+    geom_vline(xintercept = 0, linetype = 2) +
+    #coord_cartesian(xlim = c(-3, 3), ylim = c(-3, 3)) +
+    theme_bw() +
+    theme(panel.border= element_blank(),
+          axis.line=element_line(),
+          text = element_text(size=14),
+          panel.grid.major.x = element_blank(),
+          panel.grid.major.y = element_blank(),
+          panel.grid.minor.y = element_blank(),
+          panel.grid.minor.x = element_blank(),
+          axis.title.x = element_text(size = 12),
+          axis.title.y = element_text(size = 12))
+}
+
+
+rfm_plot &lt;-
+  fitness_regression_plot(DGRP_no_line, 
+                          DGRP_no_line$female.fitness.early,
+                          DGRP_no_line$male.fitness.early, pos_colour) +
+  labs(x = &quot;Female fitness&quot;, y = &quot;Male fitness&quot;)
+
+ggMarginal(rfm_plot,
+      type = &#39;histogram&#39;,
+      margins = &#39;both&#39;,
+      size = 5,
+      colour = wes_palette(&quot;Zissou1&quot;)[1],
+      fill = wes_palette(&quot;Zissou1&quot;)[2]
+    )</code></pre>
+<p><img src="figure/Main_analysis.Rmd/unnamed-chunk-3-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code># this can be cut later, but it&#39;s too useful to get rid of right now
+
+#fitness_late &lt;-
+ # fitness_regression_plot(all.dgrp.phenos_means_subset, all.dgrp.phenos_means_subset$female.fitness.late,
+  #                        all.dgrp.phenos_means_subset$male.fitness.late, pos_colour) +
+  #labs(x = &quot;Old female fitness&quot;, y = &quot;Old male fitness&quot;)
+
+#fitness_female &lt;-
+ # fitness_regression_plot(all.dgrp.phenos_means_subset, all.dgrp.phenos_means_subset$female.fitness.early,
+  #                        all.dgrp.phenos_means_subset$female.fitness.late, pos_colour) +
+  #labs(x = &quot;Young female fitness&quot;, y = &quot;Old female fitness&quot;)
+
+#fitness_male &lt;-
+ # fitness_regression_plot(all.dgrp.phenos_means_subset, all.dgrp.phenos_means_subset$male.fitness.early,
+  #                        all.dgrp.phenos_means_subset$male.fitness.late, pos_colour) +
+  #labs(x = &quot;Young male fitness&quot;, y = &quot;Old male fitness&quot;)
+
+# Put the plots together
+
+#(fitness_early | fitness_late) / 
+#(fitness_female | fitness_male)</code></pre>
+<p><strong>Figure 1</strong>: The intersex genetic correlation (r<sup>A</sup><sub><em>fm</em></sub>) for fitness across the DGRP. The orange points each represent a DGRP line, and where it falls on the female-male fitness continuum. Data points are standardised to have a mean of 0 and a standard deviation of 1. This means that lines that have negative values have lower than average fitness, while lines that have positive values have above average fitness. The dotted lines separate the plot into four quadrants: lines that fall within the top left quadrant have above average male fitness, but below average female fitness, lines in the top right have above average fitness for both sexes, lines in the bottom left have below average fitness in both sexes, and lines in the bottom right have below average fitness in males, but above average fitness in females.</p>
+<p><span class="math inline">\(~\)</span></p>
+</div>
+<div id="calculating-s-the-selection-differential" class="section level2">
+<h2>Calculating <em>S</em>: the selection differential</h2>
+<p>We can calculate the selection differential associated with each phenotype using the <strong>Robertson Price identity</strong>, which states that the selection differential is equivalent to the covariance between phenotype and relative fitness</p>
+<p><span class="math inline">\(S = \sigma(w_i, z_i)\)</span></p>
+<p>or</p>
+<p><span class="math inline">\(S = cov(relative.fitness, standarised.phenotype)\)</span></p>
+<p>We can also calculate the broad sense heritability associated with each phenotype… if we could calculate the narrow sense heritability we could use the <strong>Breeder’s equation</strong> to calculate the response to selection for each phenotype (seems unlikely).</p>
+<p><strong>Table 1:</strong> Selection coefficients (<span class="math inline">\(S\)</span>) for each phenotype, when expressed in each sex. The antagonism index column shows how different selection on the trait is in the two sexes. Postive values indcate that the trait has a more positive selection differential in females than it does in males, a value of 0 indicates that the selection differential is the same in each sex, and negative values indicate a more positive selection differential in males compared to females.</p>
+<pre class="r"><code># We need to know how all of our traits correlate with fitness. Let&#39;s make looking at this easier by calculating the correlation matrix with just our two fitness parameters.
+
+fef.matrix &lt;- round(cor(y = DGRP_no_line$female.fitness.early, x = DGRP_no_line, use = &quot;pairwise.complete.obs&quot;), 2)
+#flf.matrix &lt;- round(cor(y = DGRP_no_line$female.fitness.late, x = DGRP_no_line, use = &quot;pairwise.complete.obs&quot;), 2)
+mef.matrix &lt;- round(cor(y = DGRP_no_line$male.fitness.early, x = DGRP_no_line, use = &quot;pairwise.complete.obs&quot;), 2)
+#mlf.matrix &lt;- round(cor(y = DGRP_no_line$male.fitness.late, x = DGRP_no_line, use = &quot;pairwise.complete.obs&quot;), 2)
+
+fitness.matrix &lt;- cbind(fef.matrix, mef.matrix) 
+  
+colnames(fitness.matrix) &lt;- c(&quot;S female&quot;, &quot;S male&quot;)
+
+# calculate a sexual conflict score for each trait: the `antagonism` index.
+
+trait_selection_gradients &lt;- tibble(Trait = names(DGRP_no_line)) %&gt;% 
+  cbind(fitness.matrix %&gt;% as_tibble()) %&gt;% as_tibble() %&gt;% 
+  mutate(`antagonism index` = `S female` - `S male`) %&gt;% 
+  filter(Trait != &quot;male.fitness.early&quot;,
+         Trait != &quot;female.fitness.early&quot;,
+         Trait != &quot;male.fitness.late&quot;,
+         Trait != &quot;female.fitness.late&quot;)
+
+# Here&#39;s a table showing the correlations
+
+my_data_table &lt;- function(df){
+  datatable(
+    df, rownames=FALSE,
+    autoHideNavigation = TRUE,
+    extensions = c(&quot;Scroller&quot;,  &quot;Buttons&quot;),
+    options = list(
+      dom = &#39;Bfrtip&#39;,
+      deferRender=TRUE,
+      scrollX=TRUE, scrollY=800,
+      scrollCollapse=TRUE,
+      buttons =
+        list(&#39;pageLength&#39;, &#39;colvis&#39;, &#39;csv&#39;, list(
+          extend = &#39;pdf&#39;,
+          pageSize = &#39;A4&#39;,
+          orientation = &#39;landscape&#39;,
+          filename = &#39;selection_data&#39;)),
+      pageLength = 905
+    )
+  )
+}
+
+my_data_table(trait_selection_gradients)</code></pre>
+<div id="htmlwidget-dcf2ee3f4ef18e907153" style="width:100%;height:auto;" class="datatables html-widget"></div>
+<script type="application/json" data-for="htmlwidget-dcf2ee3f4ef18e907153">{"x":{"filter":"none","extensions":["Scroller","Buttons"],"autoHideNavigation":true,"data":[["1-Methyladenosine.high.yeast.f","1-Methyladenosine.low.yeast.f","1-Methylguanosine.high.yeast.f","1-Methylguanosine.low.yeast.f","1/3-Methylhistidine.high.yeast.f","1/3-Methylhistidine.low.yeast.f","13-HODE.high.yeast.f","13-HODE.low.yeast.f","2-Hydroxyglutarate.high.yeast.f","2-Hydroxyglutarate.low.yeast.f","2-Phosphoglyceric.acid.high.yeast.f","2-Phosphoglyceric.acid.low.yeast.f","2.3-butanedione.olfactory.attraction.f","2.3-butanedione.olfactory.attraction.m","2.3-butanedione.olfactory.latency.30.percentile.f","2.3-butanedione.olfactory.latency.30.percentile.m","2.3-butanedione.olfactory.latency.90.percentile.f","2.3-butanedione.olfactory.latency.90.percentile.m","2.3-butanedione.olfactory.response.intensity.f","2.3-butanedione.olfactory.response.intensity.m","2.3-butanedione.olfactory.strength.attraction.f","2.3-butanedione.olfactory.strength.attraction.m","3-Hydroxybutyric.acid.high.yeast.f","3-Hydroxybutyric.acid.low.yeast.f","3-Hydroxykynurenine.high.yeast.f","3-Hydroxykynurenine.low.yeast.f","4-Pyridoxic.acid.high.yeast.f","4-Pyridoxic.acid.low.yeast.f","5-Aminovalerate.high.yeast.f","5-Aminovalerate.low.yeast.f","abdomen.length.18C.f","abdomen.length.28C.f","abdomen.length.thermal.plasticity.f","acclimated.acute.cold.exposure.resistance.18C.f","acclimated.acute.cold.exposure.resistance.18C.m","acclimated.acute.cold.exposure.resistance.25C.f","acclimated.acute.cold.exposure.resistance.25C.m","acetoacetate.high.yeast.f","acetoacetate.low.yeast.f","Acetobacter.aceti.f","Acetobacter.aceti.m","Acetobacter.cibinongensis.f","Acetobacter.cibinongensis.m","Acetobacter.ghanensis.f","Acetobacter.ghanensis.m","Acetobacter.indonesiensis.f","Acetobacter.indonesiensis.m","Acetobacter.malorum.f","Acetobacter.malorum.m","Acetobacter.nitrogenifigens.f","Acetobacter.nitrogenifigens.m","Acetobacter.okinawensis.f","Acetobacter.okinawensis.m","Acetobacter.orientalis.f","Acetobacter.orientalis.m","Acetobacter.papayae.f","Acetobacter.papayae.m","Acetobacter.pasteurianus.f","Acetobacter.pasteurianus.m","Acetobacter.persici.f","Acetobacter.persici.m","Acetobacter.pomorum.f","Acetobacter.pomorum.m","Acetobacter.senegalensis.f","Acetobacter.senegalensis.m","Acetobacter.syzygii.f","Acetobacter.syzygii.m","Acetobacter.tropicalis.f","Acetobacter.tropicalis.m","acetylcarnitine.high.yeast.f","acetylcarnitine.low.yeast.f","acetylcholine.high.yeast.f","acetylcholine.low.yeast.f","Acidiphilium.angustum.f","Acidiphilium.angustum.m","Acidomonas.methanolica.f","Acidomonas.methanolica.m","Acidovorax.sp..f","Acidovorax.sp..m","Acidovorax.temperans.f","Acidovorax.temperans.m","Acinetobacter.gyllenbergii.f","Acinetobacter.gyllenbergii.m","Acinetobacter.johnsonii.f","Acinetobacter.johnsonii.m","Acinetobacter.sp..f","Acinetobacter.sp..m","activity.m","acute.cold.exposure.resistance.18C.-6.f","acute.cold.exposure.resistance.18C.-6.m","acute.cold.exposure.resistance.18C.-8.f","acute.cold.exposure.resistance.18C.-8.m","acute.cold.exposure.resistance.25C.f","acute.cold.exposure.resistance.25C.m","adenine.high.yeast.f","adenine.low.yeast.f","adenosine.high.yeast.f","adenosine.low.yeast.f","ADP.high.yeast.f","ADP.low.yeast.f","aggression.m","agmatine.high.yeast.f","agmatine.low.yeast.f","Agrobacterium.tumefaciens.f","Agrobacterium.tumefaciens.m","alanine.high.yeast.f","alanine.low.yeast.f","allantoin.high.yeast.f","allantoin.low.yeast.f","alpha-amanitin.resistance.0.2","alpha-amanitin.resistance.2","alpha-Ketoglutaric.acid.high.yeast.f","alpha-Ketoglutaric.acid.low.yeast.f","aminoisobutyrate.high.yeast.f","aminoisobutyrate.low.yeast.f","AMP.high.yeast.f","AMP.low.yeast.f","anoxia.tolerance.adult.f","anoxia.tolerance.adult.m","anoxia.tolerance.larval","anthranilate.high.yeast.f","anthranilate.low.yeast.f","approach.female.m","arachidonate.high.yeast.f","arachidonate.low.yeast.f","arginine.high.yeast.f","arginine.low.yeast.f","Asaia.prunellae.f","Asaia.prunellae.m","Asaia.sp..f","Asaia.sp..m","asparagine.high.yeast.f","asparagine.low.yeast.f","aspartic.acid.high.yeast.f","aspartic.acid.low.yeast.f","Aspergillus.nidulans.f","Aspergillus.nidulans.m","Aspergillus.terreus,Malassezia globosa.f","Aspergillus.terreus,Malassezia globosa.m","attempted.copulation.frequency.m","azinphos.methyl.resistance.0.25","azinphos.methyl.resistance.0.5","azinphos.methyl.resistance.1","azinphos.methyl.resistance.2","azinphos.methyl.resistance.LD50","Azospirillum.brasilense.f","Azospirillum.brasilense.m","Azospirillum.thiophilum.f","Azospirillum.thiophilum.m","basal.activity.f","basal.activity.m","betaine.high.yeast.f","betaine.low.yeast.f","biotin.high.yeast.f","biotin.low.yeast.f","boric.acid.resistance.f","Borrelia.coriaceae.f","Borrelia.coriaceae.m","cadaverine.high.yeast.f","cadaverine.low.yeast.f","caffeine.resistance.f","Campylobacter.mucosalis.f","Campylobacter.mucosalis.m","Cardinium.endosymbiont.f","Cardinium.endosymbiont.m","carnitine.high.yeast.f","carnitine.low.yeast.f","Caulobacter.henricii.f","Caulobacter.henricii.m","cGMP.high.yeast.f","cGMP.low.yeast.f","Chaetomium.globosum.f","Chaetomium.globosum.m","CHC.11 &amp; 9-Me-C23.f","CHC.13- &amp; 11-Me-C25.f","CHC.2-Me-C22.f","CHC.2-Me-C22.m","CHC.2-Me-C24.f","CHC.2-Me-C24.m","CHC.2-Me-C25.f","CHC.2-Me-C25.m","CHC.2-Me-C26.m","CHC.2-Me-C27.m","CHC.2-Me-C28 &amp; 7,11-C29:2.f","CHC.2-Me-C28.m","CHC.2-Me-C29 &amp; 8,12-C30:2.f","CHC.2-Me-C29.m","CHC.2-Me-C30.f","CHC.3-Me-C23.m","CHC.3-Me-C25 &amp; 9-C26:1.f","CHC.3-Me-C25.m","CHC.3-Me-C27 &amp; 6,10-C28:2 &amp; 9-C28:1.f","CHC.5-C23:1.f","CHC.5-C23:1.m","CHC.5-C24:1.f","CHC.5-C24:1.m","CHC.5-C25:1.f","CHC.5-C25:1.m","CHC.5-C27:1.f","CHC.5-Me-C25.f","CHC.5,9-C25:2 &amp; 9-C25:1.f","CHC.5,9-C27:2 &amp; 9-C27:1.f","CHC.6-C23:1.f","CHC.6-C23:1.m","CHC.6-C24:1.f","CHC.6-C24:1.m","CHC.6-C26:1 &amp; i.m","CHC.6,10-C25:2.f","CHC.6,10-C25:2.m","CHC.6,10-C26:2.f","CHC.7-C23:1.f","CHC.7-C23:1.m","CHC.7-C24:1.m","CHC.7-C25:1.f","CHC.7-C25:1.m","CHC.7-C26:1.f","CHC.7-C26:1.m","CHC.7-C27:1.f","CHC.7-C27:1.m","CHC.7-C29:1.f","CHC.7-C29:1.m","CHC.7,11-C23:2.f","CHC.7,11-C24:2.f","CHC.7,11-C25:2.f","CHC.7,11-C26:2.f","CHC.7,11-C27:2 &amp; 2-Me-C26.f","CHC.7,11-C28:2 &amp; 2-Me-C27.f","CHC.7,11-C31:2.f","CHC.8-C25:1.f","CHC.8,12-C26:2.f","CHC.8,12-C28:2.f","CHC.9-C23:1.f","CHC.9-C23:1.m","CHC.9-C25:1.m","CHC.9-C27:1.m","CHC.9-C29:1 &amp; 5,9-C29:2.f","CHC.9,13-C25:2.f","CHC.9,13-C27:2.f","CHC.n-C21.f","CHC.n-C21.m","CHC.n-C22.f","CHC.n-C22.m","CHC.n-C23.f","CHC.n-C23.m","CHC.n-C24.f","CHC.n-C24.m","CHC.n-C25.m","CHC.n-C26.f","CHC.n-C26.m","CHC.n-C27.f","CHC.n-C27.m","CHC.n-C28.f","CHC.n-C28.m","CHC.n-C29.f","CHC.n-C29.m","CHC.n-C31.f","CHC.n-C31.m","CHC.NI.20.f","CHC.NI.33.f","CHC.NI.34.f","CHC.NI.54.f","CHC.NI.54.m","CHC.NI.7.m","CHC.x-C22:1a.m","CHC.x-C22:1b.m","CHC.x-C23:1.f","CHC.x,y-C24:2.f","CHC.x,y-C24:2.m","chill.coma.recovery.f","chill.coma.recovery.m","chill.coma.recovery.variance.f","chill.coma.recovery.variance.m","chlorantraniliprole.resistance.0.5","chlorantraniliprole.resistance.1","chlorantraniliprole.resistance.2","chlorantraniliprole.resistance.3","chlorantraniliprole.resistance.4","chlorantraniliprole.resistance.5","chlorantraniliprole.resistance.LC50","choline.high.yeast.f","choline.low.yeast.f","chronic.cold.exposure.resistance.f","chronic.cold.exposure.resistance.m","circadian.period.chi.f","circadian.period.chi.m","circadian.period.mesa.f","circadian.period.mesa.m","circadian.rythmicity.index.f","circadian.rythmicity.index.m","citrulline.high.yeast.f","citrulline.low.yeast.f","climbing.age.decline.high.yeast.f","climbing.age.decline.low.yeast.f","Clostridium.lentocellum.f","Clostridium.lentocellum.m","CMP.high.yeast.f","CMP.low.yeast.f","cocaine.preferenceA.E3.m","cold.shock.acclimated.old.f","cold.shock.acclimated.old.m","cold.shock.acclimated.young.f","cold.shock.acclimated.young.m","cold.shock.old.f","cold.shock.old.m","cold.shock.young.f","cold.shock.young.m","Corynebacterium.minutissimum.f","Corynebacterium.minutissimum.m","Corynebacterium.pseudogenitalium.f","Corynebacterium.pseudogenitalium.m","Corynebacterium.sp..f","Corynebacterium.sp..m","Corynebacterium.terpenotabidum.f","Corynebacterium.terpenotabidum.m","CT.max.2020.f","CT.max.2020.m","CT.min.2020.f","CT.min.2020.m","CT.min.23C.m","CT.min.developmental.stability.m","CT.min.plasticity.m","CT.min.plasticity.variation.m","CT.min.within.environment.variation.plasticity.m","cystathionine.high.yeast.f","cystathionine.low.yeast.f","cystine.high.yeast.f","cystine.low.yeast.f","cytidine.high.yeast.f","cytidine.low.yeast.f","cytosine.high.yeast.f","cytosine.low.yeast.f","D-GA3P.high.yeast.f","D-GA3P.low.yeast.f","D-Leucic.acid.high.yeast.f","D-Leucic.acid.low.yeast.f","day.sleep.bout.length.f","day.sleep.bout.length.m","day.sleep.bout.length.SD.f","day.sleep.bout.length.SD.m","day.sleep.bouts.f","day.sleep.bouts.m","day.sleep.bouts.SD.f","day.sleep.bouts.SD.m","day.sleep.f","day.sleep.m","day.sleep.SD.f","day.sleep.SD.m","DCV.resistance.m","DDT.resistance.knockdown.f","DDT.resistance.mortality.f","deltamethrin.resistance.m","dessication.tolerance.f","dessication.tolerance.m","developmental.acclimation.cold.exposure.f","developmental.acclimation.cold.exposure.m","Drosophila.A Virus.f","Drosophila.A Virus.m","E.faecalis.resistance.m","Enterococcus.hirae.f","Enterococcus.hirae.m","epinephrine.high.yeast.f","epinephrine.low.yeast.f","Escherichia.coli.f","Escherichia.coli.m","ethanol.sensitivity.first.exposure.f","ethanol.sensitivity.first.exposure.m","ethanol.sensitivity.second.exposure.f","ethanol.sensitivity.second.exposure.m","ethanol.tolerance.f","ethanol.tolerance.m","exercise.induced.activity.f","exercise.induced.activity.m","Exophiala.xenobiotica.f","Exophiala.xenobiotica.m","fecundity.f","fertilised.egg.retention.score.f","fertility.25C.m","fertility.27C.m","fertility.29C.m","fertility.thermal.plasticity.m","FHV.resistance.m","Fimbriimonas.ginsengisoli.f","Fimbriimonas.ginsengisoli.m","flight.performance.f","flight.performance.m","food.intake.f","food.intake.m","foraging.survival.m","G1P.G6P.F6P.F1P.high.yeast.f","G1P.G6P.F6P.F1P.low.yeast.f","Gardnerella.vaginalis.f","Gardnerella.vaginalis.m","Gemmata.obscuriglobus.f","Gemmata.obscuriglobus.m","Gemmata.sp..f","Gemmata.sp..m","genital.licking.frequency.m","genome.size","geranyl.pyrophosphate.high.yeast.f","geranyl.pyrophosphate.low.yeast.f","Gluconacetobacter.diazotrophicus.f","Gluconacetobacter.diazotrophicus.m","Gluconobacter.frateurii.f","Gluconobacter.frateurii.m","Gluconobacter.morbifer.f","Gluconobacter.morbifer.m","Gluconobacter.oxydans.f","Gluconobacter.oxydans.m","Gluconobacter.thailandicus.f","Gluconobacter.thailandicus.m","glucoronate.high.yeast.f","glucoronate.low.yeast.f","glucose.2015.m","glucose.high.glucose.diet.m","glucose.high.yeast.f","glucose.low.glucose.diet.m","glucose.low.yeast.f","glucose.medium.glucose.diet.m","glucose.yeast.poor.diet.f","glucose.yeast.rich.diet.f","glutamic.acid.high.yeast.f","glutamic.acid.low.yeast.f","glutamine.high.yeast.f","glutamine.low.yeast.f","glyceraldehyde.high.yeast.f","glyceraldehyde.low.yeast.f","glycerate.high.yeast.f","glycerate.low.yeast.f","glycerol-3-P.high.yeast.f","glycerol-3-P.low.yeast.f","glycerol.2015.m","glycerol.high.glucose.diet.m","glycerol.low.glucose.diet.m","glycerol.medium.glucose.diet.m","glycine.high.yeast.f","glycine.low.yeast.f","glycogen.2015.m","glycogen.high.glucose.diet.m","glycogen.low.glucose.diet.m","glycogen.medium.glucose.diet.m","GMP.high.yeast.f","GMP.low.yeast.f","guanosine.high.yeast.f","guanosine.low.yeast.f","gustatory.reponse.ethanol.m","gustatory.response.ethanol.f","histamine.high.yeast.f","histamine.low.yeast.f","histidine.high.yeast.f","histidine.low.yeast.f","homogentisate.high.yeast.f","homogentisate.low.yeast.f","hydrogen.peroxide.resistance.f","Hymenobacter.sp..f","Hymenobacter.sp..m","Hymenobacter.swuensis.f","Hymenobacter.swuensis.m","hypoxanthine.high.yeast.f","hypoxanthine.low.yeast.f","Ideonella.sp..f","Ideonella.sp..m","imidacloprid.resistance.100ppm","imidacloprid.resistance.25ppm","IMP.high.yeast.f","IMP.low.yeast.f","inosine.high.yeast.f","inosine.low.yeast.f","inositol.high.yeast.fInositol","inositol.low.yeast.f","IOD.f","IOD.m","IPI.m","iso-leucine.high.yeast.f","iso-leucine.low.yeast.f","isolated.aggression.m","isoValeric.acid.high.yeast.f","isoValeric.acid.low.yeast.f","kallithea.resistance.LT50.f","kallithea.resistance.LT50.m","kallithea.viral.load.f","Klebsiella.pneumoniae.f","Klebsiella.pneumoniae.m","Kocuria.polaris.f","Kocuria.polaris.m","Kocuria.sp..f","Kocuria.sp..m","Komagataeibacter.europaeus.f","Komagataeibacter.europaeus.m","Komagataeibacter.hansenii.f","Komagataeibacter.hansenii.m","Komagataeibacter.intermedius.f","Komagataeibacter.intermedius.m","Komagataeibacter.kakiaceti.f","Komagataeibacter.kakiaceti.m","Komagataeibacter.medellinensis.f","Komagataeibacter.medellinensis.m","Komagataeibacter.oboediens.f","Komagataeibacter.oboediens.m","Komagataeibacter.rhaeticus.f","Komagataeibacter.rhaeticus.m","Komagataeibacter.xylinus.f","Komagataeibacter.xylinus.m","Kozakia.baliensis.f","Kozakia.baliensis.m","kujin.virus.resistance.f","L-Kynurenine.high.yeast.f","L-Kynurenine.low.yeast.f","L.monocytogenes.load.m","L.monocytogenes.MTD.m","lactate.high.yeast.f","lactate.low.yeast.f","Lactobacillus.brevis.f","Lactobacillus.brevis.m","Lactobacillus.fabifermentans.f","Lactobacillus.fabifermentans.m","Lactobacillus.fermentum.f","Lactobacillus.fermentum.m","Lactobacillus.kisonensis.f","Lactobacillus.kisonensis.m","Lactobacillus.plantarum.f","Lactobacillus.plantarum.m","Lactobacillus.rhamnosus.f","Lactobacillus.rhamnosus.m","Lactococcus.lactis.f","Lactococcus.lactis.m","lactose.high.yeast.f","lactose.low.yeast.f","larvae.learning","leucine.high.yeast.f","leucine.low.yeast.f","Leuconostoc.carnosum.f","Leuconostoc.carnosum.m","Leuconostoc.pseudomesenteroides.f","Leuconostoc.pseudomesenteroides.m","lifespan.18C.f","lifespan.18C.m","lifespan.25C.2014.f","lifespan.25C.2015.f","lifespan.25C.2020.f","lifespan.25C.2020.m","lifespan.25C.high.yeast.f","lifespan.25C.low.yeast.f","lifespan.28C.f","lifespan.28C.m","lifetime.fecundity.25C.f","linoleic.acid.high.yeast.f","linoleic.acid.low.yeast.f","linolenic.acid.high.yeast.f","linolenic.acid.low.yeast.f","locomotor.activity.m","locomotor.frequency.f","Luteipulveratus.mongoliensis.f","Luteipulveratus.mongoliensis.m","lysine.high.yeast.f","lysine.low.yeast.f","M.anisopliae.resistance.f","M.anisopliae.resistance.m","malathion.mortality.12hr.f","malathion.mortality.12hr.m","malathion.mortality.24hr.f","malathion.mortality.24hr.m","malathion.mortality.3hr.f","malathion.mortality.3hr.m","malathion.mortality.6hr.f","malathion.mortality.6hr.m","malondialdehyde.high.yeast.f","malondialdehyde.low.yeast.f","margaric.acid.high.yeast.f","margaric.acid.low.yeast.f","mass.yeast.poor.diet.f","mass.yeast.rich.diet.f","mating.latency.2015.m","MeHg.tolerance","Mesorhizobium.sp..f","Mesorhizobium.sp..m","Metarhizium.brunneum.f","Metarhizium.brunneum.m","methionine.high.yeast.f","methionine.low.yeast.f","methylmalonate.high.yeast.f","methylmalonate.low.yeast.f","Methylobacterium.extorquens.f","Methylobacterium.extorquens.m","Methylobacterium.sp..f","Methylobacterium.sp..m","micro.environmental.plasticity.lifespan.18C.f","micro.environmental.plasticity.lifespan.18C.m","micro.environmental.plasticity.lifespan.25C.f","micro.environmental.plasticity.lifespan.25C.m","micro.environmental.plasticity.lifespan.28C.f","micro.environmental.plasticity.lifespan.28C.m","Microbacterium.sp..f","Microbacterium.sp..m","MPH.effect.on.activity.m","msb.resistance.f","msb.resistance.m","mtDNA.copy.number","myristic.acid.high.yeast.f","myristic.acid.low.yeast.f","N-AcetylGlycine.high.yeast.f","N-AcetylGlycine.low.yeast.f","night.sleep.bout.length.f","night.sleep.bout.length.m","night.sleep.bout.length.SD.f","night.sleep.bout.length.SD.m","night.sleep.bouts.f","night.sleep.bouts.m","night.sleep.bouts.SD.f","night.sleep.bouts.SD.m","night.sleep.f","night.sleep.m","night.sleep.SD.f","night.sleep.SD.m","Nora.virus.f","Nora.virus.m","olfactory.response.1-hexanol.f","olfactory.response.1-hexanol.m","olfactory.response.2-heptanone.f","olfactory.response.2-heptanone.m","olfactory.response.2-phenyl ethyl alcohol.f","olfactory.response.2-phenyl ethyl alcohol.m","olfactory.response.acetophenone.f","olfactory.response.acetophenone.m","olfactory.response.benzaldehyde.2013.f","olfactory.response.benzaldehyde.2013.m","olfactory.response.benzaldehyde.2015.f","olfactory.response.benzaldehyde.2015.m","olfactory.response.citral.f","olfactory.response.citral.m","olfactory.response.D-carvone.f","olfactory.response.D-carvone.m","olfactory.response.ethanol.f","olfactory.response.ethanol.m","olfactory.response.ethylacetate.f","olfactory.response.ethylacetate.m","olfactory.response.ethylbutyrate.f","olfactory.response.ethylbutyrate.m","olfactory.response.eugenol.f","olfactory.response.eugenol.m","olfactory.response.heliol.f","olfactory.response.heliol.m","olfactory.response.hexal.f","olfactory.response.hexal.m","olfactory.response.L-carvone.f","olfactory.response.L-carvone.m","olfactory.response.methylSalicylate.f","olfactory.response.methylSalicylate.m","orient.towards.female.m","ornithine.high.yeast.f","ornithine.low.yeast.f","orotate.high.yeast.f","orotate.low.yeast.f","ovariole.asymmetry.f","ovariole.number.f","oxaloacetate.high.yeast.f","oxaloacetate.low.yeast.f","oxypurinol.high.yeast.f","oxypurinol.low.yeast.f","P.aeruginosa.defecation.f","P.aeruginosa.fecal.pH.f","P.aeruginosa.intestinal.mitosis.f","P.aeruginosa.resistance.2017.f","P.aeruginosa.resistance.2017.m","P.aeruginosa.resistance.2019.f","P.entomophila.resistance.f","P.rettgeri.load.f","P.rettgeri.load.high.glucose.diet.m","P.rettgeri.load.low.glucose.diet.m","P.rettgeri.load.medium.glucose.diet.m","P.rettgeri.resistance.f","P.rettgeri.tolerance.f","Paenibacillus.borealis.f","Paenibacillus.borealis.m","Paenibacillus.sp..f","Paenibacillus.sp..m","pantothenate.high.yeast.f","pantothenate.low.yeast.f","paraquat.resistance.f","paraquat.resistance.m","parathion.resistance.m","Pectobacterium.carotovorum.f","Pectobacterium.carotovorum.m","PEP.high.yeast.f","PEP.low.yeast.f","permethrin.knockdown.f","permethrin.knockdown.m","permethrin.mortality.24hr.f","permethrin.mortality.24hr.m","phenylalanine.high.yeast.f","phenylalanine.low.yeast.f","phototaxis.mid.age.f","phototaxis.mid.age.m","phototaxis.old.f","phototaxis.old.m","phototaxis.young.f","phototaxis.young.m","pipecolate.high.yeast.f","pipecolate.low.yeast.f","Plasmodium.vivax.f","Plasmodium.vivax.m","Podospora.anserina.f","Podospora.anserina.m","proline.high.yeast.f","proline.low.yeast.f","Propionibacterium.acidipropionici.f","Propionibacterium.acidipropionici.m","Propionibacterium.acnes.f","Propionibacterium.acnes.m","protein.2015.m","protein.high.glucose.diet.m","protein.low.glucose.diet.m","protein.medium.glucose.diet.m","Pseudodonghicola.xiamenensis.f","Pseudodonghicola.xiamenensis.m","Pseudomonas.fuscovaginae.f","Pseudomonas.fuscovaginae.m","Pseudomonas.moraviensis.f","Pseudomonas.moraviensis.m","Pseudomonas.putida.f","Pseudomonas.putida.m","Pseudomonas.sp..f","Pseudomonas.sp..m","Pseudomonas.stutzeri.f","Pseudomonas.stutzeri.m","Pseudomonas.syringae.f","Pseudomonas.syringae.m","Psychrobacter.glacincola.f","Psychrobacter.glacincola.m","Psychrobacter.sp..f","Psychrobacter.sp..m","pupation.height","putrescine.high.yeast.f","putrescine.low.yeast.f","pyridoxal-5-P.high.yeast.f","pyridoxal-5-P.low.yeast.f","pyruvate.high.yeast.f","pyruvate.low.yeast.f","radiation.resistance.m","RCH.18C.f","RCH.18C.m","RCH.25C.f","RCH.25C.m","RCH.old.f","RCH.old.m","RCH.young.f","RCH.young.m","Rhizobacter.sp..f","Rhizobacter.sp..m","ribose-5-P.high.yeast.f","ribose-5-P.low.yeast.f","Saccharomyces.cerevisiae.f","Saccharomyces.cerevisiae.m","sarcosine.high.yeast.f","sarcosine.low.yeast.f","serine.high.yeast.f","serine.low.yeast.f","social.aggression.m","social.effect.aggression.m","sorbitol.high.yeast.f","sorbitol.low.yeast.f","Sphingomonas.hengshuiensis.f","Sphingomonas.hengshuiensis.m","Sphingomonas.parapaucimobilis.f","Sphingomonas.parapaucimobilis.m","Sphingomonas.phyllosphaerae.f","Sphingomonas.phyllosphaerae.m","Sphingomonas.sp..f","Sphingomonas.sp..m","Sphingomonas.wittichii.f","Sphingomonas.wittichii.m","Sporolactobacillus.terrae.f","Sporolactobacillus.terrae.m","sprinter.marathoner.f","sprinter.marathoner.m","Staphylococcus.aureus.f","Staphylococcus.aureus.m","Staphylococcus.epidermidis.f","Staphylococcus.epidermidis.m","Staphylococcus.gallinarum.f","Staphylococcus.gallinarum.m","startle.response.f","startle.response.m","startle.response.variance.f","startle.response.variance.m","startle.sensitivity.msb.f","startle.sensitivity.msb.m","starvation.resistance.2012.f","starvation.resistance.2012.m","starvation.resistance.2017.m","starvation.resistance.2019.f","starvation.resistance.2019.m","starvation.resistance.old.f","starvation.resistance.old.m","starvation.resistance.variance.f","starvation.resistance.variance.m","starvation.resistance.yeast.poor.diet.f","starvation.resistance.yeast.rich.diet.f","starvation.resistance.young.f","starvation.resistance.young.m","Streptococcus.pneumoniae.f","Streptococcus.pneumoniae.m","Streptococcus.salivarius.f","Streptococcus.salivarius.m","Streptomyces.griseoflavus.f","Streptomyces.griseoflavus.m","Streptomyces.pristinaespiralis.f","Streptomyces.pristinaespiralis.m","Streptomyces.sp..f","Streptomyces.sp..m","succinate.high.yeast.f","succinate.low.yeast.f","sucrose.high.yeast.f","sucrose.low.yeast.f","Sum.of Non-Wolbachia Species.f","Sum.of Non-Wolbachia Species.m","T1.femur.f","T1.femur.m","T1.leg.length.f","T1.leg.length.m","T1.tarsus.f","T1.tarsus.m","T1.tibia.f","T1.tibia.m","T2.femur.f","T2.femur.m","T2.leg.length.f","T2.leg.length.m","T2.tarsus.f","T2.tarsus.m","T2.tibia.f","T2.tibia.m","taurine.high.yeast.f","taurine.low.yeast.f","tergite5.f","tergite6.f","Terriglobus.roseus.f","Terriglobus.roseus.m","thorax.length.18C.f","thorax.length.28C.f","thorax.length.thermal.plasticity.f","threonine.high.yeast.f","threonine.low.yeast.f","traumatic.injury.mortality","Tremella.mesenterica.f","Tremella.mesenterica.m","triglyceride.2015.m","triglyceride.high.glucose.diet.m","triglyceride.low.glucose.diet.m","triglyceride.medium.glucose.diet.m","triglyceride.poor.diet.f","triglyceride.yeast.rich.diet.f","trimethylamine.high.yeast.f","trimethylamine.low.yeast.f","tryptophan.high.yeast.f","tryptophan.low.yeast.f","tunicamycin.ER.stress.m","tunicamycin.LT50.m","tyrosine.high.yeast.f","tyrosine.low.yeast.f","unfertilised.eggs","uracil.high.yeast.f","uracil.low.yeast.f","urate.high.yeast.f","urate.low.yeast.f","uridine.high.yeast.f","uridine.low.yeast.f","valine.high.yeast.f","valine.low.yeast.f","virgin.egg.retention.f","waking.activity.f","waking.activity.m","waking.activity.SD.f","waking.activity.SD.m","week1.fecundity.25C.f","week3.fecundity.25C.f","week5.fecundity.25C.f","week7.fecundity.25C.f","weight.high.glucose.diet.m","weight.low.glucose.diet.m","weight.medium.glucose.diet.m","wet.weight.m","wing.centroid.size.f","wing.centroid.size.m","wing.display.frequency.m","wolbachia.copy.number","Wolbachia.pipentis.f","Wolbachia.pipentis.m","Xanthomonas.sp..f","Xanthomonas.sp..m","Xanthomonas.vesicatoria.f","Xanthomonas.vesicatoria.m","xanthosine.high.yeast.f","xanthosine.low.yeast.f","xanthurenate.high.yeast.f","xanthurenate.low.yeast.f","Yersinia.mollaretii.f","Yersinia.mollaretii.m","Yersinia.pekkanenii.f","Yersinia.pekkanenii.m","Zymomonas.mobilis.f","Zymomonas.mobilis.m"],[0.02,0.01,0.01,-0.07,0.17,0.06,-0.02,0.07,0.11,0.18,0.05,0.05,-0.01,0.07,0.17,0.02,0.12,0.03,0.22,0.01,0.09,-0.02,0.03,0.11,-0.22,-0.15,-0.07,-0.13,0.12,-0.04,0.05,0.13,-0.04,0.01,0.02,0.06,0.05,-0.11,-0.02,-0.01,0,-0.03,0.05,-0.01,0.02,-0.05,-0.04,-0.05,-0.01,-0.01,0.01,0,0.05,-0.02,0.05,-0.11,-0.06,0.02,0.09,-0.05,-0.01,0.02,0.08,-0.04,-0.03,0,0.05,-0.05,-0.05,0.11,0.24,0.1,0.07,0.01,0.08,-0.06,0.03,0.02,0.01,-0.02,-0.02,0.05,0.03,0.09,0.09,-0.05,0.1,0.11,0.08,-0.1,-0.03,-0.01,0.03,0.03,0.1,-0.12,0.01,-0.02,0.03,-0.12,0.03,0.07,-0,0.03,0.07,-0.06,-0.12,-0.04,0.02,-0.25,0.01,0.1,0.05,0.01,-0.1,-0.04,-0.05,-0.08,-0.01,-0.05,-0.08,-0.07,0.02,0.2,-0.08,-0.01,-0.07,0,0.05,0,0.07,0.21,0.03,0.12,0.14,0.08,-0.01,0.16,-0.1,-0.17,-0.02,-0.05,-0.06,0.05,0.02,-0.01,0.09,0.16,0.09,0.16,-0.13,-0.03,0.04,0.12,-0.11,0.14,0.03,0.05,-0.09,-0.07,-0.01,0.01,0.16,0.1,-0.01,-0.03,-0.1,0.09,0.02,-0.03,-0.27,0.01,-0.03,-0.01,0.06,-0.11,-0.11,-0.11,-0.03,-0.01,-0.09,-0.02,0.04,-0.04,-0.03,-0.02,0.07,0.05,0.1,0.13,0.02,0.06,0.1,0.09,0.05,0.09,0.16,0.07,0.15,0.06,0.04,0.13,-0.18,0.13,0.01,0.13,0.05,-0.04,0.05,0.01,0.05,0.02,-0.02,0.1,0.03,-0.08,0,0.2,0.04,0.01,-0.11,-0.07,-0.1,-0,-0.04,-0.1,-0.02,-0.05,-0.24,-0.04,-0.11,0.02,0.03,0.13,0.03,0.08,-0.16,-0.14,-0.17,-0.16,-0.11,-0.17,-0.16,-0.11,-0.11,0.05,0.07,0.06,0.07,0.04,0.04,0.05,-0.02,0,-0.04,-0.05,-0.09,0.1,0.19,0.14,0.12,0.15,-0.04,0.05,-0.04,-0.14,-0.02,-0.02,-0.1,-0.07,-0.07,-0.04,-0.09,-0.1,-0.07,-0.14,-0.19,-0.14,-0.07,-0.14,-0.08,0.07,0,0.07,0.18,0.23,0.21,0.14,0.09,-0.05,-0.16,-0,0.01,-0,0.02,0.05,-0.05,-0.09,-0.08,-0.19,-0.13,-0.21,-0.12,-0.01,-0.24,-0.26,-0.01,0.17,-0.03,0.19,0.1,0.08,0.01,0.12,-0.13,-0.18,-0.04,-0.05,-0.04,0.09,-0.17,-0.1,0.09,-0.12,0.06,-0.11,0.11,0.17,0.12,0.2,0.07,0.05,0.2,-0.07,0.05,-0.27,-0.17,-0.2,-0.18,0.08,0.06,-0.01,0.02,-0.13,-0.09,-0.11,-0.17,-0.02,-0.03,-0.1,-0.1,0.17,-0.01,0.05,-0.04,-0.05,-0.09,0.12,0.01,0.13,-0.29,-0.16,0.02,-0.01,-0.06,0.01,-0.07,-0.05,-0.03,-0.09,0.16,0.01,0.07,-0.02,0.19,0.02,-0.03,-0.04,-0.04,-0.05,-0.12,-0.02,0.01,0.1,0.2,0.13,0.09,0.16,0.15,0.11,0.1,0.13,0.05,-0,-0.07,-0.15,-0.06,-0.11,-0.15,-0.09,-0.02,0.02,-0.04,0.01,-0.05,-0,-0.06,-0.01,-0.05,0.04,-0.11,0.14,-0.05,-0.08,-0.14,0.12,-0.05,-0.03,-0.01,-0.02,0.15,0.29,0.1,0.1,-0.04,0.07,0.21,0.06,0.09,0.04,-0.01,0.02,0.07,0.07,-0.01,0.02,0.02,-0.03,0.07,0.03,-0.01,-0.02,0.07,-0.02,-0,0.05,-0.07,0.05,-0.1,-0.05,-0.12,-0.01,0.15,0.05,0.09,-0.08,0.09,-0.11,0.03,-0.05,-0.03,0.02,-0.04,0.03,-0.06,-0.02,-0.01,0.08,0.2,0.05,0.06,0.07,0.15,-0.04,0.04,-0.13,-0.01,-0.02,-0.06,0.05,0.13,0.08,0.08,0.14,-0.05,0.06,-0.05,-0,-0.02,-0.03,-0.04,-0.01,0.03,0.06,0.01,0.03,-0.02,0.02,-0.01,-0.05,-0.01,0.02,-0,0.05,-0.16,0.15,0.11,-0.09,-0.05,-0.18,-0.14,0.05,0.07,-0.01,-0,0.05,-0.02,0.02,0.05,0.01,0.01,0.02,-0,-0.04,-0.05,-0.21,-0.02,0.08,0.16,-0.08,-0.11,-0.05,0.05,0.1,-0.11,-0.11,0.04,-0.13,-0.06,-0.03,0.03,-0.07,-0.02,-0.04,0.29,-0.18,-0.04,-0.07,-0.03,-0.01,0.18,0.09,0.03,0,-0.01,0.25,0.24,-0.08,-0.1,-0.03,-0.07,-0.12,-0.08,-0.07,-0.04,-0.11,-0.05,-0.06,0.04,-0.08,-0.08,-0.03,-0.01,0.09,0.05,0.01,-0.1,0.15,-0,-0.01,0.21,0.16,0.09,0.05,-0.05,0.01,0.06,-0.02,-0.02,-0.02,-0.03,0.07,0.01,0.07,-0.02,0.03,0.06,-0.04,-0.15,-0.08,0.05,-0.07,0.02,0.03,0.03,0.04,-0.03,0.17,0.03,-0.03,0.06,0.03,-0.12,0.07,0.07,0.03,0.06,0,0.05,-0.07,0.09,-0.03,0.04,-0.16,-0.1,0.02,0.01,-0.08,-0.01,0.04,-0.09,-0.05,-0.12,-0.05,-0.15,0,0.04,0.04,0.01,0.07,0.11,-0.03,0.03,-0.02,-0.04,-0.05,0.07,-0.01,0.02,0.23,-0.04,-0.15,-0.05,0.03,0.2,0.02,-0.16,0,0.03,-0.07,-0.01,0.23,0.26,0.06,-0.02,-0,-0.17,0.01,-0.07,0.06,0.09,0.1,0.04,0.03,0.01,-0.03,0.03,-0.01,0,0.18,-0.1,-0.25,-0.01,0.08,-0.07,-0.12,-0.09,-0.17,0.17,-0.03,0.13,0.12,0.12,0.04,-0.02,-0.04,0.07,0.02,0.11,-0.06,0.08,-0.09,0.12,-0.24,0.04,0.07,0.07,-0.09,0.03,0.06,-0.03,0.01,-0.12,-0.23,-0.06,0.09,0.02,0.11,0.11,0.02,0.11,0.06,0.13,0.09,0.07,0.07,-0,-0.11,-0.19,-0.02,0.14,-0.17,0.03,-0.04,-0.1,-0.12,-0.17,-0.01,0.04,0.02,0.03,0.01,-0.02,-0.18,0.1,0.09,-0.03,-0.02,0.01,0.02,-0.03,-0.01,0.06,-0.14,0.23,0.12,0.07,0.09,0.16,0.09,0.02,-0.05,-0.06,-0.02,-0.02,0.05,-0.1,0.02,-0.27,0.06,0.13,0.17,-0.25,-0.15,-0.1,-0.04,-0.11,0.03,-0.11,0.18,0.03,-0.03,-0.05,-0.01,-0.04,-0.04,-0.03,0.07,0.01,-0.1,-0.08,-0.02,0.09,-0.19,0.06,0.01,-0.07,-0.02,0.02,0.11,-0.04,0.02,-0.04,0.05,-0.05,0,-0.09,0.13,0.15,0.01,-0.03,-0.07,-0.13,-0,-0.02,0.15,0.14,0.1,0.09,0.1,0.1,0.02,0.01,0.03,0.04,0.02,0.02,0.03,0.03,-0.01,-0.01,-0.16,-0.07,0.14,0.08,-0.15,0.12,-0.14,0.03,-0.18,0,-0.09,-0.07,-0.08,-0.13,-0.17,0.1,0.13,0.14,-0.05,-0.01,0.03,-0.1,0.06,0,0.19,0.06,0.16,0.15,-0.17,0.1,-0.08,-0.13,-0.01,0.11,-0.02,0.12,-0.04,-0.1,-0.22,-0.15,-0.17,-0.05,0.27,0.23,0.14,-0.01,0.02,0.05,0.05,0.01,0.12,0.12,-0.05,0.09,-0.04,-0.06,-0.16,0.05,0.07,0,-0,0.05,-0.1,-0.03,0.07,0.06,-0.13,-0.02,0,0.04],[-0.13,-0.1,-0.11,-0.13,0.06,0.01,-0.16,-0.13,0.06,-0.08,0.07,0.15,0.11,0.08,-0.14,-0.11,-0.07,-0.09,-0.1,0.02,-0.14,-0.01,-0.21,-0.27,0.08,0.12,-0.14,-0.17,0.01,0,-0.04,0.16,-0.07,0.08,-0.14,0.06,0.18,-0.08,0.12,-0.07,-0.04,-0.08,-0.02,-0.05,-0.03,-0.08,-0.07,-0.08,-0.05,-0.08,-0.05,-0.05,-0.02,-0.06,-0,-0.13,-0.08,-0.02,0.02,-0.05,-0.01,-0.01,0.01,-0.09,-0.08,-0.05,-0.05,-0.11,-0.09,0.08,0.18,0.19,0.23,-0.02,-0.05,-0.11,-0.02,0.05,-0.04,-0.1,0.05,-0.01,-0.15,0.07,0.2,0.06,-0.01,0.18,0.09,-0.09,0.03,0.02,0.04,0.12,-0.01,-0.01,0.07,0.05,0.11,0.11,0.04,-0.08,0.04,0.05,0.09,-0.05,-0.14,-0.01,-0.15,0.06,0.02,0.14,-0.06,-0.22,-0.08,0.05,0.07,0.01,0.08,0.02,0.03,0.09,0.05,0.03,0.1,-0.04,0.03,-0.08,-0.08,-0.09,-0.06,0.15,-0.05,-0,0.04,0.16,0.05,0.21,0.03,0.02,-0.04,-0.11,-0.11,0.1,-0.05,-0.07,-0.03,-0.06,-0.03,0.09,-0.02,-0.06,-0.1,0.08,0.19,0.13,-0.08,-0.1,-0.27,-0.2,0.08,0.02,0.1,0.02,-0.12,-0.02,0.09,-0.07,0.03,-0.01,-0.02,0.19,0.11,-0.04,-0.03,-0.15,-0.21,-0.19,-0.09,-0,-0.12,-0.09,-0.04,0.17,-0,0.13,0.13,0.06,0,-0.08,-0.02,0.07,-0.08,-0.15,-0.19,0.04,0,-0.1,0.07,0.03,-0.23,-0.03,-0.2,0.11,-0.12,0.08,-0.03,-0.15,0.11,-0.29,-0.09,-0.06,-0.02,-0.05,0.08,0.14,0.05,0.09,-0.06,0.14,-0.04,-0.15,-0.16,-0.02,-0.1,-0.11,0.18,0.15,-0.09,-0.22,0.14,-0.08,0.01,0.13,-0.11,0.12,-0.21,-0,-0.14,-0.09,-0.11,-0.06,-0.14,-0.02,-0.03,0.08,0.09,0.25,0.12,0.16,0.15,0.2,0.06,0.19,0.09,0.14,-0.06,-0.09,0.1,0.16,0.08,0.11,0.05,0.01,-0.11,-0.17,-0.07,-0.12,-0.13,-0.13,-0.06,-0.12,-0.03,0.06,0.04,0.01,0.01,0.02,-0.02,-0.15,-0.13,0.03,0.12,-0.03,0.11,0.08,0.11,0.11,0.09,0.2,0.02,-0.04,0.09,-0.05,-0.04,0.09,0.02,-0.37,0.02,0.18,-0.07,-0.09,-0.24,-0.12,-0.23,-0.26,0.02,-0.06,-0.08,0.18,0.14,0.12,-0.08,0.06,0.31,0.18,0.16,0.2,0.02,-0.11,-0.04,-0.16,-0.21,0.02,0.03,0.01,0.1,0.02,0.04,0.01,0.05,-0.08,0.06,-0.04,-0.13,0.18,0.2,0.19,0.21,-0.13,-0.19,-0.11,0.07,0.04,0.18,0,-0.18,-0.11,0.08,0.17,0.06,0.11,0.12,-0.05,-0.13,-0.17,-0.11,-0.02,0.13,0.25,-0.16,-0.02,0.18,-0.11,-0.01,-0.09,-0.08,-0.09,-0.11,-0.04,0.09,0.02,0.08,0.16,0.12,0.13,0.11,0.11,0.06,0.01,0,0.08,0.07,0.1,0.15,0.08,0.06,-0.04,0.04,0.17,-0,0.01,0.16,0.06,0.23,0.1,-0.14,-0.05,-0.19,-0.14,-0.15,-0.12,-0.06,-0.02,-0.11,-0.01,-0.09,-0.05,-0.07,-0.01,0.01,-0.02,0.1,0.08,-0.04,0.22,-0.03,0.15,0,0.03,0.15,0.09,0.17,0.17,-0.14,-0.06,0.1,0.02,0.05,-0.1,0.04,0.05,0.07,0.09,-0.05,-0.02,0.12,0.16,0.16,0.18,0.06,0.09,0.07,0.16,0.04,0.01,-0.17,-0.07,0.09,0.11,-0.17,-0.12,-0.03,0.05,0.1,-0.06,0.15,-0.09,-0.17,0.07,0.08,-0.2,-0.18,0,0.04,-0.01,0.07,-0.14,-0.03,-0.06,-0.04,-0.05,0.04,-0.03,0.13,-0.08,-0.08,-0.06,-0,-0.01,0.11,0.16,0.03,0.1,0.05,-0.13,-0.1,-0.04,-0.09,0,-0.18,-0.16,-0.03,0.03,-0.02,-0.05,-0.05,-0.02,-0.06,-0.05,-0.09,-0.05,-0.08,-0.07,-0.11,0.03,0.21,0.14,-0.15,-0.13,-0.13,0.15,0.17,0.02,0.05,0.04,0.06,0.09,0.11,0.05,0.05,0.03,0.01,-0,-0.02,0.07,0.12,0,0.07,-0.04,0.04,0,0.09,0.16,0.12,0.1,0.07,0.03,0.14,0.16,0.18,-0,0.14,0.27,0.12,-0.07,-0.03,-0.12,-0.08,0.18,0.33,0.05,0.06,-0.04,-0.01,0.24,0.24,-0.04,-0.04,0.02,-0,-0.06,0.01,-0.01,0.02,-0.06,-0.07,-0.1,-0.12,-0.09,-0.04,-0.11,0.07,0.06,0.04,0.14,0.02,0.1,0.03,-0.03,-0,0.15,-0.08,0.15,-0.15,0.13,0.05,0.2,0.21,0.16,0.05,0.03,0.01,-0.03,-0.09,-0.02,0.04,-0.13,-0.22,-0.14,-0.14,0.11,0.16,0.13,0.17,-0.02,-0.17,0.02,-0.16,0.14,0.14,-0.09,-0.17,-0.07,-0.06,0.11,0.13,0.06,0.15,-0.17,-0.02,-0.05,-0.11,0.03,0.11,-0.03,0.03,-0.05,0.01,-0.14,-0.17,-0.06,0.04,-0.16,-0.22,0.03,0.1,0.04,-0.06,-0.11,-0.05,-0.01,-0,-0.1,-0.06,-0.1,-0.07,-0.14,-0,-0.03,0,0.04,-0.09,0.19,0.14,-0.07,-0.07,-0.21,-0.1,0.04,-0.1,0.24,0.28,0.08,0.01,-0.15,-0.29,-0.1,-0.19,0.18,0.14,0.09,0.14,0.06,0.05,-0.19,-0.23,0.09,0.02,0.14,0.04,0.01,0.04,0.1,-0.07,-0.03,-0.08,-0.07,0.06,-0.03,0.22,-0.04,0.11,-0.03,0.13,0.11,-0.01,0.02,0.16,0.07,0.17,0.05,-0.03,-0.12,-0,0.03,0.12,-0.02,-0.11,-0.08,-0.02,-0.04,0.21,0.08,0.02,0.17,-0.11,0.11,0.1,0.12,0.02,0.07,0.05,0.06,0.2,-0.02,0.05,0.07,-0.23,-0.09,-0.03,-0.02,-0.02,-0.19,-0.15,0.01,0.03,0.05,0.01,-0.09,0.01,0.03,0.19,0.27,0.15,0.18,0.12,0.09,-0.01,-0.06,-0.05,-0.01,0.01,-0.19,0.16,0,0.03,-0.06,0.13,0.03,-0.08,-0.1,0,0.04,0.01,0.12,-0.2,0.07,-0.25,0.01,0.07,0.07,0.21,0.21,0.01,0.12,0.06,-0.03,-0.03,0.04,0.07,0.06,-0.06,-0.11,0.09,-0.03,-0.04,-0.05,-0.03,0.01,-0.01,0.01,0.01,0.02,-0.04,0.06,0.01,0.01,0.04,0.12,0.01,0.01,0.05,0.17,0.04,0.16,0.04,0.17,0.22,0.03,0.05,0.05,0,-0.09,-0.09,0.03,0.04,0.05,0.05,-0.01,-0.02,0.11,0.11,-0.04,-0.01,-0.05,-0.03,-0.12,-0.11,0.03,0.06,-0.05,0.05,0.08,0,-0.1,0.09,-0.03,0.01,-0.02,-0.02,0,0.02,0.15,-0,0.02,0.14,-0.12,0.02,0.09,0.02,0.01,-0.05,0.03,0.1,0.06,-0.06,0.14,0.12,-0.21,-0.08,-0.14,-0.16,-0.08,0.15,0.12,0.01,-0.03,0.03,-0.05,0.04,-0.16,0,0.1,0.1,-0.07,-0.08,0.08,0.17,0.15,0.11,-0.03,-0.05,-0.14,-0.1,0.06,0.08,-0.04,0.08,0.14,0.05,-0.1,0.03,-0.02,0.04,-0.08,0.02,-0.1,-0.02,-0.08,-0.09],[0.15,0.11,0.12,0.06,0.11,0.05,0.14,0.2,0.05,0.26,-0.02,-0.1,-0.12,-0.01,0.31,0.13,0.19,0.12,0.32,-0.01,0.23,-0.01,0.24,0.38,-0.3,-0.27,0.07,0.04,0.11,-0.04,0.09,-0.03,0.03,-0.07,0.16,0,-0.13,-0.03,-0.14,0.06,0.04,0.05,0.07,0.04,0.05,0.03,0.03,0.03,0.04,0.07,0.06,0.05,0.07,0.04,0.05,0.02,0.02,0.04,0.07,0,0,0.03,0.07,0.05,0.05,0.05,0.1,0.06,0.04,0.03,0.06,-0.09,-0.16,0.03,0.13,0.05,0.05,-0.03,0.05,0.08,-0.07,0.06,0.18,0.02,-0.11,-0.11,0.11,-0.07,-0.01,-0.01,-0.06,-0.03,-0.01,-0.09,0.11,-0.11,-0.06,-0.07,-0.08,-0.23,-0.01,0.15,-0.04,-0.02,-0.02,-0.01,0.02,-0.03,0.17,-0.31,-0.01,-0.04,0.11,0.23,-0.02,-0.09,-0.12,-0.09,-0.09,-0.07,-0.11,-0.16,-0.03,0.17,-0.18,0.03,-0.1,0.08,0.13,0.09,0.13,0.06,0.08,0.12,0.1,-0.08,-0.06,-0.05,-0.13,-0.19,0.02,0.06,0.05,-0.05,0.07,0.06,0.12,0.22,0.12,0.07,-0.11,0.03,0.14,0.04,-0.3,0.01,0.11,0.15,0.18,0.13,-0.09,-0.01,0.06,0.08,0.11,-0.01,-0.19,0.16,-0.01,-0.02,-0.25,-0.18,-0.14,0.03,0.09,0.04,0.1,0.08,0.06,-0.01,0.03,0.07,0.08,-0.21,-0.03,-0.15,-0.06,-0.01,0.1,0.21,0.04,-0.01,0.18,0.24,0.24,0.05,0.16,0.17,0.08,0.03,0.27,0.16,0.02,0.02,0.13,0.05,0.08,0.11,-0.06,0.3,0.14,0.08,0,0.15,-0.05,-0.22,-0.05,0.11,0.1,-0.13,-0.07,0.08,0.06,0.02,0.06,0.01,-0.2,-0.2,-0.15,0.18,-0.25,0.1,0.02,0,0.14,-0.04,0.05,-0.14,-0.03,-0.07,0,-0.11,-0.02,-0.09,-0.08,-0.03,-0.02,-0.19,-0.05,-0.12,-0.11,-0.15,-0.08,-0.19,-0.13,-0.19,-0.03,0.19,0.09,-0.02,0.04,0.04,-0.09,0.04,0.07,0.03,0.05,0.1,0.03,0.06,-0.01,0.08,-0.06,-0.16,-0.11,-0.15,-0.2,-0.16,-0.05,0.00999999999999998,0.05,0.04,-0.12,0.1,0.07,0.15,0.1,0.03,0,-0.25,-0.18,0.04,-0.08,0.05,0.06,-0.04,-0.07,0.28,-0.1,-0.37,-0.06,-0.12,0.12,0.11,-0.00999999999999998,0,-0.03,0.23,0.05,0.01,-0.04,-0.04,0.09,0.06,-0.44,-0.36,-0.2,-0.25,-0.06,0.2,-0.13,0.06,0.3,-0.14,0.03,-0.12,0.01,0.15,0.08,0.19,0.02,0.13,0.14,-0.03,0.18,-0.45,-0.37,-0.39,-0.39,0.21,0.25,0.1,-0.05,-0.17,-0.27,-0.11,0.00999999999999998,0.09,-0.11,-0.27,-0.16,0.06,-0.13,0.1,0.09,0.12,0.02,0.14,-0.12,-0.12,-0.13,-0.14,-0.16,0.1,-0.05,0.1,0.01,0.04,0.08,-0.05,0.07,-0.01,-0.01,-0.18,0.07,-0.11,-0.14,-0.15,-0.1,-0.06,-0.12,-0.1,-0.06,0,0.05,0.05,0.03,0.2,0.11,-0.06,0.1,0.12,-0.11,-0.06,-0.3,-0.25,0.08,-0.06,0.04,0.05,0.13,0.14,0.02,0.03,0.06,0.01,0.03,0.04,0.02,0.05,-0.12,0.16,-0.15,-0.16,-0.1,-0.1,-0.02,-0.18,-0.01,-0.05,0,0.2,-0.07,-0.07,0.1,0.13,0.11,0.04,0.04,0.14,-0.05,-0.03,0,-0.02,0.04,0.04,-0.1,-0.19,-0.09,-0.15,-0.07,-0.11,0,-0.18,-0.04,0.04,0.1,0.12,-0.19,-0.16,0.05,0.11,0.18,0,-0.01,-0.02,-0.06,-0.02,0.2,-0.12,-0.11,0.22,0.14,0.03,-0.1,-0.01,-0.08,0.22,0.23,0.11,0.1,0.12,0.11,-0.01,-0.09,-0.05,0.07,0.04,-0.06,0.06,0.02,-0.08,0.05,0.04,-0.1,0.19,0.05,0.04,0.07,-0.03,0.14,0.15,0.06,0.03,0.03,0.08,0.03,0.04,0.05,0,0.08,0.07,0.08,0.12,-0.05,0.12,-0.1,-0.23,0.1,-0.05,-0.01,-0.1,-0.1,-0.03,-0.05,0.01,-0.08,-0.07,-0.06,-0.04,-0.04,-0.01,-0.01,-0.04,-0.03,-0.28,-0.14,0.08,0.09,-0.04,-0.15,-0.05,-0.04,-0.06,-0.23,-0.21,-0.03,-0.16,-0.2,-0.19,-0.15,-0.07,-0.16,-0.31,0.17,-0.11,-0.01,0.05,0.05,-0.19,-0.15,0.04,-0.03,0.04,0,0.01,0,-0.04,-0.06,-0.05,-0.07,-0.06,-0.09,-0.06,-0.06,-0.05,0.02,0.04,0.16,0.01,-0.04,0.08,-0.08,0.03,0.01,-0.13,-0.12,0.05,-0.03,0.02,0.21,0.01,0.17,-0.1,0.1,-0.12,0.01,-0.22,-0.23,-0.18,-0.08,0.04,0,0.1,0.07,0.05,0.02,0.09,0.07,0.06,0.19,-0.18,-0.14,-0.1,-0.14,0.06,0.14,0.15,0.19,-0.17,-0.08,0.12,0.05,0.14,0.13,-0.08,-0.07,-0.06,-0.1,0.1,0.11,0.02,0.15,-0.19,-0.21,0.05,-0.02,-0.03,-0.02,0.18,0.08,0.01,-0.16,0.11,0.07,-0.03,-0.06,0,0.07,0.18,0.16,-0.02,0.03,0.08,0.02,0.05,0.14,0.13,0.02,0.26,-0.04,-0.19,0.04,-0.16,0.06,0.09,-0.09,0.21,0.13,-0.11,0.09,-0.00999999999999998,-0.02,-0.02,-0.03,0.15,0.12,0.11,0.12,-0.12,-0.05,0.01,-0.1,-0.03,-0.04,0.16,0.26,-0.1,-0.02,0.04,-0.14,-0.26,-0.05,-0.02,0,-0.09,-0.01,-0.1,0.11,0,-0.09,0.16,0.01,0.07,-0.15,-0.15,0.08,0,-0.05,-0.13,-0.09,-0.14,0.15,-0.12,0.04,0.04,-0.05,-0.07,0.14,0.14,-0.01,0.05,-0.33,-0.31,-0.08,-0.08,0.13,0,0.01,-0.1,0.09,-0.01,0.08,0.03,-0.13,0.09,-0.05,-0.18,0.04,0.07,0.17,-0.15,0.05,0.15,0.05,-0.13,-0.2,-0.06,0.03,0.11,0.02,-0.02,-0.21,-0.45,-0.05,-0.09,-0.15,-0.11,0.02,0.08,0.02,0,0.05,0.05,0.07,0.12,0.04,0.15,0.03,0.06,0.1,0.05,-0.06,-0.06,-0.03,-0.07,0.1,-0.05,-0.02,0.05,0.06,0.1,-0.46,-0.36,-0.11,-0.16,-0.17,0.06,-0.08,0.14,-0.04,-0.09,0.01,0.1,-0.13,-0.01,0.01,0.12,0.04,-0.11,-0.07,-0.03,0.08,-0.21,0.1,-0.05,-0.08,-0.03,-0.02,-0.01,-0.05,0.01,-0.09,-0.12,-0.09,-0.16,-0.13,-0.04,-0.07,-0.02,-0.08,-0.12,-0.13,0.09,0.07,0.12,0.1,0.05,0.04,0.11,0.12,-0.09,-0.1,0.07,0.05,0.07,0.05,0.15,0.14,-0.04,-0.07,-0.11,-0.12,0.06,0.08,-0.05,0.03,-0.11,0.02,-0.16,0.02,-0.09,-0.09,-0.23,-0.13,-0.19,-0.04,0.25,0.12,-0.14,-0.03,0.02,-0.05,0.03,-0.1,0.13,0.12,0.02,0.03,0.04,0.18,0.06,0.03,0.07,-0.04,-0.14,0.11,-0.01,-0.13,-0.17,-0.19,-0.01,-0.05,0.17,0.13,0.21,0.07,-0.06,-0.12,-0.1,-0.1,0.15,0.17,0.09,0.19,-0.1,-0.14,-0.12,-0.03,-0.07,-0.05,0.1,0.02,-0.08,-0.07,0.15,0.04,-0.03,0,0.08,0.13]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th>Trait<\/th>\n      <th>S female<\/th>\n      <th>S male<\/th>\n      <th>antagonism index<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"dom":"Bfrtip","deferRender":true,"scrollX":true,"scrollY":800,"scrollCollapse":true,"buttons":["pageLength","colvis","csv",{"extend":"pdf","pageSize":"A4","orientation":"landscape","filename":"selection_data"}],"pageLength":905,"columnDefs":[{"className":"dt-right","targets":[1,2,3]}],"order":[],"autoWidth":false,"orderClasses":false,"lengthMenu":[10,25,50,100,905]}},"evals":[],"jsHooks":[]}</script>
+<p><span class="math inline">\(~\)</span></p>
+<p>There are some issues here. It does not make sense to calculate the covariance between e.g. female fitness and a phenotype expressed in males, when we also have a measure of the phenotype in females.</p>
+<pre class="r"><code># this is not perfect
+
+ggplot(data = trait_selection_gradients, aes(x = `S female`, y = `S male`, fill = `antagonism index`)) +
+  #geom_hex(bins = 20) +
+  geom_jitter(shape = 21, alpha = 0.8, size = 4, show.legend = FALSE, width = 0.003, height = 0.003) +
+  #geom_point(shape = 21, alpha = 0.9, size = 5, show.legend = FALSE) +
+  geom_smooth(method = &#39;lm&#39;, color=&#39;black&#39;) +
+  geom_hline(yintercept = 0, linetype = 2) +
+  geom_vline(xintercept = 0, linetype = 2) +
+  #coord_cartesian(xlim = c(-3, 3), ylim = c(-3, 3)) +
+  scale_fill_carto_c(palette = &quot;Geyser&quot;,
+                     breaks=c(-1, -0.5, 0, 0.5, 1),
+                     limits=c(-1,1)) +
+  theme_bw() +
+  theme(panel.border= element_blank(),
+        axis.line=element_line(),
+        text = element_text(size=14),
+        panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        axis.title.x = element_text(size = 12),
+        axis.title.y = element_text(size = 12))</code></pre>
+<p><img src="figure/Main_analysis.Rmd/unnamed-chunk-5-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p><span class="math inline">\(~\)</span></p>
+<p>While this figure comes from relatively rough data, we can see that trait values that are postively selected in females tend also to be positively selected in males. However, there are numerous traits that appear to be under sexually antagonstic selection: that is, trait values that make fit males make low fitness females and vice versa.</p>
+</div>
+<div id="female-fitness" class="section level2">
+<h2>Female fitness</h2>
+<pre class="r"><code># I&#39;m trying to find a way to automatically find the strongest correlations with each fitness component 
+
+# Now let&#39;s plot the trait correlations that are most positively correlated  
+
+early.female.1 &lt;-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$glutamic.acid.low.yeast.f,
+                          DGRP_no_line$female.fitness.early, pos_colour) +
+  labs(x = &quot;Level of glutamic\nacid on low yeast\ndiet&quot;, y = &quot;Female fitness&quot;)
+
+early.female.2 &lt;-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$lifetime.fecundity.25C.f   ,
+                          DGRP_no_line$female.fitness.early, pos_colour) +
+  labs(x = &quot;Lifetime fecundity&quot;, y = NULL)
+
+early.female.3 &lt;-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$week1.fecundity.25C.f  ,
+                          DGRP_no_line$female.fitness.early, pos_colour) +
+  labs(x = &quot;Week 1 fecundity\n at 25C&quot;, y = NULL)
+
+early.female.4 &lt;-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$M.anisopliae.resistance.f  ,
+                          DGRP_no_line$female.fitness.early, pos_colour) +
+  labs(x = &quot;Resistance to\nM. anisopliae&quot;, y = NULL)
+
+early.female.5 &lt;-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$acetylcarnitine.low.yeast.f    ,
+                          DGRP_no_line$female.fitness.early, pos_colour) +
+  labs(x = &quot;Level of\nacetylcarnitine on low\nyeast diet&quot;, y = NULL)
+
+early.female.6 &lt;-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$circadian.period.mesa.f        ,
+                          DGRP_no_line$female.fitness.early, pos_colour) +
+  labs(x = &quot;Circadian period length&quot;, y = &quot;Female fitness&quot;)
+
+early.female.7 &lt;-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$ornithine.low.yeast.f  ,
+                          DGRP_no_line$female.fitness.early, pos_colour) +
+  labs(x = &quot;Level of ornithine\non low yeast diet&quot;, y = NULL)
+
+early.female.8 &lt;-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$P.aeruginosa.resistance.2017.f ,
+                          DGRP_no_line$female.fitness.early, pos_colour) +
+  labs(x = &quot;Resistance to\nP. aeruginosa&quot;, y = NULL)
+
+early.female.9 &lt;-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$serine.high.yeast.f    ,
+                          DGRP_no_line$female.fitness.early, pos_colour) +
+  labs(x = &quot;Level of serine\non low yeast diet&quot;, y = NULL)
+
+early.female.10 &lt;-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$week3.fecundity.25C.f  ,
+                          DGRP_no_line$female.fitness.early, pos_colour) +
+  labs(x = &quot;Week 3 fecundity\n at 25C&quot;, y = NULL)
+
+# Now lets do the most negative correlations
+
+early.female.11 &lt;-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$epinephrine.high.yeast.f   ,
+                          DGRP_no_line$female.fitness.early, neg_colour) +
+  labs(x = &quot;Level of epinephrine\non high yeast diet&quot;, y = &quot;Female fitness&quot;)
+
+early.female.12 &lt;-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$cGMP.low.yeast.f   ,
+                          DGRP_no_line$female.fitness.early, neg_colour) +
+  labs(x = &quot;Level of cGMP\non low yeast diet&quot;, y = NULL)
+
+early.female.13&lt;-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$day.sleep.bout.length.f     ,
+                          DGRP_no_line$female.fitness.early, neg_colour) +
+  labs(x = &quot;Day sleep bout\n length&quot;, y = NULL)
+
+early.female.14 &lt;-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$Sphingomonas.wittichii.f    ,
+                          DGRP_no_line$female.fitness.early, neg_colour) +
+  coord_cartesian(xlim = c(-3, 5), ylim = c(-3, 3)) +
+  labs(x = &quot;S. wittichii load\n(microbiome)&quot;, y = NULL)
+
+early.female.15 &lt;-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$`alpha-amanitin.resistance.0.2`    ,
+                          DGRP_no_line$female.fitness.early, neg_colour) +
+  labs(x = &quot;Resistance to mushroom toxin\n (alpha-amanitin 0.2 ug/g)&quot;, y = NULL)
+
+early.female.16 &lt;-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$sprinter.marathoner.f  ,
+                          DGRP_no_line$female.fitness.early, neg_colour) +
+  labs(x = &quot;&#39;Sprinter&#39; phenotype&quot;, y = &quot;Female fitness&quot;)
+
+early.female.17 &lt;-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$`CHC.8-C25:1.f`    ,
+                          DGRP_no_line$female.fitness.early, neg_colour) +
+  labs(x = &quot;Level of the CHC\n 8-C25:1&quot;, y = NULL)
+
+early.female.18 &lt;-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$cold.shock.young.f ,
+                          DGRP_no_line$female.fitness.early, neg_colour) +
+  labs(x = &quot;Resistance to cold\n shock&quot;, y = NULL)
+
+early.female.19 &lt;-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$proline.low.yeast.f    ,
+                          DGRP_no_line$female.fitness.early, neg_colour) +
+  labs(x = &quot;Level of proline\non low yeast diet&quot;, y = NULL)
+
+early.female.20 &lt;-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$`3-Hydroxykynurenine.high.yeast.f` ,
+                          DGRP_no_line$female.fitness.early, neg_colour) +
+  labs(x = &quot;Level of\n3-Hydroxykynurenine on\n low yeast diet&quot;, y = NULL)
+
+(early.female.1 | early.female.2 | early.female.3 | early.female.4 | early.female.5) /
+  (early.female.6 | early.female.7 | early.female.8 | early.female.9 | early.female.10) /
+  (early.female.11 | early.female.12 | early.female.13| early.female.14| early.female.15) /
+  (early.female.16 | early.female.17 | early.female.18 | early.female.19 | early.female.20)</code></pre>
+<p><img src="figure/Main_analysis.Rmd/unnamed-chunk-6-1.png" width="1440" style="display: block; margin: auto;" /></p>
+<p><strong>Figure 2</strong>: The 10 phenotypes with the strongest positive (orange points) and negative (blue points) selection coefficients in females. All traits are standardised to have a mean = 0 and SD = 1.</p>
+<p><span class="math inline">\(~\)</span></p>
+</div>
+<div id="male-fitness" class="section level2">
+<h2>Male fitness</h2>
+<pre class="r"><code># I&#39;m trying to find a way to automatically find the strongest correlations with each fitness component 
+
+young.male.1 &lt;-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$locomotor.frequency.f,
+                          DGRP_no_line$male.fitness.early, pos_colour) +
+  labs(x = &quot;Locomotor activity&quot;, y = &quot;Male fitness&quot;)
+
+young.male.2 &lt;-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$P.aeruginosa.resistance.2017.m,
+                          DGRP_no_line$male.fitness.early, pos_colour) +
+  labs(x = &quot;Resistance to bacterial infection\n (P. aeruginosa)&quot;, y = NULL)
+
+young.male.3 &lt;-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$lifespan.28C.m,
+                          DGRP_no_line$male.fitness.early, pos_colour) +
+  labs(x = &quot;Lifespan at 28C&quot;, y = NULL)
+
+young.male.4 &lt;-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$RCH.old.m,
+                          DGRP_no_line$male.fitness.early, pos_colour) +
+  labs(x = &quot;Rapid cold hardening\n in old flies&quot;, y = NULL)
+
+young.male.5 &lt;-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$Enterococcus.hirae.m   ,
+                          DGRP_no_line$male.fitness.early, pos_colour) +
+  labs(x = &quot;E. hirae load\n(microbiome)&quot;, y = NULL)
+
+young.male.6 &lt;-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$M.anisopliae.resistance.m  ,
+                          DGRP_no_line$male.fitness.early, pos_colour) +
+  labs(x = &quot;Resistance to fungal infection\n (M. anisopliae)&quot;,
+       y = &quot;Male fitness&quot;)
+
+young.male.7 &lt;-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$acetylcholine.low.yeast.f  ,
+                          DGRP_no_line$male.fitness.early, pos_colour) +
+  labs(x = &quot;Level of\nacetylcholine on\n low yeast diet&quot;, y = NULL)
+
+young.male.8 &lt;-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$glucose.low.glucose.diet.m ,
+                          DGRP_no_line$male.fitness.early, pos_colour) +
+  labs(x = &quot;Level of glucose\non low glucose diet&quot;, y = NULL)
+
+young.male.9 &lt;-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$Streptomyces.sp..m ,
+                          DGRP_no_line$male.fitness.early, pos_colour) +
+  labs(x = &quot;Streptomyces sp. load\n(microbiome)&quot;, y = NULL)
+
+young.male.10 &lt;-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$day.sleep.bout.length.SD.m ,
+                          DGRP_no_line$male.fitness.early, pos_colour) +
+  labs(x = &quot;Variation in day\nsleep bout length&quot;, y = NULL)
+
+# Now lets do the most negative correlations
+
+young.male.11 &lt;-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$cocaine.preferenceA.E3.m   ,
+                          DGRP_no_line$male.fitness.early, neg_colour) +
+  labs(x = &quot;Peference for cocaine\nafter three days of exposure&quot;, y = &quot;Male fitness&quot;)
+
+young.male.12 &lt;-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$`CHC.6,10-C26:2.f` ,
+                          DGRP_no_line$male.fitness.early, neg_colour) +
+  labs(x = &quot;Level of the CHC\n 6, 10-C26:2\n(only produced by females)&quot;, y = NULL)
+
+young.male.13 &lt;-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$P.rettgeri.load.high.glucose.diet.m     ,
+                          DGRP_no_line$male.fitness.early, neg_colour) +
+  labs(x = &quot;Bacterial load \n(P. rettgeri) 24hrs post\ninfection&quot;, y = NULL)
+
+young.male.14 &lt;-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$`3-Hydroxybutyric.acid.low.yeast.f`     ,
+                          DGRP_no_line$male.fitness.early, neg_colour) +
+  labs(x = &quot;Level of\3-Hydroxybutyric acid on\n low yeast diet&quot;, y = NULL)
+
+young.male.15 &lt;-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$cadaverine.high.yeast.f    ,
+                          DGRP_no_line$male.fitness.early, neg_colour) +
+  labs(x = &quot;Level of\ncadaverine on\n high yeast diet&quot;, y = NULL)
+
+young.male.16 &lt;-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$cold.shock.young.m ,
+                          DGRP_no_line$male.fitness.early, neg_colour) +
+  labs(x = &quot;Resistance to cold\nshock in young flies&quot;, y = &quot;Male fitness&quot;)
+
+young.male.17 &lt;-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$`CHC.5,9-C25:2 &amp; 9-C25:1.f`,
+                          DGRP_no_line$male.fitness.early, neg_colour) +
+  labs(x = &quot;Level of the CHCs\n5,9-C25:2 &amp; 9-C25:1\n(only produced by females)&quot;, y = NULL)
+
+young.male.18 &lt;-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$pantothenate.low.yeast.f,
+                          DGRP_no_line$male.fitness.early, neg_colour) +
+  labs(x = &quot;Level of\npantothenate on\n low yeast diet&quot;, y = NULL)
+
+young.male.19 &lt;-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$aminoisobutyrate.high.yeast.f  ,
+                          DGRP_no_line$male.fitness.early, neg_colour) +
+  labs(x = &quot;Level of\naminoisobutyrate on\n high yeast diet&quot;, y = NULL)
+
+young.male.20 &lt;-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$`CHC.8,12-C26:2.f` ,
+                          DGRP_no_line$male.fitness.early, neg_colour) +
+  labs(x = &quot;Level of the CHC\n8,12-C26:2\n(only produced by females)&quot;, y = NULL)
+
+(young.male.1 | young.male.2 | young.male.3 | young.male.4 | young.male.5) /
+  (young.male.6 | young.male.7 | young.male.8 | young.male.9 | young.male.10) /
+  (young.male.11 | young.male.12 | young.male.13 | young.male.14 | young.male.15) /
+  (young.male.16 | young.male.17 | young.male.18 | young.male.19 | young.male.20)</code></pre>
+<p><img src="figure/Main_analysis.Rmd/unnamed-chunk-7-1.png" width="1440" style="display: block; margin: auto;" /></p>
+<p><strong>Figure 3</strong>: The 10 phenotypes with the strongest positive (orange points) and negative (blue points) selection coefficients in males. All phenotypes are standardised to have a mean = 0 and SD = 1.</p>
+<p><span class="math inline">\(~\)</span></p>
+<br>
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-sessioninfo" data-toggle="collapse" data-target="#workflowr-sessioninfo" style="display: block;">
+<span class="glyphicon glyphicon-wrench" aria-hidden="true"></span> Session information
+</button>
+</p>
+<div id="workflowr-sessioninfo" class="collapse">
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>R version 4.0.5 (2021-03-31)
+Platform: x86_64-apple-darwin17.0 (64-bit)
+Running under: macOS Big Sur 10.16
+
+Matrix products: default
+BLAS:   /Library/Frameworks/R.framework/Versions/4.0/Resources/lib/libRblas.dylib
+LAPACK: /Library/Frameworks/R.framework/Versions/4.0/Resources/lib/libRlapack.dylib
+
+locale:
+[1] en_AU.UTF-8/en_AU.UTF-8/en_AU.UTF-8/C/en_AU.UTF-8/en_AU.UTF-8
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+ [1] ggtips_0.3.4        ggExtra_0.9         broom_0.7.6        
+ [4] DT_0.18             shiny_1.6.0         tidybayes_2.3.1    
+ [7] brms_2.15.0         Rcpp_1.0.6          patchwork_1.1.1    
+[10] pander_0.6.3        kableExtra_1.3.4    wesanderson_0.3.6  
+[13] rcartocolor_2.0.0   RColorBrewer_1.1-2  pheatmap_1.0.12    
+[16] googlesheets4_0.3.0 forcats_0.5.1       stringr_1.4.0      
+[19] dplyr_1.0.5         purrr_0.3.4         readr_1.4.0        
+[22] tidyr_1.1.3         tibble_3.1.1        ggplot2_3.3.3      
+[25] tidyverse_1.3.1     workflowr_1.6.2    
+
+loaded via a namespace (and not attached):
+  [1] readxl_1.3.1         backports_1.2.1      systemfonts_1.0.1   
+  [4] plyr_1.8.6           igraph_1.2.6         svUnit_1.0.6        
+  [7] splines_4.0.5        crosstalk_1.1.1      rstantools_2.1.1    
+ [10] inline_0.3.17        digest_0.6.27        htmltools_0.5.1.1   
+ [13] rsconnect_0.8.17     fansi_0.4.2          magrittr_2.0.1      
+ [16] modelr_0.1.8         RcppParallel_5.1.2   matrixStats_0.58.0  
+ [19] xts_0.12.1           svglite_2.0.0        prettyunits_1.1.1   
+ [22] colorspace_2.0-0     rvest_1.0.0          ggdist_2.4.0        
+ [25] haven_2.4.0          xfun_0.22            callr_3.7.0         
+ [28] crayon_1.4.1         jsonlite_1.7.2       lme4_1.1-26         
+ [31] zoo_1.8-9            glue_1.4.2           gtable_0.3.0        
+ [34] gargle_1.1.0         emmeans_1.5.5-1      webshot_0.5.2       
+ [37] V8_3.4.0             distributional_0.2.2 pkgbuild_1.2.0      
+ [40] rstan_2.21.2         abind_1.4-5          scales_1.1.1        
+ [43] mvtnorm_1.1-1        DBI_1.1.1            miniUI_0.1.1.1      
+ [46] viridisLite_0.4.0    xtable_1.8-4         StanHeaders_2.21.0-7
+ [49] stats4_4.0.5         htmlwidgets_1.5.3    httr_1.4.2          
+ [52] threejs_0.3.3        arrayhelpers_1.1-0   ellipsis_0.3.1      
+ [55] farver_2.1.0         pkgconfig_2.0.3      loo_2.4.1           
+ [58] sass_0.3.1           dbplyr_2.1.1         utf8_1.2.1          
+ [61] labeling_0.4.2       tidyselect_1.1.0     rlang_0.4.10        
+ [64] reshape2_1.4.4       later_1.1.0.1        munsell_0.5.0       
+ [67] cellranger_1.1.0     tools_4.0.5          cli_2.4.0           
+ [70] generics_0.1.0       ggridges_0.5.3       evaluate_0.14       
+ [73] fastmap_1.1.0        yaml_2.2.1           processx_3.5.1      
+ [76] knitr_1.32           fs_1.5.0             nlme_3.1-152        
+ [79] whisker_0.4          mime_0.10            projpred_2.0.2      
+ [82] xml2_1.3.2           compiler_4.0.5       bayesplot_1.8.0     
+ [85] shinythemes_1.2.0    rstudioapi_0.13      gamm4_0.2-6         
+ [88] curl_4.3             reprex_2.0.0         statmod_1.4.35      
+ [91] bslib_0.2.4          stringi_1.5.3        highr_0.9           
+ [94] ps_1.6.0             Brobdingnag_1.2-6    lattice_0.20-41     
+ [97] Matrix_1.3-2         nloptr_1.2.2.2       markdown_1.1        
+[100] shinyjs_2.0.0        vctrs_0.3.7          pillar_1.6.0        
+[103] lifecycle_1.0.0      jquerylib_0.1.3      bridgesampling_1.1-2
+[106] estimability_1.3     httpuv_1.5.5         R6_2.5.0            
+[109] promises_1.2.0.1     gridExtra_2.3        codetools_0.2-18    
+[112] boot_1.3-27          colourpicker_1.1.0   MASS_7.3-53.1       
+[115] gtools_3.8.2         assertthat_0.2.1     rprojroot_2.0.2     
+[118] withr_2.4.2          shinystan_2.5.0      mgcv_1.8-35         
+[121] parallel_4.0.5       hms_1.0.0            grid_4.0.5          
+[124] coda_0.19-4          minqa_1.2.4          rmarkdown_2.7       
+[127] googledrive_1.0.1    git2r_0.28.0         lubridate_1.7.10    
+[130] base64enc_0.1-3      dygraphs_1.1.1.6    </code></pre>
+</div>
+</div>
+</div>
+
+
+<!-- Adjust MathJax settings so that all math formulae are shown using
+TeX fonts only; see
+http://docs.mathjax.org/en/latest/configuration.html.  This will make
+the presentation more consistent at the cost of the webpage sometimes
+taking slightly longer to load. Note that this only works because the
+footer is added to webpages before the MathJax javascript. -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    "HTML-CSS": { availableFonts: ["TeX"] }
+  });
+</script>
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+<script>
+$(document).ready(function () {
+  window.initializeCodeFolding("hide" === "show");
+});
+</script>
+
+<script>
+$(document).ready(function ()  {
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
