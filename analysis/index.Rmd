@@ -8,4 +8,4 @@ editor_options:
   chunk_output_type: console
 ---
 
-Welcome to my research website.
+This website presents an analysis of seelction acting on the DGRP. We particularly focus upon sexually antagonistic selection and test some well known hypotheses that relate to this concept.

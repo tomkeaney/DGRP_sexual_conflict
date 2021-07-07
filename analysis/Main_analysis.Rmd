@@ -1,0 +1,659 @@
+---
+title: "Intralocus sexual conflict in the DGRP"
+author: "Thomas Keaney and Luke Holman"
+date: "25/06/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, cache = FALSE)
+```
+
+# Load packages and the data
+
+First load the packages
+
+```{r load packages}
+
+library(tidyverse)
+library(googlesheets4) # for reading google sheets
+library(pheatmap) # for heatmaps
+library(RColorBrewer) # for custom colours
+library(rcartocolor) # cool colours
+library(wesanderson) # cool colours
+library(kableExtra) # for scrolling tables
+library(pander) # more tables
+library(patchwork) # for cool plots
+library(brms) # for bayesian models
+library(tidybayes) # for more bayesian things
+library(shiny) # for interactive app
+library(DT) # for interactive tables
+library(broom) # convert results of functions into tables
+library(ggExtra) # for marginal plots
+library(ggtips) # for hovering tooltips in R shiny
+```
+
+Now load the data. Correlation analysis is not robust when sample sizes are small, so we only include traits that have been measured in 80+ lines. 
+
+```{r}
+
+DGRP_data <- read_csv("data/all.dgrp.phenos_unscaled.csv")
+
+# Now subset - we are left with 905 traits from an original 1119
+
+DGRP_subset <- DGRP_data %>% 
+  group_by(Trait) %>% 
+  filter(length(line) > 80) %>% 
+  ungroup()
+
+# This next section changes the format of the data. Each row represents a single line, while each column represents a trait and contains the lines trait mean. Scaling is also applied to each trait value, so that each trait has a mean of 0 and an SD of 1. This makes the variation found for each trait broadly comparable with all other traits.
+
+DGRP_subset_scaled <- 
+  split(DGRP_subset, DGRP_subset$Trait) %>% # split divides the data into trait groups
+  lapply(function(x){
+    trait_name <- x$Trait[1]
+    x <- x[,c(1,4)]
+    names(x) <- c("line", "value")
+    x <- x %>% 
+      group_by(line) %>% 
+      summarise(mean = mean(value))
+    names(x) <- c("line", trait_name)
+    x}) %>% 
+  purrr::reduce(full_join, by = "line", match = "first") %>% 
+  mutate_at(vars(-("line")), ~ as.numeric(scale(.x))) # this is the scaling step
+
+```
+
+$~$
+
+## Calculate the intersex genetic correlation (r^A^~*fm*~) for fitness 
+
+```{r, eval=FALSE}
+
+# Note that because we are using standarised data, the intercept will always = 0 and the sigma = 1 (we have no predictors so sigma just predicts the population SD). We make the intercept 0 because we have standardised the mean for every trait to = 0. We fix sigma to 0, which makes our estimate more precise. We make sigma = 0 rather than 1 because brms by default actually models the log of sigma. log(1) = 1, so lets set sigma to 0.
+
+rfm_model_uni <- 
+  brm(data = DGRP_subset_scaled, 
+      family = gaussian,
+      female.fitness.early ~ 0 + male.fitness.early,
+      prior = c(prior(normal(0, 1), class = b),
+                prior(normal(0, 1), class = sigma)),
+      chains = 4, cores = 4, 
+      seed = 1)
+
+fixef(rfm_model_uni)
+
+rfm_model_multi <- 
+  brm(data = DGRP_subset_scaled, 
+      family = gaussian,
+      bf(mvbind(female.fitness.early, male.fitness.early) ~ 0, sigma ~ 0) + set_rescor(TRUE),
+      prior(lkj(2), class = rescor),
+      chains = 4, cores = 4, 
+      seed = 1)
+
+get_rescor <- function(fit) {
+  posterior_samples(fit) %>% 
+    select(starts_with("rescor")) %>% 
+    set_names("rfm for fitness") %>% 
+    gather(label, rho) %>% 
+    select(rho, label)
+}
+
+posterior_summary(rfm_model_multi)
+```
+
+
+## Plot r^A^~*fm*~ for fitness
+
+```{r}
+
+DGRP_no_line <- 
+  DGRP_subset_scaled %>% 
+  select(-line)
+
+pos_colour <- wes_palette("Zissou1")[4]
+neg_colour <- wes_palette("Zissou1")[2]
+
+fitness_regression_plot <- function(a, b, c, d) {
+  ggplot(data = a, aes(x = b, y = c)) +
+    #geom_hex(bins = 20) +
+    #scale_fill_carto_c(palette = "Temps") +
+    geom_point(shape = 21, alpha = 0.75, size = 3, fill = d, show.legend = FALSE) +
+    geom_smooth(method = 'lm', color='black') +
+    geom_hline(yintercept = 0, linetype = 2) +
+    geom_vline(xintercept = 0, linetype = 2) +
+    #coord_cartesian(xlim = c(-3, 3), ylim = c(-3, 3)) +
+    theme_bw() +
+    theme(panel.border= element_blank(),
+          axis.line=element_line(),
+          text = element_text(size=14),
+          panel.grid.major.x = element_blank(),
+          panel.grid.major.y = element_blank(),
+          panel.grid.minor.y = element_blank(),
+          panel.grid.minor.x = element_blank(),
+          axis.title.x = element_text(size = 12),
+          axis.title.y = element_text(size = 12))
+}
+
+
+rfm_plot <-
+  fitness_regression_plot(DGRP_no_line, 
+                          DGRP_no_line$female.fitness.early,
+                          DGRP_no_line$male.fitness.early, pos_colour) +
+  labs(x = "Female fitness", y = "Male fitness")
+
+ggMarginal(rfm_plot,
+      type = 'histogram',
+      margins = 'both',
+      size = 5,
+      colour = wes_palette("Zissou1")[1],
+      fill = wes_palette("Zissou1")[2]
+    )
+
+# this can be cut later, but it's too useful to get rid of right now
+
+#fitness_late <-
+ # fitness_regression_plot(all.dgrp.phenos_means_subset, all.dgrp.phenos_means_subset$female.fitness.late,
+  #                        all.dgrp.phenos_means_subset$male.fitness.late, pos_colour) +
+  #labs(x = "Old female fitness", y = "Old male fitness")
+
+#fitness_female <-
+ # fitness_regression_plot(all.dgrp.phenos_means_subset, all.dgrp.phenos_means_subset$female.fitness.early,
+  #                        all.dgrp.phenos_means_subset$female.fitness.late, pos_colour) +
+  #labs(x = "Young female fitness", y = "Old female fitness")
+
+#fitness_male <-
+ # fitness_regression_plot(all.dgrp.phenos_means_subset, all.dgrp.phenos_means_subset$male.fitness.early,
+  #                        all.dgrp.phenos_means_subset$male.fitness.late, pos_colour) +
+  #labs(x = "Young male fitness", y = "Old male fitness")
+
+# Put the plots together
+
+#(fitness_early | fitness_late) / 
+#(fitness_female | fitness_male)
+
+```
+
+**Figure 1**: The intersex genetic correlation (r^A^~*fm*~) for fitness across the DGRP. The orange points each represent a DGRP line, and where it falls on the female-male fitness continuum. Data points are standardised to have a mean of 0 and a standard deviation of 1. This means that lines that have negative values have lower than average fitness, while lines that have positive values have above average fitness. The dotted lines separate the plot into four quadrants: lines that fall within the top left quadrant have above average male fitness, but below average female fitness, lines in the top right have above average fitness for both sexes, lines in the bottom left have below average fitness in both sexes, and lines in the bottom right have below average fitness in males, but above average fitness in females.
+
+$~$
+
+## Calculating *S*: the selection differential
+
+We can calculate the selection differential associated with each phenotype using the **Robertson Price identity**, which states that the selection differential is equivalent to the covariance between phenotype and relative fitness
+
+$S = \sigma(w_i, z_i)$
+
+or
+
+$S = cov(relative.fitness, standarised.phenotype)$
+
+We can also calculate the broad sense heritability associated with each phenotype... if we could calculate the narrow sense heritability we could use the **Breeder's equation** to calculate the response to selection for each phenotype (seems unlikely).
+
+**Table 1:** Selection coefficients ($S$) for each phenotype, when expressed in each sex. The antagonism index column shows how different selection on the trait is in the two sexes. Postive values indcate that the trait has a more positive selection differential in females than it does in males, a value of 0 indicates that the selection differential is the same in each sex, and negative values indicate a more positive selection differential in males compared to females. 
+
+```{r}
+
+# We need to know how all of our traits correlate with fitness. Let's make looking at this easier by calculating the correlation matrix with just our two fitness parameters.
+
+fef.matrix <- round(cor(y = DGRP_no_line$female.fitness.early, x = DGRP_no_line, use = "pairwise.complete.obs"), 2)
+#flf.matrix <- round(cor(y = DGRP_no_line$female.fitness.late, x = DGRP_no_line, use = "pairwise.complete.obs"), 2)
+mef.matrix <- round(cor(y = DGRP_no_line$male.fitness.early, x = DGRP_no_line, use = "pairwise.complete.obs"), 2)
+#mlf.matrix <- round(cor(y = DGRP_no_line$male.fitness.late, x = DGRP_no_line, use = "pairwise.complete.obs"), 2)
+
+fitness.matrix <- cbind(fef.matrix, mef.matrix) 
+  
+colnames(fitness.matrix) <- c("S female", "S male")
+
+# calculate a sexual conflict score for each trait: the `antagonism` index.
+
+trait_selection_gradients <- tibble(Trait = names(DGRP_no_line)) %>% 
+  cbind(fitness.matrix %>% as_tibble()) %>% as_tibble() %>% 
+  mutate(`antagonism index` = `S female` - `S male`) %>% 
+  filter(Trait != "male.fitness.early",
+         Trait != "female.fitness.early",
+         Trait != "male.fitness.late",
+         Trait != "female.fitness.late")
+
+# Here's a table showing the correlations
+
+my_data_table <- function(df){
+  datatable(
+    df, rownames=FALSE,
+    autoHideNavigation = TRUE,
+    extensions = c("Scroller",  "Buttons"),
+    options = list(
+      dom = 'Bfrtip',
+      deferRender=TRUE,
+      scrollX=TRUE, scrollY=800,
+      scrollCollapse=TRUE,
+      buttons =
+        list('pageLength', 'colvis', 'csv', list(
+          extend = 'pdf',
+          pageSize = 'A4',
+          orientation = 'landscape',
+          filename = 'selection_data')),
+      pageLength = 905
+    )
+  )
+}
+
+my_data_table(trait_selection_gradients)
+
+```
+
+$~$
+
+There are some issues here. It does not make sense to calculate the covariance between e.g. female fitness and a phenotype expressed in males, when we also have a measure of the phenotype in females.
+
+```{r}
+
+# this is not perfect
+
+ggplot(data = trait_selection_gradients, aes(x = `S female`, y = `S male`, fill = `antagonism index`)) +
+  #geom_hex(bins = 20) +
+  geom_jitter(shape = 21, alpha = 0.8, size = 4, show.legend = FALSE, width = 0.003, height = 0.003) +
+  #geom_point(shape = 21, alpha = 0.9, size = 5, show.legend = FALSE) +
+  geom_smooth(method = 'lm', color='black') +
+  geom_hline(yintercept = 0, linetype = 2) +
+  geom_vline(xintercept = 0, linetype = 2) +
+  #coord_cartesian(xlim = c(-3, 3), ylim = c(-3, 3)) +
+  scale_fill_carto_c(palette = "Geyser",
+                     breaks=c(-1, -0.5, 0, 0.5, 1),
+                     limits=c(-1,1)) +
+  theme_bw() +
+  theme(panel.border= element_blank(),
+        axis.line=element_line(),
+        text = element_text(size=14),
+        panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        axis.title.x = element_text(size = 12),
+        axis.title.y = element_text(size = 12))
+
+```
+
+$~$
+
+While this figure comes from relatively rough data, we can see that trait values that are postively selected in females tend also to be positively selected in males. However, there are numerous traits that appear to be under sexually antagonstic selection: that is, trait values that make fit males make low fitness females and vice versa. 
+
+## Female fitness
+
+```{r, fig.width= 15, fig.height= 10}
+
+# I'm trying to find a way to automatically find the strongest correlations with each fitness component 
+
+# Now let's plot the trait correlations that are most positively correlated  
+
+early.female.1 <-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$glutamic.acid.low.yeast.f,
+                          DGRP_no_line$female.fitness.early, pos_colour) +
+  labs(x = "Level of glutamic\nacid on low yeast\ndiet", y = "Female fitness")
+
+early.female.2 <-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$lifetime.fecundity.25C.f	,
+                          DGRP_no_line$female.fitness.early, pos_colour) +
+  labs(x = "Lifetime fecundity", y = NULL)
+
+early.female.3 <-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$week1.fecundity.25C.f	,
+                          DGRP_no_line$female.fitness.early, pos_colour) +
+  labs(x = "Week 1 fecundity\n at 25C", y = NULL)
+
+early.female.4 <-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$M.anisopliae.resistance.f	,
+                          DGRP_no_line$female.fitness.early, pos_colour) +
+  labs(x = "Resistance to\nM. anisopliae", y = NULL)
+
+early.female.5 <-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$acetylcarnitine.low.yeast.f	,
+                          DGRP_no_line$female.fitness.early, pos_colour) +
+  labs(x = "Level of\nacetylcarnitine on low\nyeast diet", y = NULL)
+
+early.female.6 <-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$circadian.period.mesa.f		,
+                          DGRP_no_line$female.fitness.early, pos_colour) +
+  labs(x = "Circadian period length", y = "Female fitness")
+
+early.female.7 <-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$ornithine.low.yeast.f	,
+                          DGRP_no_line$female.fitness.early, pos_colour) +
+  labs(x = "Level of ornithine\non low yeast diet", y = NULL)
+
+early.female.8 <-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$P.aeruginosa.resistance.2017.f	,
+                          DGRP_no_line$female.fitness.early, pos_colour) +
+  labs(x = "Resistance to\nP. aeruginosa", y = NULL)
+
+early.female.9 <-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$serine.high.yeast.f	,
+                          DGRP_no_line$female.fitness.early, pos_colour) +
+  labs(x = "Level of serine\non low yeast diet", y = NULL)
+
+early.female.10 <-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$week3.fecundity.25C.f	,
+                          DGRP_no_line$female.fitness.early, pos_colour) +
+  labs(x = "Week 3 fecundity\n at 25C", y = NULL)
+
+# Now lets do the most negative correlations
+
+early.female.11 <-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$epinephrine.high.yeast.f	,
+                          DGRP_no_line$female.fitness.early, neg_colour) +
+  labs(x = "Level of epinephrine\non high yeast diet", y = "Female fitness")
+
+early.female.12 <-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$cGMP.low.yeast.f	,
+                          DGRP_no_line$female.fitness.early, neg_colour) +
+  labs(x = "Level of cGMP\non low yeast diet", y = NULL)
+
+early.female.13<-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$day.sleep.bout.length.f	 ,
+                          DGRP_no_line$female.fitness.early, neg_colour) +
+  labs(x = "Day sleep bout\n length", y = NULL)
+
+early.female.14 <-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$Sphingomonas.wittichii.f	 ,
+                          DGRP_no_line$female.fitness.early, neg_colour) +
+  coord_cartesian(xlim = c(-3, 5), ylim = c(-3, 3)) +
+  labs(x = "S. wittichii load\n(microbiome)", y = NULL)
+
+early.female.15 <-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$`alpha-amanitin.resistance.0.2`	,
+                          DGRP_no_line$female.fitness.early, neg_colour) +
+  labs(x = "Resistance to mushroom toxin\n (alpha-amanitin 0.2 ug/g)", y = NULL)
+
+early.female.16 <-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$sprinter.marathoner.f	,
+                          DGRP_no_line$female.fitness.early, neg_colour) +
+  labs(x = "'Sprinter' phenotype", y = "Female fitness")
+
+early.female.17 <-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$`CHC.8-C25:1.f`	,
+                          DGRP_no_line$female.fitness.early, neg_colour) +
+  labs(x = "Level of the CHC\n 8-C25:1", y = NULL)
+
+early.female.18 <-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$cold.shock.young.f	,
+                          DGRP_no_line$female.fitness.early, neg_colour) +
+  labs(x = "Resistance to cold\n shock", y = NULL)
+
+early.female.19 <-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$proline.low.yeast.f	,
+                          DGRP_no_line$female.fitness.early, neg_colour) +
+  labs(x = "Level of proline\non low yeast diet", y = NULL)
+
+early.female.20 <-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$`3-Hydroxykynurenine.high.yeast.f`	,
+                          DGRP_no_line$female.fitness.early, neg_colour) +
+  labs(x = "Level of\n3-Hydroxykynurenine on\n low yeast diet", y = NULL)
+
+(early.female.1 | early.female.2 | early.female.3 | early.female.4 | early.female.5) /
+  (early.female.6 | early.female.7 | early.female.8 | early.female.9 | early.female.10) /
+  (early.female.11 | early.female.12 | early.female.13| early.female.14| early.female.15) /
+  (early.female.16 | early.female.17 | early.female.18 | early.female.19 | early.female.20)
+
+
+
+```
+
+**Figure 2**: The 10 phenotypes with the strongest positive (orange points) and negative (blue points) selection coefficients in females. All traits are standardised to have a mean = 0 and SD = 1.
+
+$~$
+
+## Male fitness
+
+```{r, fig.width= 15, fig.height= 10}
+
+# I'm trying to find a way to automatically find the strongest correlations with each fitness component 
+
+young.male.1 <-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$locomotor.frequency.f,
+                          DGRP_no_line$male.fitness.early, pos_colour) +
+  labs(x = "Locomotor activity", y = "Male fitness")
+
+young.male.2 <-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$P.aeruginosa.resistance.2017.m,
+                          DGRP_no_line$male.fitness.early, pos_colour) +
+  labs(x = "Resistance to bacterial infection\n (P. aeruginosa)", y = NULL)
+
+young.male.3 <-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$lifespan.28C.m,
+                          DGRP_no_line$male.fitness.early, pos_colour) +
+  labs(x = "Lifespan at 28C", y = NULL)
+
+young.male.4 <-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$RCH.old.m,
+                          DGRP_no_line$male.fitness.early, pos_colour) +
+  labs(x = "Rapid cold hardening\n in old flies", y = NULL)
+
+young.male.5 <-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$Enterococcus.hirae.m	,
+                          DGRP_no_line$male.fitness.early, pos_colour) +
+  labs(x = "E. hirae load\n(microbiome)", y = NULL)
+
+young.male.6 <-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$M.anisopliae.resistance.m	,
+                          DGRP_no_line$male.fitness.early, pos_colour) +
+  labs(x = "Resistance to fungal infection\n (M. anisopliae)",
+       y = "Male fitness")
+
+young.male.7 <-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$acetylcholine.low.yeast.f	,
+                          DGRP_no_line$male.fitness.early, pos_colour) +
+  labs(x = "Level of\nacetylcholine on\n low yeast diet", y = NULL)
+
+young.male.8 <-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$glucose.low.glucose.diet.m	,
+                          DGRP_no_line$male.fitness.early, pos_colour) +
+  labs(x = "Level of glucose\non low glucose diet", y = NULL)
+
+young.male.9 <-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$Streptomyces.sp..m	,
+                          DGRP_no_line$male.fitness.early, pos_colour) +
+  labs(x = "Streptomyces sp. load\n(microbiome)", y = NULL)
+
+young.male.10 <-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$day.sleep.bout.length.SD.m	,
+                          DGRP_no_line$male.fitness.early, pos_colour) +
+  labs(x = "Variation in day\nsleep bout length", y = NULL)
+
+# Now lets do the most negative correlations
+
+young.male.11 <-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$cocaine.preferenceA.E3.m	,
+                          DGRP_no_line$male.fitness.early, neg_colour) +
+  labs(x = "Peference for cocaine\nafter three days of exposure", y = "Male fitness")
+
+young.male.12 <-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$`CHC.6,10-C26:2.f`	,
+                          DGRP_no_line$male.fitness.early, neg_colour) +
+  labs(x = "Level of the CHC\n 6, 10-C26:2\n(only produced by females)", y = NULL)
+
+young.male.13 <-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$P.rettgeri.load.high.glucose.diet.m	 ,
+                          DGRP_no_line$male.fitness.early, neg_colour) +
+  labs(x = "Bacterial load \n(P. rettgeri) 24hrs post\ninfection", y = NULL)
+
+young.male.14 <-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$`3-Hydroxybutyric.acid.low.yeast.f`	 ,
+                          DGRP_no_line$male.fitness.early, neg_colour) +
+  labs(x = "Level of\3-Hydroxybutyric acid on\n low yeast diet", y = NULL)
+
+young.male.15 <-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$cadaverine.high.yeast.f	,
+                          DGRP_no_line$male.fitness.early, neg_colour) +
+  labs(x = "Level of\ncadaverine on\n high yeast diet", y = NULL)
+
+young.male.16 <-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$cold.shock.young.m	,
+                          DGRP_no_line$male.fitness.early, neg_colour) +
+  labs(x = "Resistance to cold\nshock in young flies", y = "Male fitness")
+
+young.male.17 <-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$`CHC.5,9-C25:2 & 9-C25:1.f`,
+                          DGRP_no_line$male.fitness.early, neg_colour) +
+  labs(x = "Level of the CHCs\n5,9-C25:2 & 9-C25:1\n(only produced by females)", y = NULL)
+
+young.male.18 <-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$pantothenate.low.yeast.f,
+                          DGRP_no_line$male.fitness.early, neg_colour) +
+  labs(x = "Level of\npantothenate on\n low yeast diet", y = NULL)
+
+young.male.19 <-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$aminoisobutyrate.high.yeast.f	,
+                          DGRP_no_line$male.fitness.early, neg_colour) +
+  labs(x = "Level of\naminoisobutyrate on\n high yeast diet", y = NULL)
+
+young.male.20 <-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$`CHC.8,12-C26:2.f`	,
+                          DGRP_no_line$male.fitness.early, neg_colour) +
+  labs(x = "Level of the CHC\n8,12-C26:2\n(only produced by females)", y = NULL)
+
+(young.male.1 | young.male.2 | young.male.3 | young.male.4 | young.male.5) /
+  (young.male.6 | young.male.7 | young.male.8 | young.male.9 | young.male.10) /
+  (young.male.11 | young.male.12 | young.male.13 | young.male.14 | young.male.15) /
+  (young.male.16 | young.male.17 | young.male.18 | young.male.19 | young.male.20)
+
+```
+
+**Figure 3**: The 10 phenotypes with the strongest positive (orange points) and negative (blue points) selection coefficients in males. All phenotypes are standardised to have a mean = 0 and SD = 1.
+
+$~$
+
+```{r, eval=FALSE, include=FALSE}
+
+# The relationship between fitness and population dynamics
+
+#One study measured several population dynamics across the DGRP - Gerken, Eller and Morgan (2014) They placed 20 females in a vial with two males of the same DGRP line and measured the number of eggs they laid per day and noted daily female mortality. In the advent of male death they were replaced the following day. Using this data the researchers were able to calculate population growth rates, net reproductive rates and estimated generation time. 
+
+#We can look at how our individual fitness components correlate with these population dynamics. The sex ratio is extremely female biased, so it is likely that some females were sperm limited at some stage of their lives, very unlikely that interlocus sexual conflict affected females to a signficant extent, or that different rates of resource consumption between the sexes had a pronounced effect on population fitness Conversely, female fecundity, food intake and male sperm number are likely to have strong effects on population fitness.
+
+#Here's a reminder of the traits measured in Gerken, Eller and Morgan:
+
+left_join(lines, table) %>% 
+  select(-line) %>% 
+  filter(Reference == "Gerken, Eller and Morgan (2014) PhD thesis",
+         Trait != c("RCH.16C", "RCH.23C", "RCH.25C")) %>%
+  arrange(Trait) %>% 
+  pander(split.cell = 40, split.table = Inf)
+```
+
+```{r, fig.width= 15, fig.height= 15, eval=FALSE, include=FALSE}
+
+#The two traits that are most interesting to us are net reproductive rate, which is the lifetime offspring production of the 20 females, and population growth rate, which is the average rate of population increase per day over the entire lives of the 20 females (only the offspring of the 20 original females are counted in this measure). It should be noted that both of these measures are calculated using the same inputs: eggs laid per day and the surviving proportion of females.  
+
+#First lets look at net reproductive output
+
+
+# First make plots for 16C
+
+early.female.repro.rate <-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$female.fitness.early,
+                          DGRP_no_line$net.reproductive.rate.16C, pos_colour) +
+  labs(x = "Young female fitness", y = "Net reproductive rate\n at 16C")
+
+late.female.repro.rate <-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$female.fitness.late,
+                          DGRP_no_line$net.reproductive.rate.16C, pos_colour) +
+  labs(x = "Old female fitness")
+
+early.male.repro.rate <-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$male.fitness.early,
+                          DGRP_no_line$net.reproductive.rate.16C, neg_colour) +
+  labs(x = "Young male fitness", y = "Net reproductive rate\n at 16C")
+
+late.male.repro.rate <-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$male.fitness.late,
+                          DGRP_no_line$net.reproductive.rate.16C, pos_colour) +
+  labs(x = "Old male fitness") 
+
+# Now plot at 23C
+
+early.female.repro.rate.23 <-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$female.fitness.early,
+                          DGRP_no_line$net.reproductive.rate.23C, pos_colour) +
+  labs(x = "Young female fitness", y = "Net reproductive rate\n at 23C")
+
+late.female.repro.rate.23 <-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$female.fitness.late,
+                          DGRP_no_line$net.reproductive.rate.23C, pos_colour) +
+  labs(x = "Old female fitness")
+
+early.male.repro.rate.23 <-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$male.fitness.early,
+                          DGRP_no_line$net.reproductive.rate.23C, neg_colour) +
+  labs(x = "Young male fitness", y = "Net reproductive rate\n at 23C")
+
+late.male.repro.rate.23 <-
+  fitness_regression_plot(DGRP_no_line, DGRP_no_line$male.fitness.late,
+                          DGRP_no_line$net.reproductive.rate.23C, pos_colour) +
+  labs(x = "Old male fitness") 
+ 
+(early.female.repro.rate | late.female.repro.rate) /
+(early.male.repro.rate | late.male.repro.rate) / 
+(early.female.repro.rate.23 | late.female.repro.rate.23) /
+(early.male.repro.rate.23 | late.male.repro.rate.23) 
+
+
+#**Figure 6**: Correlations between female and male fitness with net reproductive output. Each point represents the standardised mean for a DGRP line. Yellow points indicate a positive genetic correlation between fitness and reproductive output, while blue points indicate a negative genetic correlation. 
+
+```
+
+```{r, fig.width= 15, fig.height= 15, eval=FALSE, include=FALSE}
+
+#Now lets take a look at $\lambda$, the population growth rate. 
+
+# First make plots for 16C
+
+early.female.pop.growth <-
+fitness_regression_plot(DGRP_no_line, DGRP_no_line$female.fitness.early,
+                          DGRP_no_line$pop.growth.rate.16C, pos_colour) +
+  labs(x = "Young female fitness", y = "Population growth rate\n at 16C")
+
+late.female.pop.growth <-
+fitness_regression_plot(DGRP_no_line, DGRP_no_line$female.fitness.late,
+                          DGRP_no_line$pop.growth.rate.16C, pos_colour) +
+  labs(x = "Old female fitness")
+
+early.male.pop.growth <-
+fitness_regression_plot(DGRP_no_line, DGRP_no_line$male.fitness.early,
+                          DGRP_no_line$pop.growth.rate.16C, pos_colour) +
+  labs(x = "Young male fitness", y = "Population growth rate\n at 16C")
+
+late.male.pop.growth <-
+fitness_regression_plot(DGRP_no_line, DGRP_no_line$male.fitness.late,
+                          DGRP_no_line$pop.growth.rate.16C, pos_colour) +
+  labs(x = "Old male fitness")
+
+### Now plot for 23C
+
+early.female.pop.growth.23 <-
+fitness_regression_plot(DGRP_no_line, DGRP_no_line$female.fitness.early,
+                          DGRP_no_line$pop.growth.rate.23C, pos_colour) +
+  labs(x = "Young female fitness", y = "Population growth rate\n at 23C")
+
+late.female.pop.growth.23 <-
+fitness_regression_plot(DGRP_no_line, DGRP_no_line$female.fitness.late,
+                          DGRP_no_line$pop.growth.rate.23C, pos_colour) +
+  labs(x = "Old female fitness")
+
+early.male.pop.growth.23 <-
+fitness_regression_plot(DGRP_no_line, DGRP_no_line$male.fitness.early,
+                          DGRP_no_line$pop.growth.rate.23C, neg_colour) +
+  labs(x = "Young male fitness", y = "Population growth rate\n at 23C")
+
+late.male.pop.growth.23 <-
+fitness_regression_plot(DGRP_no_line, DGRP_no_line$male.fitness.late,
+                          DGRP_no_line$pop.growth.rate.23C, pos_colour) +
+  labs(x = "Old male fitness")
+
+(early.female.pop.growth | late.female.pop.growth) /
+(early.male.pop.growth | late.male.pop.growth) / 
+(early.female.pop.growth.23 | late.female.pop.growth.23) /
+(early.male.pop.growth.23 | late.male.pop.growth.23) 
+
+#**Figure 7**: Correlations between female and male fitness with population growth rate. Each point represents the standardised mean for a DGRP line. Yellow points indicate a positive genetic correlation between fitness and reproductive output, while blue points indicate a negative genetic correlation. 
+
+```
