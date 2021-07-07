@@ -1,21 +1,22 @@
 name: DGRP_sexual_conflict
 output_dir: ../docs
 navbar:
-  title: DGRP_sexual_conflict
+  title: Intralocus sexual conflict in the DGRP
   left:
   - text: Home
     href: index.html
-  - text: About
-    href: about.html
+  - text: Main analysis
+    href: Main_analysis.html
   - text: License
     href: license.html
   right:
-  - icon: fa-github
+  - icon: fab fa-github
     text: Source code
     href: https://github.com/tomkeaney/DGRP_sexual_conflict
 output:
   workflowr::wflow_html:
     toc: yes
     toc_float: yes
-    theme: cosmo
+    theme: readable
     highlight: textmate
+    code_folding: hide
