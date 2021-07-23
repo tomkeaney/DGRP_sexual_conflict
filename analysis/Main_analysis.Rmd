@@ -236,7 +236,7 @@ rfm_fitness_plot <-
   labs(x = "Female fitness", y = "Male fitness") +
   annotate(
     "text", label = "residual correlation = 0.21 (95% CIs: 0.05 to 0.36)",
-    x = -2.6, y = 2.5, size = 4, colour = "black"
+    x = -2.4, y = 2.55, size = 4, colour = "black"
   )
 
 ggMarginal(rfm_fitness_plot,
