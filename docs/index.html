@@ -13,6 +13,7 @@
 
 <title>Home</title>
 
+<script src="site_libs/header-attrs-2.7/header-attrs.js"></script>
 <script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link href="site_libs/bootstrap-3.3.5/css/readable.min.css" rel="stylesheet" />
@@ -42,6 +43,8 @@ div.section {
   padding-top: 12px;
 }
 </style>
+
+
 
 <style type="text/css">
   code{white-space: pre-wrap;}
@@ -314,7 +317,7 @@ $(document).ready(function () {
 <div class="tab-content">
 <div id="summary" class="tab-pane fade in active">
 <p>
-<strong>Last updated:</strong> 2021-07-07
+<strong>Last updated:</strong> 2021-07-28
 </p>
 <p>
 <strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 2 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 0
@@ -345,16 +348,16 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomtomkeaneyDGRPsexualconflicttreee8442586237b24394b14c0087e0d333328215d74targetblanke844258a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/tomkeaney/DGRP_sexual_conflict/tree/e8442586237b24394b14c0087e0d333328215d74" target="_blank">e844258</a> </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomtomkeaneyDGRPsexualconflicttree959123f80add4c3747918d1937e125003c982035targetblank959123fa"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/tomkeaney/DGRP_sexual_conflict/tree/959123f80add4c3747918d1937e125003c982035" target="_blank">959123f</a> </a>
 </p>
 </div>
-<div id="strongRepositoryversionstrongahrefhttpsgithubcomtomkeaneyDGRPsexualconflicttreee8442586237b24394b14c0087e0d333328215d74targetblanke844258a" class="panel-collapse collapse">
+<div id="strongRepositoryversionstrongahrefhttpsgithubcomtomkeaneyDGRPsexualconflicttree959123f80add4c3747918d1937e125003c982035targetblank959123fa" class="panel-collapse collapse">
 <div class="panel-body">
 <p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility.
 </p>
 <p>
-The results in this page were generated with repository version <a href="https://github.com/tomkeaney/DGRP_sexual_conflict/tree/e8442586237b24394b14c0087e0d333328215d74" target="_blank">e844258</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
+The results in this page were generated with repository version <a href="https://github.com/tomkeaney/DGRP_sexual_conflict/tree/959123f80add4c3747918d1937e125003c982035" target="_blank">959123f</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
 </p>
 <p>
 Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
@@ -366,7 +369,9 @@ Ignored files:
     Ignored:    .Rproj.user/
 
 Untracked files:
-    Untracked:  data/all.dgrp.phenos_unscaled.csv
+    Untracked:  Selection_differential_plot.pdf
+    Untracked:  data/S_female.csv
+    Untracked:  fits/
 
 </code></pre>
 <p>
@@ -405,6 +410,40 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/tomkeaney/DGRP_sexual_conflict/blob/959123f80add4c3747918d1937e125003c982035/analysis/index.Rmd" target="_blank">959123f</a>
+</td>
+<td>
+tkeaney
+</td>
+<td>
+2021-07-28
+</td>
+<td>
+trying to fix a bug
+</td>
+</tr>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/tomkeaney/DGRP_sexual_conflict/9e6630d1a258686756bc615d7aee0f31e7431db6/docs/index.html" target="_blank">9e6630d</a>
+</td>
+<td>
+tkeaney
+</td>
+<td>
+2021-07-07
+</td>
+<td>
+Build site.
+</td>
+</tr>
 <tr>
 <td>
 Rmd
@@ -498,6 +537,7 @@ Start workflowr project.
 </div>
 </div>
 <p>This website presents an analysis of selection acting on the DGRP. We particularly focus upon sexually antagonistic selection and test some well known hypotheses that relate to this concept.</p>
+<p>Main analysis can be viewed <a href="Main_analysis.html">here</a></p>
 
 
 <!-- Adjust MathJax settings so that all math formulae are shown using
@@ -511,6 +551,8 @@ footer is added to webpages before the MathJax javascript. -->
     "HTML-CSS": { availableFonts: ["TeX"] }
   });
 </script>
+
+
 
 
 
