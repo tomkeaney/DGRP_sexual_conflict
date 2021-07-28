@@ -390,23 +390,8 @@ forest_plot_2 <-
 
 $~$
 
-Following Bijl and Mank (2021) we can calculate sexual dimorphism as: $SD = \frac{\tilde{x}_{larger.sex}}{\tilde{x}_{smaller.sex}} - 1$
+We use the $\beta$ estimate for the effect of Sex:Male on the mean for each trait to estimate sexual dimorphism.
 
-To do this we need:
-
-- trait values that are standardised with the sexes pooled
-
-- the data in a different format: male and female trait values in a single column, with a new column identifying the sex of the individual
-
-- then we do it bayes style, where the means come as a distribution
-
-- the hard part here is finding an efficient way to divide the larger trait mean by the smaller one, because this will often flip between traits 
-
-- once again we have issues with normality
-
-**Or we just do male mean vale / female mean value**
-
-- This model is not coded correctly. When we predict the mean trait value for each sex we get near mirrored values. The smaller sex returns a negative value, the larger sex returns a near mirrored positive value. **Why?**
 
 ```{r, fig.height=45, fig.width=8}
 d1 <- 
@@ -428,18 +413,6 @@ dimorphism_data <- rbind(d1, d2) %>%
 
 # now we model dimorphism score to find an average value for each trait 
 
-# no - should be un-scaled and done as above...
-
-dimorphism_model <-
-  brm(data = dimorphism_data,
-      family = gaussian,
-      Trait_value ~ 1 + Sex + (Sex|Trait),
-      prior = c(prior(normal(0, 3), class = b),
-                prior(normal(0, 5), class = Intercept),
-                prior(cauchy(0, 2), class = sd)),
-      chains = 4, cores = 4, warmup = 3000, iter = 10000, 
-      seed = 1, file = "fits/dimorphism_model") 
-
 #job::job({
 dimorphism_model_2 <-
   brm(data = dimorphism_data,
@@ -451,7 +424,6 @@ dimorphism_model_2 <-
       seed = 1, file = "fits/dimorphism_model_2") 
 #})
 
-dimorphism_model_2
 
 # Now find the difference between males and females for each trait. This is calculated in the model as the trait specific effect of being male. We can find posterior estimates for these parameters using posterior samples(). Each trait has a column of estimated values named r_Trait[**insert specified trait**,SexMale]. We wrangle the data so that we get two columns: one with the trait name and another with an estimated value sampled from the posterior distribution for that parameter.
 
