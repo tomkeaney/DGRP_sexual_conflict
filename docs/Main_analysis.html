@@ -487,16 +487,16 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomtomkeaneyDGRPsexualconflicttreeddea55e2cfaed0dddfe93d9dad2d1154f0e6a451targetblankddea55ea"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/tomkeaney/DGRP_sexual_conflict/tree/ddea55e2cfaed0dddfe93d9dad2d1154f0e6a451" target="_blank">ddea55e</a> </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomtomkeaneyDGRPsexualconflicttree65b25971953ba68583cb15a9503035ac59b1a16ftargetblank65b2597a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/tomkeaney/DGRP_sexual_conflict/tree/65b25971953ba68583cb15a9503035ac59b1a16f" target="_blank">65b2597</a> </a>
 </p>
 </div>
-<div id="strongRepositoryversionstrongahrefhttpsgithubcomtomkeaneyDGRPsexualconflicttreeddea55e2cfaed0dddfe93d9dad2d1154f0e6a451targetblankddea55ea" class="panel-collapse collapse">
+<div id="strongRepositoryversionstrongahrefhttpsgithubcomtomkeaneyDGRPsexualconflicttree65b25971953ba68583cb15a9503035ac59b1a16ftargetblank65b2597a" class="panel-collapse collapse">
 <div class="panel-body">
 <p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility.
 </p>
 <p>
-The results in this page were generated with repository version <a href="https://github.com/tomkeaney/DGRP_sexual_conflict/tree/ddea55e2cfaed0dddfe93d9dad2d1154f0e6a451" target="_blank">ddea55e</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
+The results in this page were generated with repository version <a href="https://github.com/tomkeaney/DGRP_sexual_conflict/tree/65b25971953ba68583cb15a9503035ac59b1a16f" target="_blank">65b2597</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
 </p>
 <p>
 Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
@@ -549,6 +549,40 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/tomkeaney/DGRP_sexual_conflict/blob/65b25971953ba68583cb15a9503035ac59b1a16f/analysis/Main_analysis.Rmd" target="_blank">65b2597</a>
+</td>
+<td>
+tkeaney
+</td>
+<td>
+2021-07-28
+</td>
+<td>
+sexual dimorphism calculation added
+</td>
+</tr>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/tomkeaney/DGRP_sexual_conflict/83a0c4fdf0c246cc8f853dbeecd4ab8b252df66e/docs/Main_analysis.html" target="_blank">83a0c4f</a>
+</td>
+<td>
+tkeaney
+</td>
+<td>
+2021-07-28
+</td>
+<td>
+Build site.
+</td>
+</tr>
 <tr>
 <td>
 Rmd
@@ -1191,19 +1225,7 @@ forest_plot_2 &lt;-
 <div id="calculating-sexual-dimorphism-for-all-traits" class="section level2">
 <h2>Calculating sexual dimorphism for all traits</h2>
 <p><span class="math inline">\(~\)</span></p>
-<p>Following Bijl and Mank (2021) we can calculate sexual dimorphism as: <span class="math inline">\(SD = \frac{\tilde{x}_{larger.sex}}{\tilde{x}_{smaller.sex}} - 1\)</span></p>
-<p>To do this we need:</p>
-<ul>
-<li><p>trait values that are standardised with the sexes pooled</p></li>
-<li><p>the data in a different format: male and female trait values in a single column, with a new column identifying the sex of the individual</p></li>
-<li><p>then we do it bayes style, where the means come as a distribution</p></li>
-<li><p>the hard part here is finding an efficient way to divide the larger trait mean by the smaller one, because this will often flip between traits</p></li>
-<li><p>once again we have issues with normality</p></li>
-</ul>
-<p><strong>Or we just do male mean vale / female mean value</strong></p>
-<ul>
-<li>This model is not coded correctly. When we predict the mean trait value for each sex we get near mirrored values. The smaller sex returns a negative value, the larger sex returns a near mirrored positive value. <strong>Why?</strong></li>
-</ul>
+<p>We use the <span class="math inline">\(\beta\)</span> estimate for the effect of Sex:Male on the mean for each trait to estimate sexual dimorphism.</p>
 <pre class="r"><code>d1 &lt;- 
   rfm_unscaled_data %&gt;% 
   select(-Male_trait_value) %&gt;% 
@@ -1223,18 +1245,6 @@ dimorphism_data &lt;- rbind(d1, d2) %&gt;%
 
 # now we model dimorphism score to find an average value for each trait 
 
-# no - should be un-scaled and done as above...
-
-dimorphism_model &lt;-
-  brm(data = dimorphism_data,
-      family = gaussian,
-      Trait_value ~ 1 + Sex + (Sex|Trait),
-      prior = c(prior(normal(0, 3), class = b),
-                prior(normal(0, 5), class = Intercept),
-                prior(cauchy(0, 2), class = sd)),
-      chains = 4, cores = 4, warmup = 3000, iter = 10000, 
-      seed = 1, file = &quot;fits/dimorphism_model&quot;) 
-
 #job::job({
 dimorphism_model_2 &lt;-
   brm(data = dimorphism_data,
@@ -1246,37 +1256,8 @@ dimorphism_model_2 &lt;-
       seed = 1, file = &quot;fits/dimorphism_model_2&quot;) 
 #})
 
-dimorphism_model_2</code></pre>
-<pre><code> Family: gaussian 
-  Links: mu = identity; sigma = identity 
-Formula: Trait_value ~ 1 + (Sex | Trait) 
-   Data: dimorphism_data (Number of observations: 92752) 
-Samples: 4 chains, each with iter = 8000; warmup = 3000; thin = 1;
-         total post-warmup samples = 20000
 
-Group-Level Effects: 
-~Trait (Number of levels: 256) 
-                       Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS
-sd(Intercept)              0.31      0.01     0.29     0.34 1.00     1925
-sd(SexMale)                0.63      0.03     0.58     0.69 1.00     1850
-cor(Intercept,SexMale)    -1.00      0.00    -1.00    -1.00 1.00    12659
-                       Tail_ESS
-sd(Intercept)              3645
-sd(SexMale)                3259
-cor(Intercept,SexMale)    13467
-
-Population-Level Effects: 
-          Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-Intercept     0.00      0.00    -0.01     0.01 1.00    56275    12536
-
-Family Specific Parameters: 
-      Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-sigma     0.95      0.00     0.95     0.96 1.00    54457    14574
-
-Samples were drawn using sampling(NUTS). For each parameter, Bulk_ESS
-and Tail_ESS are effective sample size measures, and Rhat is the potential
-scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
-<pre class="r"><code># Now find the difference between males and females for each trait. This is calculated in the model as the trait specific effect of being male. We can find posterior estimates for these parameters using posterior samples(). Each trait has a column of estimated values named r_Trait[**insert specified trait**,SexMale]. We wrangle the data so that we get two columns: one with the trait name and another with an estimated value sampled from the posterior distribution for that parameter.
+# Now find the difference between males and females for each trait. This is calculated in the model as the trait specific effect of being male. We can find posterior estimates for these parameters using posterior samples(). Each trait has a column of estimated values named r_Trait[**insert specified trait**,SexMale]. We wrangle the data so that we get two columns: one with the trait name and another with an estimated value sampled from the posterior distribution for that parameter.
 
 # Interpreting the dimorphism values: positive values indicate that males have higher trait values than females, a value of 0 indicates that there is no sexual dimorphism, and negative values indicate that females have higher trait values
 
@@ -1333,6 +1314,17 @@ Date
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+<a href="https://github.com/tomkeaney/DGRP_sexual_conflict/blob/83a0c4fdf0c246cc8f853dbeecd4ab8b252df66e/docs/figure/Main_analysis.Rmd/unnamed-chunk-6-1.png" target="_blank">83a0c4f</a>
+</td>
+<td>
+tkeaney
+</td>
+<td>
+2021-07-28
+</td>
+</tr>
 <tr>
 <td>
 <a href="https://github.com/tomkeaney/DGRP_sexual_conflict/blob/32f107fb9019fd1c55e06e4826fa11fed5dfc221/docs/figure/Main_analysis.Rmd/unnamed-chunk-6-1.png" target="_blank">32f107f</a>
@@ -1661,6 +1653,43 @@ Selection_index_forest_plot &lt;-
 
 Selection_index_forest_plot</code></pre>
 <p><img src="figure/Main_analysis.Rmd/unnamed-chunk-9-1.png" width="576" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-9-1">
+Past versions of unnamed-chunk-9-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-9-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://github.com/tomkeaney/DGRP_sexual_conflict/blob/83a0c4fdf0c246cc8f853dbeecd4ab8b252df66e/docs/figure/Main_analysis.Rmd/unnamed-chunk-9-1.png" target="_blank">83a0c4f</a>
+</td>
+<td>
+tkeaney
+</td>
+<td>
+2021-07-28
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 <pre class="r"><code># Here&#39;s a table showing the correlations
 
 S_complete %&gt;% 
@@ -1856,6 +1885,17 @@ Date
 <tbody>
 <tr>
 <td>
+<a href="https://github.com/tomkeaney/DGRP_sexual_conflict/blob/83a0c4fdf0c246cc8f853dbeecd4ab8b252df66e/docs/figure/Main_analysis.Rmd/unnamed-chunk-13-1.png" target="_blank">83a0c4f</a>
+</td>
+<td>
+tkeaney
+</td>
+<td>
+2021-07-28
+</td>
+</tr>
+<tr>
+<td>
 <a href="https://github.com/tomkeaney/DGRP_sexual_conflict/blob/32f107fb9019fd1c55e06e4826fa11fed5dfc221/docs/figure/Main_analysis.Rmd/unnamed-chunk-13-1.png" target="_blank">32f107f</a>
 </td>
 <td>
@@ -1984,6 +2024,43 @@ young.male.20 &lt;-
   (young.male.11 | young.male.12 | young.male.13 | young.male.14 | young.male.15) /
   (young.male.16 | young.male.17 | young.male.18 | young.male.19 | young.male.20)</code></pre>
 <p><img src="figure/Main_analysis.Rmd/unnamed-chunk-14-1.png" width="1440" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-14-1">
+Past versions of unnamed-chunk-14-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-14-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://github.com/tomkeaney/DGRP_sexual_conflict/blob/83a0c4fdf0c246cc8f853dbeecd4ab8b252df66e/docs/figure/Main_analysis.Rmd/unnamed-chunk-14-1.png" target="_blank">83a0c4f</a>
+</td>
+<td>
+tkeaney
+</td>
+<td>
+2021-07-28
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 <p><strong>Figure 3</strong>: The 10 phenotypes with the strongest positive (orange points) and negative (blue points) selection coefficients in males. All phenotypes are standardised to have a mean = 0 and SD = 1.</p>
 <p><span class="math inline">\(~\)</span></p>
 <br>
