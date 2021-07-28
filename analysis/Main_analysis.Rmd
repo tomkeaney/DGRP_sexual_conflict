@@ -404,7 +404,11 @@ To do this we need:
 
 - once again we have issues with normality
 
-```{r}
+**Or we just do male mean vale / female mean value**
+
+- This model is not coded correctly. When we predict the mean trait value for each sex we get near mirrored values. The smaller sex returns a negative value, the larger sex returns a near mirrored positive value. **Why?**
+
+```{r, fig.height=45, fig.width=8}
 d1 <- 
   rfm_unscaled_data %>% 
   select(-Male_trait_value) %>% 
@@ -449,16 +453,44 @@ dimorphism_model_2 <-
 
 dimorphism_model_2
 
-new_data <-
-  expand_grid(Trait = unique(dimorphism_data$Trait),
-              Sex = unique(dimorphism_data$Sex))
+# Now find the difference between males and females for each trait. This is calculated in the model as the trait specific effect of being male. We can find posterior estimates for these parameters using posterior samples(). Each trait has a column of estimated values named r_Trait[**insert specified trait**,SexMale]. We wrangle the data so that we get two columns: one with the trait name and another with an estimated value sampled from the posterior distribution for that parameter.
 
-dimorphism_predictions <- fitted(dimorphism_model_2, new_data) %>% 
-  as_tibble()
+# Interpreting the dimorphism values: positive values indicate that males have higher trait values than females, a value of 0 indicates that there is no sexual dimorphism, and negative values indicate that females have higher trait values
 
-dimorphism_predictions <- cbind(new_data, dimorphism_predictions)
+dimorphism_post <- posterior_samples(dimorphism_model_2) %>% 
+  as_tibble() %>% 
+  select(starts_with("r_Trait") &
+           contains("SexMale")) %>% 
+  pivot_longer(cols = everything(), names_to = "Trait", values_to = "dimorphism_value") %>% 
+  mutate(Trait = str_remove(Trait, "r_Trait"),
+         Trait =  str_remove(Trait, ",SexMale"),
+         Trait = gsub("\\[|\\]", "", Trait)) %>% 
+  arrange(Trait)
+
+# now plot dimorphism for all traits
+
+forest_plot_dimorphism <-
+  dimorphism_post %>% 
+  group_by(Trait) %>% 
+  mutate(avg_dimorph = median(dimorphism_value)) %>%
+  ggplot(aes(dimorphism_value, fct_reorder(Trait, avg_dimorph))) +
+  stat_interval(.width = c(0.05, 0.66, 0.95), 
+                height = 3, show.legend = F) +
+  rcartocolor::scale_color_carto_d(palette = "Peach") +
+  #stat_pointinterval(aes(), .width = c(0.66, 0.95)) +
+  coord_cartesian(xlim = c(-2, 2)) +
+  ylab("Trait") +
+  xlab("Estimated dimorphism") +
+  theme_bw() + 
+  theme(legend.position = "none",
+        panel.grid.minor = element_blank(),
+        axis.title.x = ggtext::element_markdown())
+
+forest_plot_dimorphism
 
 ```
+
+**Figure XX**: Sexual dimorphism scores for traits that have been phenotyped in females and males. Positive values indicate that males have higher trait values than females, a value of 0 indicates that there is no sexual dimorphism, and negative values indicate that females have higher trait values than males. Bars represent means (displayed as 5% CI intervals), 66% and 95% intervals.
 
 $~$
 
@@ -648,7 +680,9 @@ We have found selection differentials acting on traits in females and males. For
 
 [Innocenti and Morrow (2011)]( https://doi.org/10.1111/j.1558-5646.2010.01021.x) present an index for measuring the intensity for sexually antagonistic selection:
 
-$I = \frac{\beta'_M \beta'_F}{\sqrt{\frac{{\beta'_M}^2 {\beta'_F}^2}{2}}}$
+```{r}
+#$I = \frac{\beta'_M \beta'_F}{\sqrt{\frac{{\beta'_M}^2 {\beta'_F}^2}{2}}}$
+```
 
 Where $B'_F$ = $S_F$ and $B'_M$ = $S_M$ that we have calculated above.
 
