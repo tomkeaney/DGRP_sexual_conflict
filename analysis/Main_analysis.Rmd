@@ -333,6 +333,7 @@ forest_plot <-
                 height = 3, show.legend = F) +
   rcartocolor::scale_color_carto_d(palette = "Peach") +
   #stat_pointinterval(aes(), .width = c(0.66, 0.95)) +
+  geom_vline(linetype = 2, xintercept = 0) +
   coord_cartesian(xlim = c(-0.5, 1)) +
   ylab("Trait") +
   xlab("Estimated _r_^A z fm") +
@@ -376,6 +377,7 @@ forest_plot_2 <-
                 height = 3, show.legend = F) +
   rcartocolor::scale_color_carto_d(palette = "Peach") +
   #stat_pointinterval(aes(), .width = c(0.66, 0.95)) +
+  geom_vline(linetype = 2, xintercept = 0) +
   coord_cartesian(xlim = c(-0.5, 1)) +
   ylab("Trait") +
   xlab("Estimated _r_^A z fm") +
@@ -450,6 +452,7 @@ forest_plot_dimorphism <-
                 height = 3, show.legend = F) +
   rcartocolor::scale_color_carto_d(palette = "Peach") +
   #stat_pointinterval(aes(), .width = c(0.66, 0.95)) +
+  geom_vline(linetype = 2, xintercept = 0) +
   coord_cartesian(xlim = c(-2, 2)) +
   ylab("Trait") +
   xlab("Estimated dimorphism") +
@@ -560,6 +563,7 @@ S_female_forest_plot <-
                 height = 3, show.legend = F) +
   rcartocolor::scale_color_carto_d(palette = "Peach") +
   #stat_pointinterval(aes(), .width = c(0.66, 0.95)) +
+  geom_vline(linetype = 2, xintercept = 0) +
   coord_cartesian(xlim = c(-0.5, 1)) +
   ylab("Trait") +
   xlab("Estimated female selection differential") +
@@ -628,6 +632,7 @@ S_male_forest_plot <-
                 height = 3, show.legend = F) +
   rcartocolor::scale_color_carto_d(palette = "Peach") +
   #stat_pointinterval(aes(), .width = c(0.66, 0.95)) +
+  geom_vline(linetype = 2, xintercept = 0) +
   coord_cartesian(xlim = c(-0.5, 1)) +
   ylab(NULL) +
   xlab("Estimated male selection differential") +
@@ -713,6 +718,7 @@ Selection_index_forest_plot <-
                 height = 3, show.legend = F) +
   rcartocolor::scale_color_carto_d(palette = "Peach") +
   #stat_pointinterval(aes(), .width = c(0.66, 0.95)) +
+  geom_vline(linetype = 2, xintercept = 0) +
   coord_cartesian(xlim = c(-0.5, 1)) +
   ylab(NULL) +
   xlab("Concordance of selection index") +
