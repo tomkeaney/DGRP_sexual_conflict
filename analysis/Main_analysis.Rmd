@@ -657,10 +657,6 @@ We have found selection differentials acting on traits in females and males. For
 
 [Innocenti and Morrow (2011)]( https://doi.org/10.1111/j.1558-5646.2010.01021.x) present an index for measuring the intensity for sexually antagonistic selection:
 
-```{r}
-#$I = \frac{\beta'_M \beta'_F}{\sqrt{\frac{{\beta'_M}^2 {\beta'_F}^2}{2}}}$
-```
-
 Where $B'_F$ = $S_F$ and $B'_M$ = $S_M$ that we have calculated above.
 
 From **Innocenti and Morrow**:
