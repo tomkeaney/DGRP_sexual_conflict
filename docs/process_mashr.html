@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+
+
+<title>Analysing the MASH results</title>
+
+<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/readable.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<script src="site_libs/navigation-1.1/codefolding.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<link href="site_libs/anchor-sections-1.0/anchor-sections.css" rel="stylesheet" />
+<script src="site_libs/anchor-sections-1.0/anchor-sections.js"></script>
+
+<link rel="icon" href="https://github.com/workflowr/workflowr-assets/raw/master/img/reproducible.png">
+<!-- Add a small amount of space between sections. -->
+<style type="text/css">
+div.section {
+  padding-top: 12px;
+}
+</style>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+<style type="text/css">
+h1 {
+  font-size: 34px;
+}
+h1.title {
+  font-size: 38px;
+}
+h2 {
+  font-size: 30px;
+}
+h3 {
+  font-size: 24px;
+}
+h4 {
+  font-size: 18px;
+}
+h5 {
+  font-size: 16px;
+}
+h6 {
+  font-size: 12px;
+}
+.table th:not([align]) {
+  text-align: left;
+}
+</style>
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+</style>
+
+
+<style type="text/css">
+/* padding for bootstrap navbar */
+body {
+  padding-top: 51px;
+  padding-bottom: 40px;
+}
+/* offset scroll position for anchor links (for fixed navbar)  */
+.section h1 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h2 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h3 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h4 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h5 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h6 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #ffffff;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script>
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.parent().addClass('active');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "&#xe258;";
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+<style type="text/css">
+.code-folding-btn { margin-bottom: 4px; }
+</style>
+
+
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row-fluid">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Intralocus sexual conflict in the DGRP</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li>
+  <a href="Main_analysis.html">Main analysis</a>
+</li>
+<li>
+  <a href="license.html">License</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="https://github.com/tomkeaney/DGRP_sexual_conflict">
+    <span class="fab fa fab fa-github"></span>
+     
+    Source code
+  </a>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div class="fluid-row" id="header">
+
+<div class="btn-group pull-right">
+<button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<ul class="dropdown-menu" style="min-width: 50px;">
+<li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
+<li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
+</ul>
+</div>
+
+
+
+<h1 class="title toc-ignore">Analysing the MASH results</h1>
+
+</div>
+
+
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-report" data-toggle="collapse" data-target="#workflowr-report">
+<span class="glyphicon glyphicon-list" aria-hidden="true"></span> workflowr <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span>
+</button>
+</p>
+<div id="workflowr-report" class="collapse">
+<ul class="nav nav-tabs">
+<li class="active">
+<a data-toggle="tab" href="#summary">Summary</a>
+</li>
+<li>
+<a data-toggle="tab" href="#checks"> Checks <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> </a>
+</li>
+<li>
+<a data-toggle="tab" href="#versions">Past versions</a>
+</li>
+</ul>
+<div class="tab-content">
+<div id="summary" class="tab-pane fade in active">
+<p>
+<strong>Last updated:</strong> 2021-08-05
+</p>
+<p>
+<strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 7 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 0
+</p>
+<p>
+<strong>Knit directory:</strong> <code>DGRP_sexual_conflict/</code> <span class="glyphicon glyphicon-question-sign" aria-hidden="true" title="This is the local directory in which the code in this file was executed."> </span>
+</p>
+<p>
+This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis was created with <a
+  href="https://github.com/jdblischak/workflowr">workflowr</a> (version 1.6.2). The <em>Checks</em> tab describes the reproducibility checks that were applied when the results were created. The <em>Past versions</em> tab lists the development history.
+</p>
+<hr>
+</div>
+<div id="checks" class="tab-pane fade">
+<div id="workflowr-checks" class="panel-group">
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguptodate"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>R Markdown file:</strong> up-to-date </a>
+</p>
+</div>
+<div id="strongRMarkdownfilestronguptodate" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great! Since the R Markdown file has been committed to the Git repository, you know the exact version of the code that produced these results.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongEnvironmentstrongempty"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Environment:</strong> empty </a>
+</p>
+</div>
+<div id="strongEnvironmentstrongempty" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! The global environment was empty. Objects defined in the global environment can affect the analysis in your R Markdown file in unknown ways. For reproduciblity it’s best to always run the code in an empty environment.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSeedstrongcodesetseed20210706code"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Seed:</strong> <code>set.seed(20210706)</code> </a>
+</p>
+</div>
+<div id="strongSeedstrongcodesetseed20210706code" class="panel-collapse collapse">
+<div class="panel-body">
+<p>The command <code>set.seed(20210706)</code> was run prior to running the code in the R Markdown file. Setting a seed ensures that any results that rely on randomness, e.g. subsampling or permutations, are reproducible.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSessioninformationstrongrecorded"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Session information:</strong> recorded </a>
+</p>
+</div>
+<div id="strongSessioninformationstrongrecorded" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Recording the operating system, R version, and package versions is critical for reproducibility.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongCachestrongnone"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Cache:</strong> none </a>
+</p>
+</div>
+<div id="strongCachestrongnone" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Nice! There were no cached chunks for this analysis, so you can be confident that you successfully produced the results during this run.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongFilepathsstrongrelative"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>File paths:</strong> relative </a>
+</p>
+</div>
+<div id="strongFilepathsstrongrelative" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Using relative paths to the files within your workflowr project makes it easier to run your code on other machines.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomtomkeaneyDGRPsexualconflicttree47673523cb8e184aa2c76cd59fb5fb567983e8b4targetblank4767352a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/tomkeaney/DGRP_sexual_conflict/tree/47673523cb8e184aa2c76cd59fb5fb567983e8b4" target="_blank">4767352</a> </a>
+</p>
+</div>
+<div id="strongRepositoryversionstrongahrefhttpsgithubcomtomkeaneyDGRPsexualconflicttree47673523cb8e184aa2c76cd59fb5fb567983e8b4targetblank4767352a" class="panel-collapse collapse">
+<div class="panel-body">
+<p>
+Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility.
+</p>
+<p>
+The results in this page were generated with repository version <a href="https://github.com/tomkeaney/DGRP_sexual_conflict/tree/47673523cb8e184aa2c76cd59fb5fb567983e8b4" target="_blank">4767352</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
+</p>
+<p>
+Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
+</p>
+<pre><code>
+Ignored files:
+    Ignored:    .DS_Store
+    Ignored:    .Rproj.user/
+
+Untracked files:
+    Untracked:  analysis/SNP_correlations.Rmd
+    Untracked:  code/gcta64
+    Untracked:  code/launch_slurm.bash
+    Untracked:  code/plink
+    Untracked:  code/run_mashr.R
+    Untracked:  gwas_data/
+
+</code></pre>
+<p>
+Note that any generated files, e.g. HTML, png, CSS, etc., are not included in this status report because it is ok for generated content to have uncommitted changes.
+</p>
+</div>
+</div>
+</div>
+</div>
+<hr>
+</div>
+<div id="versions" class="tab-pane fade">
+
+<p>
+These are the previous versions of the repository in which changes were made to the R Markdown (<code>analysis/process_mashr.Rmd</code>) and HTML (<code>docs/process_mashr.html</code>) files. If you’ve configured a remote Git repository (see <code>?wflow_git_remote</code>), click on the hyperlinks in the table below to view the files as they were in that past version.
+</p>
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+File
+</th>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+<th>
+Message
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/tomkeaney/DGRP_sexual_conflict/blob/47673523cb8e184aa2c76cd59fb5fb567983e8b4/analysis/process_mashr.Rmd" target="_blank">4767352</a>
+</td>
+<td>
+lukeholman
+</td>
+<td>
+2021-08-05
+</td>
+<td>
+wflow_publish(“analysis/process_mashr.Rmd”)
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+</div>
+</div>
+</div>
+<pre class="r"><code>library(tidyverse)
+library(mashr) 
+library(glue)
+library(RColorBrewer)
+library(future)
+library(future.apply)
+options(show_col_types = FALSE)
+
+files &lt;- list.files(&quot;gwas_data/derived/mashr_results&quot;, full.names = TRUE)</code></pre>
+<div id="load-and-process-the-results-of-mashr" class="section level2">
+<h2>Load and process the results of <code>mashr</code></h2>
+<p>This takes several minutes and lots of RAM, there’s a few hundred big files. Uses parallel processing via <code>future</code>.</p>
+<pre class="r"><code>process_mashr_results &lt;- function(mashr_file){
+  
+  trait_name &lt;- str_remove(str_split(mashr_file, &quot;/&quot;)[[1]][4], &quot;.rds&quot;)
+  # print(mashr_file)
+  mash_ED &lt;- readRDS(mashr_file)
+  # Get the list of SNPs analysed, and the mashr result itself out of the file:
+  SNPs &lt;- mash_ED[[1]]
+  mash_ED &lt;- mash_ED[[2]]
+  
+  # Get the mixture proportions (prop. SNPs assigned to each of the 4 kinds of covariance matrix)
+  mixture_proportions &lt;- get_estimated_pi(mash_ED)
+  
+  # Get the U covariance matrices, convert to correlations, and round off to +/- 1
+  U_list &lt;- mash_ED$fitted_g$Ulist
+  U_list &lt;- lapply(U_list, function(x) sign(cov2cor(x))) 
+  
+  # Define the 6 possible types of covariance matrix that mashr can pick 
+  # (it picks a subset of these, depending on the signals in the data)
+  U_types &lt;- list(
+    concord_traitpos = matrix(rep(1,9), nrow = 3),
+    antag_posfemales = matrix(c(1,1,-1,1,1,-1,-1,-1,1), nrow = 3), 
+    antag_posmales = matrix(c(1,-1,1,-1,1,-1,1,-1,1), nrow = 3), 
+    concord_traitneg = matrix(c(1,-1,-1,-1,1,1,-1,1,1), nrow = 3), 
+    dimorphism_femaleup = matrix(c(1,1,1,1,1,-1,1,-1,1), nrow = 3),
+    dimorphism_maleup = matrix(c(1,1,-1,1,1,1,-1,1,1), nrow = 3)) 
+  
+  # Give new names to the matrices in the mashr object (e.g. PC1 might become concord_traitpos)
+  new_ED_names &lt;- names(U_types[
+    sapply(1:4, function(i){ # 4 U matrices fit by the model
+      which(sapply(1:6, function(j) { # 6 possible matrix types
+        isTRUE(all.equal(U_list[[i]], U_types[[j]]))
+      }))
+    })])
+  
+  # Check for duplicates. Sometimes the tPCA matrix is essentially the same type as one of the PCs, with different variances
+  # Duplicates get named e.g. concord_traitpos_2
+  if(any(duplicated(new_ED_names))){
+    new_ED_names[duplicated(new_ED_names)] &lt;- paste(new_ED_names[duplicated(new_ED_names)], 2, sep = &quot;_&quot;)
+  }
+  
+  # Assign the names to the fitted matrices and mixture proportions
+  U_list &lt;- mash_ED$fitted_g$Ulist
+  names(U_list) &lt;- new_ED_names
+  names(mixture_proportions)[names(mixture_proportions) != &quot;null&quot;] &lt;- new_ED_names
+  
+  # Get the mashr-adjusted effect sizes for every SNP/trait, and the local false sign rates too
+  posterior_effect_size &lt;- as.data.frame(get_pm(mash_ED))
+  names(posterior_effect_size) &lt;- c(&quot;trait_effect&quot;, &quot;f_fitness_effect&quot;, &quot;m_fitness_effect&quot;)
+  lfsr &lt;- as.data.frame(get_lfsr(mash_ED))
+  names(lfsr) &lt;- c(&quot;trait_lfsr&quot;, &quot;f_fitness_lfsr&quot;, &quot;m_fitness_lfsr&quot;)
+  
+  # Get the mixture weights for each SNP, as advised by mashr authors here: 
+  # https://github.com/stephenslab/mashr/issues/68
+  posterior_weights_cov &lt;- mash_ED$posterior_weights 
+  colnames(posterior_weights_cov) &lt;- sapply(
+    str_split(colnames(posterior_weights_cov), &#39;\\.&#39;), 
+    function(x) {
+      if(length(x) == 1) return(x)
+      else if(length(x) == 2) return(x[1])
+      else if(length(x) == 3) return(paste(x[1], x[2], sep = &quot;.&quot;))
+    })
+  posterior_weights_cov &lt;- t(rowsum(t(posterior_weights_cov), 
+                                    colnames(posterior_weights_cov))) %&gt;% 
+    as.data.frame()
+  names(posterior_weights_cov)[names(posterior_weights_cov) == &quot;ED_PCA_1&quot;] &lt;- new_ED_names[1]
+  names(posterior_weights_cov)[names(posterior_weights_cov) == &quot;ED_PCA_2&quot;] &lt;- new_ED_names[2]
+  names(posterior_weights_cov)[names(posterior_weights_cov) == &quot;ED_PCA_3&quot;] &lt;- new_ED_names[3]
+  names(posterior_weights_cov)[names(posterior_weights_cov) == &quot;ED_tPCA&quot;] &lt;- new_ED_names[4]
+  
+  # Make a data frame with info about each SNP (effect, LFSR, mixture assignments)
+  mashr_SNP_data &lt;- cbind(SNP = SNPs, 
+                          posterior_effect_size, 
+                          lfsr, posterior_weights_cov) %&gt;% 
+    as_tibble() %&gt;% 
+    arrange(trait_lfsr + f_fitness_lfsr + m_fitness_lfsr)
+  
+  # Identify SNPs that pass a certain LFSR threshold for all 3 traits (0.1, 0.05, 0.01)
+  sig_SNPs_p10 &lt;- mashr_SNP_data %&gt;%
+    filter(trait_lfsr &lt; 0.1 &amp; f_fitness_lfsr &lt; 0.1 &amp; m_fitness_lfsr &lt; 0.1) 
+  
+  sig_SNPs_p05 &lt;- mashr_SNP_data %&gt;%
+    filter(trait_lfsr &lt; 0.05 &amp; f_fitness_lfsr &lt; 0.05 &amp; m_fitness_lfsr &lt; 0.05) 
+  
+  sig_SNPs_p01 &lt;- sig_SNPs_p05 %&gt;%
+    filter(trait_lfsr &lt; 0.01 &amp; f_fitness_lfsr &lt; 0.01 &amp; m_fitness_lfsr &lt; 0.01) 
+  
+  # Function to categorise the significant SNPs as concord traitpos, antag malepos, etc.
+  categorise &lt;- function(sig_snps){
+    if(nrow(sig_snps) == 0) return(&quot;Not enough significant SNPs&quot;)
+    
+    type &lt;- sig_snps %&gt;% 
+      mutate(type = case_when(
+        sign(f_fitness_effect) == sign(m_fitness_effect) &amp; sign(m_fitness_effect) == sign(trait_effect) ~ &quot;SC, +ve selection&quot;, 
+        sign(f_fitness_effect) == sign(m_fitness_effect) &amp; sign(m_fitness_effect) != sign(trait_effect) ~ &quot;SC, -ve selection&quot;, 
+        sign(f_fitness_effect) != sign(m_fitness_effect) &amp; sign(m_fitness_effect) == sign(trait_effect) ~ &quot;SA, +ve in males&quot;,
+        sign(f_fitness_effect) != sign(m_fitness_effect) &amp; sign(f_fitness_effect) == sign(trait_effect) ~ &quot;SA, +ve in females&quot;,
+        NA ~ &quot;ERROR&quot;)) %&gt;% pull(type)
+    type &lt;- factor(type, c(&quot;SC, +ve selection&quot;, &quot;SC, -ve selection&quot;, &quot;SA, +ve in males&quot;, &quot;SA, +ve in females&quot;))
+    
+    female_fitness_effect &lt;- sig_snps %&gt;% 
+      mutate(type = case_when(
+        f_fitness_effect &lt; 0 ~ &quot;Female-harmful minor allele&quot;, 
+        f_fitness_effect &gt; 0 ~ &quot;Female-beneficial minor allele&quot;, 
+        NA ~ &quot;ERROR&quot;)) %&gt;% pull(type)
+    type &lt;- factor(type, c(&quot;SC, +ve selection&quot;, &quot;SC, -ve selection&quot;, &quot;SA, +ve in males&quot;, &quot;SA, +ve in females&quot;))
+    
+    tibble(type, female_fitness_effect) %&gt;% 
+      group_by(type, female_fitness_effect) %&gt;% 
+      summarise(n_snps = n(), .groups = &quot;drop&quot;)
+    
+  }
+  
+  # Counts of significant SNPs of each possible kind 
+  SNP_counts &lt;- list(categorise(sig_SNPs_p10), categorise(sig_SNPs_p05), categorise(sig_SNPs_p01))
+  
+  list(trait_name = trait_name, 
+       SNP_data = mashr_SNP_data, 
+       mixture_proportions = mixture_proportions, 
+       U_list = U_list,
+       SNP_counts  = SNP_counts)
+}
+
+all_mashr_results &lt;- future_lapply(files, process_mashr_results)</code></pre>
+<!-- ```{r} -->
+<!-- all_mashr_results[[1]]$SNP_data %>%  -->
+<!--   filter(f_fitness_lfsr < 0.05) %>%  -->
+<!--   ggplot(aes(m_fitness_effect, trait_effect)) +  -->
+<!--   geom_hex() -->
+<!-- ``` -->
+</div>
+<div id="plots-classifying-the-significant-snps" class="section level2 tabset">
+<h2>Plots classifying the significant SNPs</h2>
+<p>The following plots show the number of statistically significant pleiotropic SNPs, defined as those that affect 1) female early-life fitness, 2) male early-life fitness, and 3) the focal phenotypic trait, all with a local false sign rate &lt; 0.05 (as calculated by <code>mashr</code>). The SNPs have been further classified into four possible types:</p>
+<ul>
+<li><code>SC, +ve selection</code>: SNPs that are under sexually concordant selection (i.e. the same allele is associated with higher fitness in both sexes), and the high-fitness allele is associated with <em>higher</em> values of the phenotypic trait.</li>
+<li><code>SC, +ve selection</code>: SNPs that are under sexually concordant selection (i.e. the same allele is associated with higher fitness in both sexes), and the high-fitness allele is associated with <em>lower</em> values of the phenotypic trait.</li>
+<li><code>SA, +ve in males</code>: SNPs that are under sexually antagonistic selection (i.e. the allele associated with higher fitness in females is associated with lower fitness in males, and <em>vice versa</em>), and the <em>male</em>-beneficial allele is associated with higher values of the phenotypic trait.</li>
+<li><code>SA, +ve in females</code>: SNPs that are under sexually antagonistic selection (i.e. the allele associated with higher fitness in females is associated with lower fitness in males, and <em>vice versa</em>), and the <em>female</em>-beneficial allele is associated with higher values of the phenotypic trait.</li>
+</ul>
+<p>Finally, we have further divided the loci between those where the minor allele is associated with higher fitness in females, and those where the minor allele is associated with lower fitness in females.</p>
+<p>Some take-home messages from these figures are that:</p>
+<ul>
+<li>Among sexually concordant loci, the allele that harms female and male fitness is more often the minor allele, as expected given that lower-fitness alleles are preferentially removed by selection.</li>
+<li>Among sexually antagonistic loci, the allele that benefits female fitness tends to be the one that increases the trait value, while the male-beneficial allele tends to decrease the trait value. This is especially clear for morphological traits, consistent with earlier evidence of sexually antagonistic selection for larger female (and smaller male) body size. Few exceptions: one example is <code>foraging.survival.m</code>, where the male-beneficial allele increases male foraging survival, and the female-beneficial allele decreases male foraging survival (this trait was apparently only measured in males, so we cannot tell if the reverse is true in females).</li>
+<li>Among sexually-antagonistic loci, the allele associated with lower female fitness (and higher male fitness) tends to have a higher allele frequency than the allele that benefits females over males. This is what one would predict if selection on males were stronger than selection on females.</li>
+<li>Traits that were measured under ‘stressful’ conditions, such as abdomen length at 28oC (which applies heat stress), are more likely to be under sexually concordant selection, and to be highly heritable (as indicated by the higher number of loci with significant effects on the trait and fitness). By contrast, traits measured under more benign conditions, such as abdomen length at 18oC, tend to have fewer loci under sexually concordant selection, and sometimes have more loci under sexually antagonistic selection. This is in accordance with predictions and prior evidence (e.g. Long et al 2012, <a href="https://doi.org/10.1016/j.cub.2011.12.020" class="uri">https://doi.org/10.1016/j.cub.2011.12.020</a>)</li>
+</ul>
+<pre class="r"><code>traits &lt;- map_chr(all_mashr_results, ~ .x$trait_name)
+counts &lt;- map(map(all_mashr_results, ~ .x$SNP_counts), ~ .x[[2]]) # get SNPs with LFSR &lt; 0.05
+no_sig_snps &lt;- map_lgl(counts, ~ is.character(.x)) %&gt;% which()
+# counts &lt;- map_df((1:length(counts)), ~ counts[[.x]] %&gt;% mutate(trait = traits[.x]))
+counts &lt;- map_df((1:length(counts))[-no_sig_snps], ~ counts[[.x]] %&gt;% mutate(trait = traits[.x]))
+
+counts &lt;- expand_grid(type = unique(counts$type), 
+            female_fitness_effect = unique(counts$female_fitness_effect), 
+            trait = unique(counts$trait)) %&gt;% 
+  left_join(counts, by = c(&quot;type&quot;, &quot;female_fitness_effect&quot;, &quot;trait&quot;)) %&gt;% 
+  mutate(n_snps = replace(n_snps, is.na(n_snps), 0))
+
+
+plot_data &lt;- counts %&gt;% 
+  left_join(read_csv(&quot;data/all.dgrp.phenos_unscaled.csv&quot;) %&gt;% 
+              select(Trait, `Trait guild`) %&gt;% distinct(), by = c(&quot;trait&quot; = &quot;Trait&quot;)) %&gt;% 
+  arrange(trait, type) %&gt;% 
+  mutate(trait = factor(trait, rev(unique(trait))),
+         type = as.factor(type),
+         `Trait guild` = replace(`Trait guild`, is.na(`Trait guild`), &quot;Other&quot;),
+         `Trait guild` = replace(`Trait guild`, `Trait guild` == &quot;?&quot;, &quot;Other&quot;))
+
+guilds &lt;- unique(plot_data$`Trait guild`) 
+
+levels &lt;- plot_data %&gt;% 
+  group_by(trait) %&gt;% 
+  summarise(difference = sum(n_snps[grepl(&quot;SA&quot;, type)]) - sum(n_snps[grepl(&quot;SC&quot;, type)]), .groups = &quot;drop&quot;) %&gt;% 
+  arrange(difference) %&gt;% pull(trait)
+
+make_plot &lt;- function(guild){
+  plot_data %&gt;% 
+    mutate(trait = factor(trait, rev(levels))) %&gt;% 
+    filter(`Trait guild` == guild) %&gt;% 
+    ggplot(aes(trait, n_snps, fill = type)) + 
+    geom_bar(stat = &quot;identity&quot;, position = &quot;dodge&quot;, colour = &quot;grey10&quot;, alpha = 0.7, size = 0.3) +
+    scale_fill_brewer(palette = &quot;Spectral&quot;, drop = FALSE, direction = -1, name = &quot;Locus type&quot;) + 
+    coord_flip() +
+    facet_wrap(~ female_fitness_effect) + 
+    xlab(&quot;Number of significant SNPs&quot;) + ylab(&quot;Phenotypic trait&quot;)
+}</code></pre>
+<div id="unclassified-traits" class="section level3">
+<h3>Unclassified traits</h3>
+<pre class="r"><code>make_plot(guilds[1])</code></pre>
+<p><img src="figure/process_mashr.Rmd/unnamed-chunk-4-1.png" width="960" style="display: block; margin: auto;" /></p>
+</div>
+<div id="morphological" class="section level3">
+<h3>Morphological</h3>
+<pre class="r"><code>make_plot(guilds[4])</code></pre>
+<p><img src="figure/process_mashr.Rmd/unnamed-chunk-5-1.png" width="960" style="display: block; margin: auto;" /></p>
+</div>
+<div id="physiological" class="section level3">
+<h3>Physiological</h3>
+<pre class="r"><code>make_plot(guilds[5])</code></pre>
+<p><img src="figure/process_mashr.Rmd/unnamed-chunk-6-1.png" width="960" style="display: block; margin: auto;" /></p>
+</div>
+<div id="behavioural" class="section level3">
+<h3>Behavioural</h3>
+<pre class="r"><code>make_plot(guilds[7])</code></pre>
+<p><img src="figure/process_mashr.Rmd/unnamed-chunk-7-1.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="life-history" class="section level3">
+<h3>Life history</h3>
+<pre class="r"><code>make_plot(guilds[11])</code></pre>
+<p><img src="figure/process_mashr.Rmd/unnamed-chunk-8-1.png" width="960" style="display: block; margin: auto;" /></p>
+</div>
+<div id="pathogen-response" class="section level3">
+<h3>Pathogen response</h3>
+<pre class="r"><code>make_plot(guilds[8])</code></pre>
+<p><img src="figure/process_mashr.Rmd/unnamed-chunk-9-1.png" width="960" style="display: block; margin: auto;" /></p>
+</div>
+<div id="insecticide-response" class="section level3">
+<h3>Insecticide response</h3>
+<p>Notice that the loci affecting resistance to some insecticides are under sexually antagonistic selection in some cases (like DDT) but not others (or, sexual antagonism is confined to fewer loci). Note that there is independent evidence that DDT resistance alleles are under sexually antagonistic selection, e.g. <a href="https://royalsocietypublishing.org/doi/10.1098/rspb.2016.1429" class="uri">https://royalsocietypublishing.org/doi/10.1098/rspb.2016.1429</a>.</p>
+<pre class="r"><code>make_plot(guilds[9])</code></pre>
+<p><img src="figure/process_mashr.Rmd/unnamed-chunk-10-1.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="cuticular-hydrocarbons" class="section level3">
+<h3>Cuticular hydrocarbons</h3>
+<p>I read that many of the dienes (those with :2 in the name) are female-biased, while monoenes (those with :1) are male-biased in the CHC profile. It might be worth seeing whether the more sex-biased CHCs tend to be sexually antagonistic.</p>
+<pre class="r"><code>make_plot(guilds[10])</code></pre>
+<p><img src="figure/process_mashr.Rmd/unnamed-chunk-11-1.png" width="672" style="display: block; margin: auto;" /></p>
+<!-- ### Metabolome  -->
+<!-- ```{r} -->
+<!-- make_plot(guilds[2]) -->
+<!-- ``` -->
+<!-- ### Sensory  -->
+<!-- ```{r} -->
+<!-- make_plot(guilds[3]) -->
+<!-- ``` -->
+</div>
+</div>
+<div id="plots-showing-the-estimated-proportions-of-different-snps" class="section level2 tabset">
+<h2>Plots showing the estimated proportions of different SNPs</h2>
+<pre class="r"><code>mixtures &lt;- map(all_mashr_results, ~ enframe(.x$mixture_proportions))
+
+plot_data_mix &lt;- map_df((1:length(mixtures)), ~ mixtures[[.x]] %&gt;% mutate(trait = traits[.x])) %&gt;% 
+  left_join(read_csv(&quot;data/all.dgrp.phenos_unscaled.csv&quot;) %&gt;% 
+              select(Trait, `Trait guild`) %&gt;% distinct(), by = c(&quot;trait&quot; = &quot;Trait&quot;)) %&gt;% 
+  arrange(trait, name) %&gt;% 
+  filter(!(name == &quot;dimorphism_maleup&quot; | name == &quot;dimorphism_femaleup&quot;)) %&gt;%  # these  are very rare
+  split(.$trait) %&gt;% 
+  map_df(~{
+    if(any(pull(.x, name) == &quot;concord_traitpos_2&quot;)){
+      .x$value[.x$name == &quot;concord_traitpos&quot;] &lt;- .x$value[.x$name == &quot;concord_traitpos&quot;] + .x$value[.x$name == &quot;concord_traitpos_2&quot;]
+    }
+    if(any(pull(.x, name) == &quot;antag_posfemales_2&quot;)){
+      .x$value[.x$name == &quot;antag_posfemales&quot;] &lt;- .x$value[.x$name == &quot;antag_posfemales&quot;] + .x$value[.x$name == &quot;antag_posfemales_2&quot;]
+    }
+    .x %&gt;% filter(!(name %in% c(&quot;concord_traitpos_2&quot;, &quot;antag_posfemales_2&quot;)))
+  }) %&gt;% 
+  mutate(name = replace(name, name == &quot;concord_traitpos&quot;, &quot;SC, +ve selection&quot;),
+         name = replace(name, name == &quot;concord_traitneg&quot;, &quot;SC, -ve selection&quot;),
+         name = replace(name, name == &quot;antag_posfemales&quot;, &quot;SA, +ve in females&quot;),
+         name = replace(name, name == &quot;antag_posmales&quot;, &quot;SA, +ve in males&quot;),
+         name = replace(name, name == &quot;null&quot;, &quot;Null&quot;)) %&gt;% 
+  mutate(name = factor(name, c(&quot;Null&quot;, &quot;SC, +ve selection&quot;, &quot;SC, -ve selection&quot;,
+                               &quot;SA, +ve in males&quot;, &quot;SA, +ve in females&quot;)),
+         `Trait guild` = replace(`Trait guild`, is.na(`Trait guild`), &quot;Other&quot;),
+         `Trait guild` = replace(`Trait guild`, `Trait guild` == &quot;?&quot;, &quot;Other&quot;))
+
+
+levels_mix &lt;- plot_data_mix %&gt;% 
+  group_by(trait) %&gt;% 
+  summarise(difference = sum(value[grepl(&quot;SA&quot;, name)]) - sum(value[grepl(&quot;SC&quot;, name)])) %&gt;% 
+  arrange(difference) %&gt;% pull(trait)
+
+pal &lt;- c(&quot;grey20&quot;, rev(brewer.pal(4, &quot;Spectral&quot;)))
+
+make_plot &lt;- function(guild){
+  plot_data_mix %&gt;% 
+    mutate(trait = factor(trait, rev(levels_mix))) %&gt;% 
+    filter(`Trait guild` == guild) %&gt;% 
+    ggplot(aes(trait, 100 * value, fill = name)) + 
+    geom_bar(stat = &quot;identity&quot;, position = &quot;dodge&quot;, colour = &quot;grey10&quot;, alpha = 0.7, size = 0.3) +
+    scale_fill_manual(values = pal, name = &quot;Locus type&quot;) + 
+    coord_flip()  + 
+    ylab(&quot;Estimated percentage of all SNPs&quot;) + xlab(&quot;Phenotypic trait&quot;)
+}</code></pre>
+<div id="unclassified-traits-1" class="section level3">
+<h3>Unclassified traits</h3>
+<pre class="r"><code>make_plot(guilds[1])</code></pre>
+<p><img src="figure/process_mashr.Rmd/unnamed-chunk-13-1.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="morphological-1" class="section level3">
+<h3>Morphological</h3>
+<pre class="r"><code>make_plot(guilds[4])</code></pre>
+<p><img src="figure/process_mashr.Rmd/unnamed-chunk-14-1.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="physiological-1" class="section level3">
+<h3>Physiological</h3>
+<pre class="r"><code>make_plot(guilds[5])</code></pre>
+<p><img src="figure/process_mashr.Rmd/unnamed-chunk-15-1.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="behavioural-1" class="section level3">
+<h3>Behavioural</h3>
+<pre class="r"><code>make_plot(guilds[7])</code></pre>
+<p><img src="figure/process_mashr.Rmd/unnamed-chunk-16-1.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="life-history-1" class="section level3">
+<h3>Life history</h3>
+<pre class="r"><code>make_plot(guilds[11])</code></pre>
+<p><img src="figure/process_mashr.Rmd/unnamed-chunk-17-1.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="pathogen-response-1" class="section level3">
+<h3>Pathogen response</h3>
+<pre class="r"><code>make_plot(guilds[8])</code></pre>
+<p><img src="figure/process_mashr.Rmd/unnamed-chunk-18-1.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="insecticide-response-1" class="section level3">
+<h3>Insecticide response</h3>
+<p>Notice that the loci affecting resistance to some insecticides are under sexually antagonistic selection in some cases (like DDT) but not others (or, sexual antagonism is confined to fewer loci). Note that there is independent evidence that DDT resistance alleles are under sexually antagonistic selection, e.g. <a href="https://royalsocietypublishing.org/doi/10.1098/rspb.2016.1429" class="uri">https://royalsocietypublishing.org/doi/10.1098/rspb.2016.1429</a>.</p>
+<pre class="r"><code>make_plot(guilds[9])</code></pre>
+<p><img src="figure/process_mashr.Rmd/unnamed-chunk-19-1.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="cuticular-hydrocarbons-1" class="section level3">
+<h3>Cuticular hydrocarbons</h3>
+<p>I read that many of the dienes (those with :2 in the name) are female-biased, while monoenes (those with :1) are male-biased in the CHC profile. It might be worth seeing whether the more sex-biased CHCs tend to be sexually antagonistic.</p>
+<pre class="r"><code>make_plot(guilds[10])</code></pre>
+<p><img src="figure/process_mashr.Rmd/unnamed-chunk-20-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p><strong>GWAS</strong> We began by filtering out loci with a minor allele frequency &lt;5% and a missing genotype frequency &gt;10%, and then imputing missing genotype data using Beagle (v4.1, ref). To limit the computational demands of running GWAS (and adaptive shrinkage) on millions of loci, and to address the statistical issues caused by linkage disequilibrium (LD) between loci, we pruned the dataset to a set of 226,581 loci that were in approximate LD with one another (r &lt; 0.2) using the PLINK (v1.9) command ‘–indep-pairwise 100 10 0.2’. We then ran genome-wide association tests using linear models, implemented via the –assoc argument in PLINK (separately for each phenotypic trait). Each test yielded an effect size, its standard error, and a p-value for each locus (testing the null hypothesis that the mean phenotype did not differ between lines fixed for one or the other allele). The minor allele was treated as the alternative allele for these tests, such that a positive effect size (beta) indicates that the minor allele is associated with higher values of the focal phenotype.</p>
+<p><strong>Multivariate adaptive shrinkage (MASH)</strong> We further investigated the GWAS summary statistics using the R package mashr (REF), which performs multivariate adaptive shrinkage via a 2-step empirical Bayes procedure. We ran a single mashr model for each phenotypic trait, and each model additionally included measurements of early life male and female fitness from Wong REF. Firstly, we used mashr to identify patterns of correlations between the GWAS effect sizes for these 3 measures (i.e. male and female fitness, and the focal trait); mashr uses the extreme deconvolution algorithm of Bovy et al (Annals of Applied Statistics) for this purpose. Secondly, mashr runs a model using these inferred correlations, the effect size estimates, and their standard errors to derive corrected effect size estimates, as well as a Bayesian measure of confidence each effect is non-zero (the local false sign rate).</p>
+<br>
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-sessioninfo" data-toggle="collapse" data-target="#workflowr-sessioninfo" style="display: block;">
+<span class="glyphicon glyphicon-wrench" aria-hidden="true"></span> Session information
+</button>
+</p>
+<div id="workflowr-sessioninfo" class="collapse">
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>R version 4.0.3 (2020-10-10)
+Platform: x86_64-apple-darwin17.0 (64-bit)
+Running under: macOS Catalina 10.15.7
+
+Matrix products: default
+BLAS:   /Library/Frameworks/R.framework/Versions/4.0/Resources/lib/libRblas.dylib
+LAPACK: /Library/Frameworks/R.framework/Versions/4.0/Resources/lib/libRlapack.dylib
+
+locale:
+[1] en_GB.UTF-8/en_GB.UTF-8/en_GB.UTF-8/C/en_GB.UTF-8/en_GB.UTF-8
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+ [1] future.apply_1.5.0 future_1.17.0      RColorBrewer_1.1-2 glue_1.4.2        
+ [5] mashr_0.2.38       ashr_2.2-47        forcats_0.5.0      stringr_1.4.0     
+ [9] dplyr_1.0.0        purrr_0.3.4        readr_2.0.0        tidyr_1.1.0       
+[13] tibble_3.0.1       ggplot2_3.3.2      tidyverse_1.3.0    workflowr_1.6.2   
+
+loaded via a namespace (and not attached):
+ [1] nlme_3.1-149     fs_1.4.1         lubridate_1.7.10 bit64_0.9-7     
+ [5] httr_1.4.1       rprojroot_1.3-2  tools_4.0.3      backports_1.1.7 
+ [9] R6_2.4.1         irlba_2.3.3      DBI_1.1.0        colorspace_1.4-1
+[13] rmeta_3.0        withr_2.2.0      tidyselect_1.1.0 bit_1.1-15.2    
+[17] compiler_4.0.3   git2r_0.27.1     cli_2.0.2        rvest_0.3.5     
+[21] xml2_1.3.2       labeling_0.3     scales_1.1.1     SQUAREM_2020.2  
+[25] mvtnorm_1.1-0    mixsqp_0.3-43    digest_0.6.25    rmarkdown_2.5   
+[29] pkgconfig_2.0.3  htmltools_0.5.0  highr_0.8        dbplyr_1.4.4    
+[33] invgamma_1.1     rlang_0.4.6      readxl_1.3.1     rstudioapi_0.11 
+[37] farver_2.0.3     generics_0.0.2   jsonlite_1.7.0   vroom_1.5.3     
+[41] magrittr_2.0.1   Matrix_1.2-18    Rcpp_1.0.4.6     munsell_0.5.0   
+[45] fansi_0.4.1      abind_1.4-5      lifecycle_0.2.0  stringi_1.5.3   
+[49] whisker_0.4      yaml_2.2.1       plyr_1.8.6       grid_4.0.3      
+[53] blob_1.2.1       parallel_4.0.3   listenv_0.8.0    promises_1.1.0  
+[57] crayon_1.3.4     lattice_0.20-41  haven_2.3.1      hms_0.5.3       
+[61] knitr_1.32       pillar_1.4.4     codetools_0.2-16 reprex_0.3.0    
+[65] evaluate_0.14    modelr_0.1.8     vctrs_0.3.0      tzdb_0.1.2      
+[69] httpuv_1.5.3.1   cellranger_1.1.0 gtable_0.3.0     assertthat_0.2.1
+[73] xfun_0.22        broom_0.5.6      later_1.0.0      truncnorm_1.0-8 
+[77] globals_0.12.5   ellipsis_0.3.1  </code></pre>
+</div>
+</div>
+</div>
+
+
+<!-- Adjust MathJax settings so that all math formulae are shown using
+TeX fonts only; see
+http://docs.mathjax.org/en/latest/configuration.html.  This will make
+the presentation more consistent at the cost of the webpage sometimes
+taking slightly longer to load. Note that this only works because the
+footer is added to webpages before the MathJax javascript. -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    "HTML-CSS": { availableFonts: ["TeX"] }
+  });
+</script>
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open')
+  });
+});
+</script>
+
+<!-- code folding -->
+<script>
+$(document).ready(function () {
+  window.initializeCodeFolding("hide" === "show");
+});
+</script>
+
+<script>
+$(document).ready(function ()  {
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
