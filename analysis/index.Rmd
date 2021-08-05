@@ -11,3 +11,10 @@ editor_options:
 This website presents an analysis of selection acting on the DGRP. We particularly focus upon sexually antagonistic selection and test some well known hypotheses that relate to this concept.
 
 Main analysis can be viewed [here](Main_analysis.html)
+
+
+See the code to run genome-wide association tests [here](run_GWAS.html)
+
+See the code to run multivariate adaptive shrinkage using `mashr` [here](run_mashr.html)
+
+See the results of the `mashr` analyses [here](process_mashr.html)
