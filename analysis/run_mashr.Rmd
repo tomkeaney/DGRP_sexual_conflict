@@ -1,0 +1,199 @@
+---
+title: "run_mashr"
+author: "lukeholman"
+date: "2021-07-28"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+
+```{r, setup, include=FALSE}
+knitr::opts_chunk$set(
+  message = FALSE, results='hide'
+)
+```
+
+
+```{r include=FALSE, eval=FALSE}
+Note: To run mashr on Spartan, use `knitr::purl(input = "analysis/run_mashr.Rmd", output = "code/run_mashr.R")` to generate an R script from this R Markdown document, then type this on Spartan
+
+cd /data/projects/punim0243/DGRP_sexual_conflict
+module load r/4.0.0
+Rscript code/run_mashr.R
+```
+
+
+```{r}
+library(tidyverse)
+library(ashr) 
+library(mashr) 
+library(glue)
+library(rslurm)
+
+files <- list.files("gwas_data/derived/gwas_results", pattern = "tsv.gz", full.names = TRUE)
+traits <- str_split(files, "/") %>% map_chr(~ .x[4]) %>% str_remove_all(".tsv.gz")
+nonfitness_traits <- traits[!(traits %in% c("fitness.early.f", "fitness.early.m"))]
+```
+
+## Code for running mashr
+
+The following code takes one phenotypic trait (other than early male/female fitness as input) as its argument, and runs `mashr` on 3 sets of GWAS-derived effect sizes for each SNP: 1 from the GWAS of female early life fitness, one from the GWAS of male early life fitness, and the 1 from the GWAS of the focal trait. We run `mashr` in the data-driven mode (see the vignette), and save the ouput of `mash()` as well as the list of SNPs that were analysed (i.e. the set of SNPs for which an effect size was calculated for all three traits). This code is designed to be run on a computer cluster using the SLURM workload manager.
+
+```{r eval=FALSE}
+run_mashr <- function(nonfitness_trait, overwrite = FALSE){
+  
+  # project folder on Spartan
+  setwd("/data/projects/punim0243/DGRP_sexual_conflict")
+  
+  print(nonfitness_trait)
+  
+  # Set up the output file name. If it already exists and overwrite = FALSE, just quit.
+  # nonfitness_trait_neat <- str_replace_all(nonfitness_trait, "[.]", "_")
+  output_file <- glue("gwas_data/derived/mashr_results/{nonfitness_trait}.rds")
+  if(!overwrite & file.exists(output_file)) return(NULL)
+  
+  # Input file names (GWAS stats for 2 fitness traits and a another phenotype)
+  files <- c(
+    "gwas_data/derived/gwas_results/fitness.early.f.tsv.gz",
+    "gwas_data/derived/gwas_results/fitness.early.m.tsv.gz",
+    paste("gwas_data/derived/gwas_results/", nonfitness_trait, ".tsv.gz", sep = ""))
+  traits <- c("fitness.early.f", "fitness.early.m", "nonfitness_trait")
+  
+  # Load the GWAS data for these 3 things
+  all_dat <- lapply(1:length(files), function(i){
+    trait <- traits[i]
+    dat <- read_tsv(files[i]) %>% select(SNP, BETA, SE)
+    names(dat)[2] <- paste("beta", trait, sep = "_")
+    names(dat)[3] <- paste("se", trait, sep = "_")
+    dat
+  })
+  names(all_dat) <- traits
+
+  ##### 1. Data set up
+  # Define functions to get the focal data, and set up as betas and SE for mashr
+  make_mashr_data_one_phenotype <- function(nonfitness_trait){
+    left_join(all_dat[[1]], all_dat[[2]], by = "SNP") %>% # 1=female fitness, 2=male fitness, 3=phenotype
+      left_join(all_dat[[3]], by = "SNP") %>% 
+      select(SNP, starts_with("beta"), starts_with("SE"))
+  }
+  
+  mashr_setup <- function(beta_and_se){
+    betas <- beta_and_se %>% select(starts_with("beta")) %>% as.matrix()
+    SEs <- beta_and_se %>% select(starts_with("SE")) %>% as.matrix()
+    rownames(betas) <- beta_and_se$SNP
+    rownames(SEs) <- beta_and_se$SNP
+    mash_set_data(betas, SEs)
+  }
+  
+  beta_and_se <- make_mashr_data_one_phenotype(nonfitness_trait)
+  mash_data <- mashr_setup(beta_and_se)
+  
+  ##### 2. Obtain data-driven covariance matrices for mashr (see mashr vignette)
+  # This first finds strong signals in the complete SNP effect size data, and use
+  # to estimate the underlying covariance matrices for the SNPs' effect sizes
+  m.1by1 <- mash_1by1(mash_data) 
+  strong <- get_significant_results(m.1by1, thresh = 0.2)   
+  U.pca <- cov_pca(mash_data, npc = 3, subset = strong)
+  U <- cov_ed(mash_data, U.pca, subset = strong)
+  
+  ##### 3. Run mashr and save the results
+  # Now that the data and cov matrices are set up, we can run mashr (takes a bit over 1 hour)
+  mash_ED <- mash(data = mash_data, Ulist = U)
+  list(SNPs = beta_and_se %>% pull(SNP), mash_ED) %>% saveRDS(output_file)
+}
+
+# Run all the mashr jobs on Spartan using SLURM (using the rslurm package) 
+slurm_parameters_df <- data.frame(nonfitness_trait = nonfitness_traits)
+sopt1 <- list(time = '6:00:00') # 6 hour time limit, usually takes <2 hours
+
+sjob <- slurm_apply(f = run_mashr, params = slurm_parameters_df, 
+                    jobname = 'DGRP_mashr', slurm_options = sopt1,
+                    nodes = nrow(slurm_parameters_df), cpus_per_node = 1, submit = TRUE)
+```
+
+
+
+<!-- ```{r} -->
+<!-- run_mashr <- function(beta_and_se){ -->
+
+<!--   mashr_setup <- function(beta_and_se){ -->
+<!--     betas <- beta_and_se %>% select(starts_with("beta")) %>% as.matrix() -->
+<!--     SEs <- beta_and_se %>% select(starts_with("SE")) %>% as.matrix() -->
+<!--     rownames(betas) <- beta_and_se$SNP -->
+<!--     rownames(SEs) <- beta_and_se$SNP -->
+<!--     mash_set_data(betas, SEs) -->
+<!--   } -->
+
+<!--   mash_data <- mashr_setup(beta_and_se) -->
+
+<!--   # define the covariance matrices ourselves (a long list of a priori interesting matrices are checked) -->
+
+<!--   # 2-trait matrices -->
+<!--   make_2trait_matrix <- function(missing_one, name) { -->
+<!--     U <- cov_canonical(mash_data) -->
+<!--     U <- U[-(1:4)] -->
+<!--     U <- lapply(U, function(x){ -->
+<!--       x[,missing_one] <- 0 -->
+<!--       x[missing_one,] <- 0 -->
+<!--       x -->
+<!--     }) -->
+<!--     names(U) <- paste(names(U), name, sep = "_") -->
+<!--     U -->
+<!--   } -->
+
+<!--   make_negative <- function(twotrait_matrix, i, j){ -->
+<!--     xx <- lapply(twotrait_matrix, function(x) { -->
+<!--                    x[x<1] <- x[x<1]*-1 -->
+<!--                    x}) -->
+<!--     xx[[1]][i,j] <- -1 -->
+<!--     xx[[1]][j,i] <- -1 -->
+<!--     xx -->
+<!--   } -->
+
+<!--   # doesn't affect female fitness, but affects the trait and male fitness -->
+<!--   pos_nofemale <- make_2trait_matrix(1, "nofemale")  -->
+<!--   names(pos_nofemale) <- c("pos_selected_males1", "pos_selected_males0.25", "pos_selected_males0.5", "pos_selected_males0.75") -->
+<!--   neg_nofemale <- make_negative(pos_nofemale, 2, 3) -->
+<!--   names(neg_nofemale) <- c("neg_selected_males1", "neg_selected_males0.25", "neg_selected_males0.5", "neg_selected_males0.75") -->
+
+<!--   # doesn't affect male fitness, but affects the trait and female fitness -->
+<!--   pos_nomale <- make_2trait_matrix(2, "nomale")  -->
+<!--   names(pos_nomale) <- c("pos_selected_females1", "pos_selected_females0.25", "pos_selected_females0.5", "pos_selected_females0.75") -->
+<!--   neg_nomale <- make_negative(pos_nomale, 1, 3) -->
+<!--   names(neg_nomale) <- c("neg_selected_females1", "neg_selected_females0.25", "neg_selected_females0.5", "neg_selected_females0.75") -->
+
+<!--   # Doesn't affect the trait, but affects fitness in both sexes -->
+<!--   pos_notrait <- make_2trait_matrix(3, "notrait")  -->
+<!--   names(pos_notrait) <- c("sex_concord_1_notrait", "sex_concord_0.25_notrait", "sex_concord_0.5_notrait", "sex_concord_0.75_notrait") -->
+<!--   neg_notrait <- make_negative(pos_notrait, 1, 2) -->
+<!--   names(neg_notrait) <- c("sex_antag_1_notrait", "sex_antag_0.25_notrait", "sex_antag_0.5_notrait", "sex_antag_0.75_notrait") -->
+
+<!--   # Add the 3-trait stuff.... -->
+
+<!--   # Get the mashr default canonical covariance matrices: this includes the ones  -->
+<!--   # called "null", "uniform", and "same sign" in the list that precedes this code chunk -->
+<!--   U <- cov_canonical(mash_data) -->
+
+<!--   # And now our custom covariance matrices:  -->
+<!--   U <- c(U, pos_nofemale, neg_nofemale, pos_nomale, neg_nomale, pos_notrait, neg_notrait) -->
+<!--   return(U) -->
+
+<!--   return(mash(data = mash_data, Ulist = U)) # Run mashr -->
+<!-- } -->
+<!-- run_mashr(beta_and_se) -->
+<!-- mash_output <- run_mashr(beta_and_se) -->
+
+
+<!-- # if(!file.exists("data/derived/mashr_results_canonical.rds")){ -->
+<!-- #   run_mashr(data_for_mashr, mashr_mode = "ED", ED_p_cutoff = 0.2) %>% -->
+<!-- #     write_rds(path = "data/derived/mashr_results_ED.rds") -->
+<!-- #    -->
+<!-- #   run_mashr(data_for_mashr, mashr_mode = "canonical") %>% -->
+<!-- #     write_rds(path = "data/derived/mashr_results_canonical.rds") -->
+<!-- # } else { -->
+<!-- #   mashr_results_ED <- read_rds("data/derived/mashr_results_ED.rds") -->
+<!-- #   mashr_results_canonical <- read_rds("data/derived/mashr_results_canonical.rds") -->
+<!-- # } -->
+<!-- ``` -->
+
+
