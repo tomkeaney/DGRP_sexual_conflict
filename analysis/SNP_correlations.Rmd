@@ -1,0 +1,416 @@
+---
+title: "Correlations in SNP effect sizes from GWAS"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+
+## Load packages and custom functions
+
+```{r}
+library(tidyverse)
+library(DT)
+library(glue)
+library(pheatmap)
+library(RColorBrewer)
+library(coop) # for covar, a faster version of R's cov function
+
+files <- list.files("gwas_data/derived/gwas_results", pattern = "tsv.gz", full.names = TRUE)
+traits <- str_split(files, "/") %>% map_chr(~ .x[4]) %>% str_remove_all(".tsv.gz")
+
+
+trait_guilds <- read_csv("data/all.dgrp.phenos_unscaled.csv") %>% 
+  select(Trait, `Trait guild`) %>% distinct() %>% 
+  mutate(`Trait guild` = replace(`Trait guild`, is.na(`Trait guild`), "Other"),
+         `Trait guild` = replace(`Trait guild`, `Trait guild` == "?", "Other"))
+
+guilds <- unique(trait_guilds$`Trait guild`)
+```
+
+```{r}
+my_data_table <- function(df){
+  datatable(
+    df, rownames=FALSE,
+    autoHideNavigation = TRUE,
+    extensions = c("Scroller",  "Buttons"),
+    options = list(
+      dom = 'Bfrtip',
+      deferRender=TRUE,
+      scrollX=TRUE, scrollY=800,
+      scrollCollapse=TRUE,
+      buttons =
+        list('pageLength', 'colvis', 'csv', list(
+          extend = 'pdf',
+          pageSize = 'A4',
+          orientation = 'landscape',
+          filename = 'selection_data')),
+      pageLength = 905
+    )
+  )
+}
+
+# Loads all the SNP effect size data for all the traits in the focal guild (data is too big to load all traits at once)
+# It also additionally loads the SNP effects for male and female early-life fitness 
+load_guild <- function(focal_guild){
+  traits_in_guild <- trait_guilds %>% filter(`Trait guild` == focal_guild) %>% pull(Trait)
+  focal_files <- unique(c(files[traits %in% traits_in_guild], files[str_detect(files, "fitness")]))
+  focal_traits <- unique(c(traits[traits %in% traits_in_guild], traits[str_detect(traits, "fitness")]))
+  
+  lapply(1:length(focal_files), function(i){
+    trait <- focal_traits[i]
+    dat <- read_tsv(files[i]) %>% select(SNP, BETA)
+    names(dat)[2] <- trait
+    dat
+  }) %>% reduce(full_join, by = "SNP")
+}
+
+# Make a correlation matrix of SNP effects, using coop::covar and then cov2cor
+make_corr_matrix <- function(snp_effect_data){
+  snp_effect_data <- snp_effect_data[!(names(snp_effect_data) == "SNP")]
+  corr_matrix <- cov2cor(covar(snp_effect_data, use = "complete.obs"))
+  corr_matrix[corr_matrix > 0.999] <- NA # some self-correlations were not exactly 1, due to floating point numbers
+  colnames(corr_matrix) <- names(snp_effect_data)
+  rownames(corr_matrix) <- names(snp_effect_data)
+  corr_matrix
+}
+
+# Make nice pheatmaps
+make_heatmap <- function(corr_matrix, cuts = 6){
+  paletteLength <- 50
+  myColor <- colorRampPalette(c(brewer.pal(9, "Purples")[7], "white", brewer.pal(9, "Oranges")[7]))(paletteLength)
+  myBreaks <- c(seq(min(corr_matrix, na.rm=T), 0, length.out=ceiling(paletteLength/2) + 1), 
+                seq(max(corr_matrix, na.rm=T)/paletteLength, max(corr_matrix, na.rm=T), length.out=floor(paletteLength/2)))
+  
+  if(is.na(cuts)){
+    pheatmap(corr_matrix, show_rownames = TRUE, col = myColor,
+             cutree_rows = cuts, cutree_cols = cuts)
+  }
+  else {
+    pheatmap(corr_matrix, show_rownames = TRUE, col = myColor)
+  }
+}
+
+# Make a neat table showing all the correlations for a given set of data
+make_correlation_table <- function(snp_effect_data){
+  all_corrs <- snp_effect_data %>% 
+    make_corr_matrix() %>% as.data.frame() %>% 
+    rownames_to_column("trait1") %>% 
+    gather(trait2, corr, -trait1) %>% 
+    filter(!is.na(corr))
+  
+  for(i in 1:nrow(all_corrs)){
+    all_corrs[i, 1:2] <- sort(all_corrs[i, 1:2]) 
+  }
+  
+  all_corrs %>% 
+    mutate(corr = round(corr, 4)) %>% 
+    distinct() %>% 
+    as_tibble() %>% 
+    arrange(-(corr)) %>% 
+    mutate(trait1_sex = substr(trait1, nchar(trait1)-1, nchar(trait1)),
+           trait2_sex = substr(trait2, nchar(trait2)-1, nchar(trait2)),
+           trait1 = replace(trait1, trait1_sex == ".m", substr(trait1, 1, nchar(trait1)-2)[trait1_sex == ".m"]),
+           trait1 = replace(trait1, trait1_sex == ".f", substr(trait1, 1, nchar(trait1)-2)[trait1_sex == ".f"]),
+           trait2 = replace(trait2, trait2_sex == ".m", substr(trait2, 1, nchar(trait2)-2)[trait2_sex == ".m"]),
+           trait2 = replace(trait2, trait2_sex == ".f", substr(trait2, 1, nchar(trait2)-2)[trait2_sex == ".f"]),
+           trait1_sex = case_when(trait1_sex == ".f" ~ "female", 
+                                  trait1_sex == ".m" ~ "male", TRUE ~ "both" ),
+           trait2_sex = case_when(trait2_sex == ".f" ~ "female", 
+                                  trait2_sex == ".m" ~ "male", TRUE ~ "both" ),
+           corr_sex_type = ifelse(trait1_sex == "female" & trait2_sex == "male", "between_sex", NA),
+           corr_sex_type = replace(corr_sex_type, trait2_sex == "female" & trait1_sex == "male", "between_sex"),
+           corr_sex_type = replace(corr_sex_type, trait1_sex == trait2_sex, "within_sex"))
+}
+```
+
+## Unclassified traits {.tabset}
+
+### Heatmap
+```{r}
+snp_effect_data <- load_guild("Other") 
+
+snp_effect_data %>% 
+  make_corr_matrix() %>% make_heatmap()
+```
+
+### Fitness-trait correlations
+```{r}
+all_corrs <- snp_effect_data %>% make_correlation_table()
+
+all_corrs %>% 
+  filter(str_detect(trait1, "fitness") | str_detect(trait2, "fitness")) %>% 
+  my_data_table()
+```
+
+### Between-sex correlations for shared traits
+
+```{r}
+all_corrs %>% 
+  filter(corr_sex_type == "between_sex" &  trait1 == trait2) %>% 
+  arrange(-corr) %>% 
+  my_data_table()
+```
+
+
+## Morphological traits {.tabset}
+
+### Heatmap
+```{r}
+snp_effect_data <- load_guild("Morphological") 
+
+snp_effect_data %>% 
+  make_corr_matrix() %>% make_heatmap()
+```
+
+### Fitness-trait correlations
+```{r}
+all_corrs <- snp_effect_data %>% make_correlation_table()
+
+all_corrs %>% 
+  filter(str_detect(trait1, "fitness") | str_detect(trait2, "fitness")) %>% 
+  my_data_table()
+```
+
+### Between-sex correlations for shared traits
+
+```{r}
+all_corrs %>% 
+  filter(corr_sex_type == "between_sex" &  trait1 == trait2) %>% 
+  arrange(-corr) %>% 
+  my_data_table()
+```
+
+
+## Physiological traits {.tabset}
+
+### Heatmap
+```{r}
+snp_effect_data <- load_guild("Physiological") 
+
+snp_effect_data %>% 
+  make_corr_matrix() %>% make_heatmap()
+```
+
+### Fitness-trait correlations
+```{r}
+all_corrs <- snp_effect_data %>% make_correlation_table()
+
+all_corrs %>% 
+  filter(str_detect(trait1, "fitness") | str_detect(trait2, "fitness")) %>% 
+  my_data_table()
+```
+
+### Between-sex correlations for shared traits
+
+```{r}
+all_corrs %>% 
+  filter(corr_sex_type == "between_sex" &  trait1 == trait2) %>% 
+  arrange(-corr) %>% 
+  my_data_table()
+```
+
+
+## Behavioural traits {.tabset}
+
+### Heatmap
+```{r}
+snp_effect_data <- load_guild("Behavioural") 
+
+snp_effect_data %>% 
+  make_corr_matrix() %>% make_heatmap(cuts = NA)
+```
+
+### Fitness-trait correlations
+```{r}
+all_corrs <- snp_effect_data %>% make_correlation_table()
+
+all_corrs %>% 
+  filter(str_detect(trait1, "fitness") | str_detect(trait2, "fitness")) %>% 
+  my_data_table()
+```
+
+### Between-sex correlations for shared traits
+
+```{r}
+all_corrs %>% 
+  filter(corr_sex_type == "between_sex" &  trait1 == trait2) %>% 
+  arrange(-corr) %>% 
+  my_data_table()
+```
+
+
+
+## Life history traits {.tabset}
+
+### Heatmap
+```{r}
+snp_effect_data <- load_guild("Life history") 
+
+snp_effect_data %>% 
+  make_corr_matrix() %>% make_heatmap()
+```
+
+### Fitness-trait correlations
+```{r}
+all_corrs <- snp_effect_data %>% make_correlation_table()
+
+all_corrs %>% 
+  filter(str_detect(trait1, "fitness") | str_detect(trait2, "fitness")) %>% 
+  my_data_table()
+```
+
+### Between-sex correlations for shared traits
+
+```{r}
+all_corrs %>% 
+  filter(corr_sex_type == "between_sex" &  trait1 == trait2) %>% 
+  arrange(-corr) %>% 
+  my_data_table()
+```
+
+
+## Pathogen response traits {.tabset}
+
+### Heatmap
+```{r}
+snp_effect_data <- load_guild("Pathogen response") 
+
+snp_effect_data %>% 
+  make_corr_matrix() %>% make_heatmap()
+```
+
+### Fitness-trait correlations
+```{r}
+all_corrs <- snp_effect_data %>% make_correlation_table()
+
+all_corrs %>% 
+  filter(str_detect(trait1, "fitness") | str_detect(trait2, "fitness")) %>% 
+  my_data_table()
+```
+
+### Between-sex correlations for shared traits
+
+```{r}
+all_corrs %>% 
+  filter(corr_sex_type == "between_sex" &  trait1 == trait2) %>% 
+  arrange(-corr) %>% 
+  my_data_table()
+```
+
+
+
+## Insecticide response traits {.tabset}
+
+### Heatmap
+```{r}
+snp_effect_data <- load_guild("Insecticide response") 
+
+snp_effect_data %>% 
+  make_corr_matrix() %>% make_heatmap()
+```
+
+### Fitness-trait correlations
+```{r}
+all_corrs <- snp_effect_data %>% make_correlation_table()
+
+all_corrs %>% 
+  filter(str_detect(trait1, "fitness") | str_detect(trait2, "fitness")) %>% 
+  my_data_table()
+```
+
+### Between-sex correlations for shared traits
+
+```{r}
+all_corrs %>% 
+  filter(corr_sex_type == "between_sex" &  trait1 == trait2) %>% 
+  arrange(-corr) %>% 
+  my_data_table()
+```
+
+
+
+
+## Cuticular hydrocarbon traits {.tabset}
+
+### Heatmap
+```{r}
+snp_effect_data <- load_guild("CHC") 
+
+snp_effect_data %>% 
+  make_corr_matrix() %>% make_heatmap()
+```
+
+### Fitness-trait correlations
+```{r}
+all_corrs <- snp_effect_data %>% make_correlation_table()
+
+all_corrs %>% 
+  filter(str_detect(trait1, "fitness") | str_detect(trait2, "fitness")) %>% 
+  my_data_table()
+```
+
+### Between-sex correlations for shared traits
+
+```{r}
+all_corrs %>% 
+  filter(corr_sex_type == "between_sex" &  trait1 == trait2) %>% 
+  arrange(-corr) %>% 
+  my_data_table()
+```
+
+
+## Metabolome traits {.tabset}
+
+### Heatmap
+```{r}
+snp_effect_data <- load_guild("Metabolome") 
+
+snp_effect_data %>% 
+  make_corr_matrix() %>% make_heatmap()
+```
+
+### Fitness-trait correlations
+```{r}
+all_corrs <- snp_effect_data %>% make_correlation_table()
+
+all_corrs %>% 
+  filter(str_detect(trait1, "fitness") | str_detect(trait2, "fitness")) %>% 
+  my_data_table()
+```
+
+### Between-sex correlations for shared traits
+
+```{r}
+all_corrs %>% 
+  filter(corr_sex_type == "between_sex" &  trait1 == trait2) %>% 
+  arrange(-corr) %>% 
+  my_data_table()
+```
+
+## Sensory traits {.tabset}
+
+### Heatmap
+```{r}
+snp_effect_data <- load_guild("Sensory") 
+
+snp_effect_data %>% 
+  make_corr_matrix() %>% make_heatmap()
+```
+
+### Fitness-trait correlations
+```{r}
+all_corrs <- snp_effect_data %>% make_correlation_table()
+
+all_corrs %>% 
+  filter(str_detect(trait1, "fitness") | str_detect(trait2, "fitness")) %>% 
+  my_data_table()
+```
+
+### Between-sex correlations for shared traits
+
+```{r}
+all_corrs %>% 
+  filter(corr_sex_type == "between_sex" &  trait1 == trait2) %>% 
+  arrange(-corr) %>% 
+  my_data_table()
+```
