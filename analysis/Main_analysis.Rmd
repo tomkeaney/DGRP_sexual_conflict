@@ -191,7 +191,7 @@ rfm_fitness_model <-
       seed = 1, file = "fits/rfm_fitness.model")   
 
 posterior_summary(rfm_fitness_model) %>% 
-  kable()
+  kable(digits = 3)
 ```
 
 $~$
