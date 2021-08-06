@@ -87,7 +87,7 @@ make_heatmap <- function(corr_matrix, cuts = 6){
   myBreaks <- c(seq(min(corr_matrix, na.rm=T), 0, length.out=ceiling(paletteLength/2) + 1), 
                 seq(max(corr_matrix, na.rm=T)/paletteLength, max(corr_matrix, na.rm=T), length.out=floor(paletteLength/2)))
   
-  if(is.na(cuts)){
+  if(!is.na(cuts)){
     pheatmap(corr_matrix, show_rownames = TRUE, col = myColor,
              cutree_rows = cuts, cutree_cols = cuts)
   }
