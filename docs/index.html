@@ -354,7 +354,7 @@ $(document).ready(function () {
 <div class="tab-content">
 <div id="summary" class="tab-pane fade in active">
 <p>
-<strong>Last updated:</strong> 2021-08-05
+<strong>Last updated:</strong> 2021-08-06
 </p>
 <p>
 <strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 2 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 0
@@ -385,16 +385,16 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomtomkeaneyDGRPsexualconflicttree2afab53503febe969aa15b124241939bc993e117targetblank2afab53a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/tomkeaney/DGRP_sexual_conflict/tree/2afab53503febe969aa15b124241939bc993e117" target="_blank">2afab53</a> </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomtomkeaneyDGRPsexualconflicttreece545d3ed3fb4b0b2ffa362240b6e111e4da17b1targetblankce545d3a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/tomkeaney/DGRP_sexual_conflict/tree/ce545d3ed3fb4b0b2ffa362240b6e111e4da17b1" target="_blank">ce545d3</a> </a>
 </p>
 </div>
-<div id="strongRepositoryversionstrongahrefhttpsgithubcomtomkeaneyDGRPsexualconflicttree2afab53503febe969aa15b124241939bc993e117targetblank2afab53a" class="panel-collapse collapse">
+<div id="strongRepositoryversionstrongahrefhttpsgithubcomtomkeaneyDGRPsexualconflicttreece545d3ed3fb4b0b2ffa362240b6e111e4da17b1targetblankce545d3a" class="panel-collapse collapse">
 <div class="panel-body">
 <p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility.
 </p>
 <p>
-The results in this page were generated with repository version <a href="https://github.com/tomkeaney/DGRP_sexual_conflict/tree/2afab53503febe969aa15b124241939bc993e117" target="_blank">2afab53</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
+The results in this page were generated with repository version <a href="https://github.com/tomkeaney/DGRP_sexual_conflict/tree/ce545d3ed3fb4b0b2ffa362240b6e111e4da17b1" target="_blank">ce545d3</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
 </p>
 <p>
 Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
@@ -403,14 +403,16 @@ Note that you need to be careful to ensure that all relevant files for the analy
 Ignored files:
     Ignored:    .DS_Store
     Ignored:    .Rproj.user/
+    Ignored:    gwas_data/
 
 Untracked files:
-    Untracked:  analysis/SNP_correlations.Rmd
+    Untracked:  analysis/bivariate_greml_results.Rmd
     Untracked:  code/gcta64
-    Untracked:  code/launch_slurm.bash
-    Untracked:  code/plink
-    Untracked:  code/run_mashr.R
-    Untracked:  gwas_data/
+
+Unstaged changes:
+    Modified:   analysis/process_mashr.Rmd
+    Modified:   analysis/run_GWAS.Rmd
+    Modified:   analysis/run_mashr.Rmd
 
 </code></pre>
 <p>
@@ -449,6 +451,40 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/tomkeaney/DGRP_sexual_conflict/blob/ce545d3ed3fb4b0b2ffa362240b6e111e4da17b1/analysis/index.Rmd" target="_blank">ce545d3</a>
+</td>
+<td>
+lukeholman
+</td>
+<td>
+2021-08-06
+</td>
+<td>
+wflow_publish(“analysis/index.Rmd”)
+</td>
+</tr>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/tomkeaney/DGRP_sexual_conflict/6fa1436de270825e4e66b6a2e50d78158dab08d9/docs/index.html" target="_blank">6fa1436</a>
+</td>
+<td>
+lukeholman
+</td>
+<td>
+2021-08-05
+</td>
+<td>
+Build site.
+</td>
+</tr>
 <tr>
 <td>
 Rmd
@@ -610,10 +646,26 @@ Start workflowr project.
 </div>
 </div>
 <p>This website presents an analysis of selection acting on the DGRP. We particularly focus upon sexually antagonistic selection and test some well known hypotheses that relate to this concept.</p>
-<p>Main analysis can be viewed <a href="Main_analysis.html">here</a></p>
-<p>See the code to run genome-wide association tests <a href="run_GWAS.html">here</a></p>
-<p>See the code to run multivariate adaptive shrinkage using <code>mashr</code> <a href="run_mashr.html">here</a></p>
-<p>See the results of the <code>mashr</code> analyses <a href="process_mashr.html">here</a></p>
+<div id="analysis-of-phenotypic-line-means" class="section level2">
+<h2>Analysis of phenotypic line means</h2>
+<p>We present analyses of heritability and correlations between line means <a href="Main_analysis.html">here</a>.</p>
+</div>
+<div id="genome-wide-association-tests-using-plink" class="section level2">
+<h2>Genome-wide association tests using PLINK</h2>
+<p>The code used to run GWA tests can be viewed <a href="run_GWAS.html">here</a>.</p>
+</div>
+<div id="estimating-genetic-correlations-from-variants-effect-sizes" class="section level2">
+<h2>Estimating genetic correlations from variants’ effect sizes</h2>
+<p>Graphs and tables relating to genetic correlations between traits can be viewed <a href="SNP_correlations.html">here</a>.</p>
+</div>
+<div id="multivariate-adaptive-shrinkage-using-mashr" class="section level2">
+<h2>Multivariate adaptive shrinkage using <code>mashr</code></h2>
+<p>The code used to run <code>mashr</code> can be viewed <a href="run_mashr.html">here</a></p>
+</div>
+<div id="results-of-the-mashr-analyses" class="section level2">
+<h2>Results of the <code>mashr</code> analyses</h2>
+<p>Graphs and tables relating to the output of <code>mashr</code> <a href="process_mashr.html">here</a></p>
+</div>
 
 
 <!-- Adjust MathJax settings so that all math formulae are shown using
