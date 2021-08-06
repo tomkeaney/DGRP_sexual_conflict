@@ -10,11 +10,17 @@ editor_options:
 
 This website presents an analysis of selection acting on the DGRP. We particularly focus upon sexually antagonistic selection and test some well known hypotheses that relate to this concept.
 
-Main analysis can be viewed [here](Main_analysis.html)
+## Analysis of phenotypic line means
+We present analyses of heritability and correlations between line means [here](Main_analysis.html).
 
+## Genome-wide association tests using PLINK
+The code used to run GWA tests can be viewed [here](run_GWAS.html).
 
-See the code to run genome-wide association tests [here](run_GWAS.html)
+## Estimating genetic correlations from variants' effect sizes
+Graphs and tables relating to genetic correlations between traits can be viewed [here](SNP_correlations.html).
 
-See the code to run multivariate adaptive shrinkage using `mashr` [here](run_mashr.html)
+## Multivariate adaptive shrinkage using `mashr`
+The code used to run `mashr` can be viewed [here](run_mashr.html)
 
-See the results of the `mashr` analyses [here](process_mashr.html)
+## Results of the `mashr` analyses
+Graphs and tables relating to the output of `mashr` [here](process_mashr.html)
