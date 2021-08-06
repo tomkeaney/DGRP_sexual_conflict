@@ -132,7 +132,7 @@ make_correlation_table <- function(snp_effect_data){
 ## Unclassified traits {.tabset}
 
 ### Heatmap
-```{r}
+```{r fig.height=17, fig.width=14}
 snp_effect_data <- load_guild("Other") 
 
 snp_effect_data %>% 
@@ -161,7 +161,7 @@ all_corrs %>%
 ## Morphological traits {.tabset}
 
 ### Heatmap
-```{r}
+```{r fig.height=14, fig.width=11}
 snp_effect_data <- load_guild("Morphological") 
 
 snp_effect_data %>% 
@@ -190,7 +190,7 @@ all_corrs %>%
 ## Physiological traits {.tabset}
 
 ### Heatmap
-```{r}
+```{r fig.height=15, fig.width=12}
 snp_effect_data <- load_guild("Physiological") 
 
 snp_effect_data %>% 
@@ -249,7 +249,7 @@ all_corrs %>%
 ## Life history traits {.tabset}
 
 ### Heatmap
-```{r}
+```{r fig.height=13, fig.width=11}
 snp_effect_data <- load_guild("Life history") 
 
 snp_effect_data %>% 
@@ -278,7 +278,7 @@ all_corrs %>%
 ## Pathogen response traits {.tabset}
 
 ### Heatmap
-```{r}
+```{r fig.height=12, fig.width=10}
 snp_effect_data <- load_guild("Pathogen response") 
 
 snp_effect_data %>% 
@@ -308,7 +308,7 @@ all_corrs %>%
 ## Insecticide response traits {.tabset}
 
 ### Heatmap
-```{r}
+```{r fig.height=13, fig.width=10}
 snp_effect_data <- load_guild("Insecticide response") 
 
 snp_effect_data %>% 
@@ -339,7 +339,7 @@ all_corrs %>%
 ## Cuticular hydrocarbon traits {.tabset}
 
 ### Heatmap
-```{r}
+```{r fig.height=19, fig.width=15}
 snp_effect_data <- load_guild("CHC") 
 
 snp_effect_data %>% 
@@ -368,7 +368,7 @@ all_corrs %>%
 ## Metabolome traits {.tabset}
 
 ### Heatmap
-```{r}
+```{r fig.height=22, fig.width=19}
 snp_effect_data <- load_guild("Metabolome") 
 
 snp_effect_data %>% 
@@ -396,7 +396,7 @@ all_corrs %>%
 ## Sensory traits {.tabset}
 
 ### Heatmap
-```{r}
+```{r fig.height=17, fig.width=14}
 snp_effect_data <- load_guild("Sensory") 
 
 snp_effect_data %>% 
