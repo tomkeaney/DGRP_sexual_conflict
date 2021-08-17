@@ -67,7 +67,7 @@ DGRP_subset <-
 
 DGRP_subset <-
   DGRP_subset %>% 
-  mutate(rmf_applicable = if_else(study_ID == "3" | study_ID == "5" | study_ID == "7" | study_ID == "8" | study_ID == "9" | study_ID == "11" | study_ID == "13" | study_ID == "19" | study_ID == "20" | study_ID == "21" | study_ID == "23" | study_ID == "24" | study_ID == "26" | study_ID == "27" | study_ID == "28" | study_ID == "34" | study_ID == "37" | study_ID == "40" | study_ID == "43" | study_ID == "48" | study_ID == "49" | study_ID == "54" | study_ID == "55" | study_ID == "57" | study_ID == "64" | study_ID == "65" | study_ID == "71" | study_ID == "72" | study_ID == "73" | study_ID == "75"| study_ID == "76", "YES", "NO"))
+  mutate(rmf_applicable = if_else(Reference == "Arya et al (2015) Chemical Senses" | Reference == "Battlay et al (2018) G3" | Reference == "Brown et al (2013) Genes, Brain and Behaviour" | Reference == "Campwell et al (2019) G3" | Reference == "Carbone et al (2017) PNAS" | Reference == "Chohan (2012) PhD thesis" | Reference == "Dembeck et al (2015) eLife" | Reference == "Everett et al (2020) Genome Research" | Reference == "Everman and Morgan (2017) Evolution" | Reference == "Everman et al (2019) Genetics" | Reference == "Garlapow et al (2015) PLOS One" | Reference == "Gerken et al (2015) PNAS" | Reference == "Green et al (2019) PNAS" | Reference == "Grubbs et al (2013) PLOS One" | Reference == "Harbison et al (2018) Behavior Genetics" | Reference == "Harbison, McCoy and Mackay (2013) BMC Genomics" | Reference == "Huang et al (2020) PLOS Biology" | Reference == "Jordan et al (2012) PLOS One" | Reference == "Lecheta et al (2020) Frontiers in Genetics" | Reference == "Mackay et al (2012) Nature" | Reference == "Morgante et al (2015) Scientific Reports" | Reference == "Morozova el al. (2015) BMC Genomics" | Reference == "Palmer et al (2018) PLOS Pathogens" | Reference == "Rajpurohit et al (2018) Molecular Ecology" | Reference == "Riddle (2020) Journal of Experimental Biology" | Reference == "Spierer et al (2021) PLOS Genetics" | Reference == "Swarup et al (2013) PNAS" | Reference == "Wang, Lu and St. Leger (2017) PLOS Pathogens" | Reference == "Watanabe et al (2020) G3" | Reference == "Weber et al (2012) PLOS One" | Reference == "Wong and Holman (in prep)"| Reference == "Wu et al (2018) SLEEPJ", "YES", "NO"))
 
 # Above, we identified the studies that measured traits in the sexes separately. However, some studies measure multiple traits, some of which they only measure in one sex or both (e.g. larval traits are often measured with the sexes pooled). Below we remove the specific traits that are not measured in both sexes separately from our already trimmed data  
 
@@ -175,6 +175,43 @@ DGRP_subset_scaled <-
 ```
 
 $~$
+
+# Potential research questions
+
+1. **Is there a negative relationship between the intersex genetic correlation and sexual dimorphism?**
+
+If there is, it means that a shared genetic architecture between the sexes constrains the ability of selection to move traits towards their separate female and male optimas. 
+
+Intralocus sexual conflict should therefore be stronger for traits that are more constrained by the intersex genetic correlation.
+
+If there isn't, the resolution of intralocus sexual conflict may be easier than expected i.e. sharing a genome may not be the problem we think it is.
+
+2. **Is selection stronger on reproductive traits than it is on viability related traits?**
+
+3. **Is SA selection stronger on these reproductive traits than viability related traits**
+
+4. **Does SA selection positively correlate with sexual dimorphism?**
+
+This one is a little tricky. One might expect a positive relationship, because why else would the trait be sexually dimorphic? But perhaps dimorphism has evolved to the extent that the conflict is resolved. The question is whether current dimorphism affects selection??
+
+If a males trait optima = 5 and a females = 10. No dimorphism, while assuming equally strong selection on both sexes, would suggest a trait mean of 7.5 for both sexes. Alleles that increase the mean will be favoured in females but selected against in males. 
+
+Now if there is strong dimorphism. Selection on the trait stays the same - higher vales are selected in females and selected against in males. But females and males are more dissimilar now, such that alleles that effect males in one way don't necessarily affect females in the same way.
+
+Upon reflection, I believe this is a way to test whether intralocus sexual conflict is ongoing in the DGRP population, or if it has been resolved by sexual dimorphism. If we observe a positive relationship between SA selection and dimorphism, this is indicative of ongoing sexual conflict i.e. dimorphism is incomplete. If there is a negative relationship, this is indicative of dimorphism being an effective resolution to sexual conflict. No relationship indicates that...
+
+A broad prediction for this one still isn't clear for me.
+
+5. **Is selection more concordant in stressful conditions?**
+
+Theory suggests it should, because male and female condition/fitness become more aligned in stressful environments. To illustrate this point, consider fitness in two contexts a) a benign environment where fitness depends on an individuals interaction with conspecifics and b) a stressful environment, where a large component of fitness is tied to viability/condition. The first context leaves plenty of room for sex-specific fitness, while the second is likely to effect the sexes in a similar way - they face a common hardship, which aligns fitness in the sexes.
+
+6. **Do genomes with greater across the board sexual dimorphism have higher fitness?**
+
+The thinking here is that escaping sexual conflict increases fitness. Those DGRP that aren't dimorphic are stuck suffering the consequences of conflict. Whether this hypothesis stacks up is dependent on the existence of genetic variation for sexual dimorphism across a whole range of traits. It may be that dimorphism is trait rather than genotype specific.
+
+7. **Are selection differentials stronger for males than they are for females?**
+
 
 ## Calculate the intersex genetic correlation for fitness r^A^~*w fm*~ 
 
