@@ -13,26 +13,38 @@
 
 <title>Home</title>
 
-<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<script src="site_libs/header-attrs-2.13/header-attrs.js"></script>
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link href="site_libs/bootstrap-3.3.5/css/readable.min.css" rel="stylesheet" />
 <script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
 <script src="site_libs/navigation-1.1/codefolding.js"></script>
 <link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
-<link href="site_libs/anchor-sections-1.0/anchor-sections.css" rel="stylesheet" />
-<script src="site_libs/anchor-sections-1.0/anchor-sections.js"></script>
+<link href="site_libs/font-awesome-5.1.0/css/all.css" rel="stylesheet" />
+<link href="site_libs/font-awesome-5.1.0/css/v4-shims.css" rel="stylesheet" />
 
-<link rel="icon" href="https://github.com/workflowr/workflowr-assets/raw/master/img/reproducible.png">
+<link rel="icon" href="https://github.com/workflowr/workflowr-assets/raw/main/img/reproducible.png">
 <!-- Add a small amount of space between sections. -->
 <style type="text/css">
 div.section {
   padding-top: 12px;
 }
 </style>
+
+
 
 <style type="text/css">
   code{white-space: pre-wrap;}
@@ -44,11 +56,6 @@ div.section {
     </style>
 
 <style type="text/css">code{white-space: pre;}</style>
-<style type="text/css">
-  pre:not([class]) {
-    background-color: white;
-  }
-</style>
 <script type="text/javascript">
 if (window.hljs) {
   hljs.configure({languages: []});
@@ -61,32 +68,8 @@ if (window.hljs) {
 
 
 
-<style type="text/css">
-h1 {
-  font-size: 34px;
-}
-h1.title {
-  font-size: 38px;
-}
-h2 {
-  font-size: 30px;
-}
-h3 {
-  font-size: 24px;
-}
-h4 {
-  font-size: 18px;
-}
-h5 {
-  font-size: 16px;
-}
-h6 {
-  font-size: 12px;
-}
-.table th:not([align]) {
-  text-align: left;
-}
-</style>
+
+
 
 
 
@@ -96,10 +79,6 @@ h6 {
   max-width: 940px;
   margin-left: auto;
   margin-right: auto;
-}
-code {
-  color: inherit;
-  background-color: rgba(0, 0, 0, 0.04);
 }
 img {
   max-width:100%;
@@ -116,40 +95,16 @@ button.code-folding-btn:focus {
 summary {
   display: list-item;
 }
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
 </style>
 
 
 <style type="text/css">
-/* padding for bootstrap navbar */
-body {
-  padding-top: 51px;
-  padding-bottom: 40px;
-}
-/* offset scroll position for anchor links (for fixed navbar)  */
-.section h1 {
-  padding-top: 56px;
-  margin-top: -56px;
-}
-.section h2 {
-  padding-top: 56px;
-  margin-top: -56px;
-}
-.section h3 {
-  padding-top: 56px;
-  margin-top: -56px;
-}
-.section h4 {
-  padding-top: 56px;
-  margin-top: -56px;
-}
-.section h5 {
-  padding-top: 56px;
-  margin-top: -56px;
-}
-.section h6 {
-  padding-top: 56px;
-  margin-top: -56px;
-}
 .dropdown-submenu {
   position: relative;
 }
@@ -177,7 +132,7 @@ body {
   margin-right: -10px;
 }
 .dropdown-submenu:hover>a:after {
-  border-left-color: #ffffff;
+  border-left-color: #adb5bd;
 }
 .dropdown-submenu.pull-left {
   float: none;
@@ -189,7 +144,7 @@ body {
 }
 </style>
 
-<script>
+<script type="text/javascript">
 // manage active state of menu based on current page
 $(document).ready(function () {
   // active menu anchor
@@ -200,10 +155,23 @@ $(document).ready(function () {
   var menuAnchor = $('a[href="' + href + '"]');
 
   // mark it active
-  menuAnchor.parent().addClass('active');
+  menuAnchor.tab('show');
 
   // if it's got a parent navbar menu mark it active as well
   menuAnchor.closest('li.dropdown').addClass('active');
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
 });
 </script>
 
@@ -215,7 +183,6 @@ $(document).ready(function () {
   max-height: 500px;
   min-height: 44px;
   overflow-y: auto;
-  background: white;
   border: 1px solid #ddd;
   border-radius: 4px;
 }
@@ -285,7 +252,7 @@ $(document).ready(function () {
 <div class="navbar navbar-default  navbar-fixed-top" role="navigation">
   <div class="container">
     <div class="navbar-header">
-      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbar" data-bs-target="#navbar">
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
@@ -307,7 +274,7 @@ $(document).ready(function () {
       <ul class="nav navbar-nav navbar-right">
         <li>
   <a href="https://github.com/tomkeaney/DGRP_sexual_conflict">
-    <span class="fab fa fab fa-github"></span>
+    <span class="fab fa-github"></span>
      
     Source code
   </a>
@@ -317,11 +284,11 @@ $(document).ready(function () {
   </div><!--/.container -->
 </div><!--/.navbar -->
 
-<div class="fluid-row" id="header">
+<div id="header">
 
-<div class="btn-group pull-right">
-<button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
-<ul class="dropdown-menu" style="min-width: 50px;">
+<div class="btn-group pull-right float-right">
+<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<ul class="dropdown-menu dropdown-menu-right" style="min-width: 50px;">
 <li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
 <li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
 </ul>
@@ -354,7 +321,7 @@ $(document).ready(function () {
 <div class="tab-content">
 <div id="summary" class="tab-pane fade in active">
 <p>
-<strong>Last updated:</strong> 2021-08-06
+<strong>Last updated:</strong> 2022-05-10
 </p>
 <p>
 <strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 2 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 0
@@ -363,8 +330,8 @@ $(document).ready(function () {
 <strong>Knit directory:</strong> <code>DGRP_sexual_conflict/</code> <span class="glyphicon glyphicon-question-sign" aria-hidden="true" title="This is the local directory in which the code in this file was executed."> </span>
 </p>
 <p>
-This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis was created with <a
-  href="https://github.com/jdblischak/workflowr">workflowr</a> (version 1.6.2). The <em>Checks</em> tab describes the reproducibility checks that were applied when the results were created. The <em>Past versions</em> tab lists the development history.
+This reproducible <a href="https://rmarkdown.rstudio.com">R Markdown</a> analysis was created with <a
+  href="https://github.com/workflowr/workflowr">workflowr</a> (version 1.7.0). The <em>Checks</em> tab describes the reproducibility checks that were applied when the results were created. The <em>Past versions</em> tab lists the development history.
 </p>
 <hr>
 </div>
@@ -385,16 +352,16 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomtomkeaneyDGRPsexualconflicttreece545d3ed3fb4b0b2ffa362240b6e111e4da17b1targetblankce545d3a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/tomkeaney/DGRP_sexual_conflict/tree/ce545d3ed3fb4b0b2ffa362240b6e111e4da17b1" target="_blank">ce545d3</a> </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomtomkeaneyDGRPsexualconflicttree5b9883ecc77ee0ab529aa2bd15efa0caf62b5f2btargetblank5b9883ea"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/tomkeaney/DGRP_sexual_conflict/tree/5b9883ecc77ee0ab529aa2bd15efa0caf62b5f2b" target="_blank">5b9883e</a> </a>
 </p>
 </div>
-<div id="strongRepositoryversionstrongahrefhttpsgithubcomtomkeaneyDGRPsexualconflicttreece545d3ed3fb4b0b2ffa362240b6e111e4da17b1targetblankce545d3a" class="panel-collapse collapse">
+<div id="strongRepositoryversionstrongahrefhttpsgithubcomtomkeaneyDGRPsexualconflicttree5b9883ecc77ee0ab529aa2bd15efa0caf62b5f2btargetblank5b9883ea" class="panel-collapse collapse">
 <div class="panel-body">
 <p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility.
 </p>
 <p>
-The results in this page were generated with repository version <a href="https://github.com/tomkeaney/DGRP_sexual_conflict/tree/ce545d3ed3fb4b0b2ffa362240b6e111e4da17b1" target="_blank">ce545d3</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
+The results in this page were generated with repository version <a href="https://github.com/tomkeaney/DGRP_sexual_conflict/tree/5b9883ecc77ee0ab529aa2bd15efa0caf62b5f2b" target="_blank">5b9883e</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
 </p>
 <p>
 Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
@@ -402,17 +369,59 @@ Note that you need to be careful to ensure that all relevant files for the analy
 <pre><code>
 Ignored files:
     Ignored:    .DS_Store
+    Ignored:    .Rhistory
     Ignored:    .Rproj.user/
+    Ignored:    analysis/figure/
+    Ignored:    code/.DS_Store
     Ignored:    gwas_data/
 
 Untracked files:
-    Untracked:  analysis/bivariate_greml_results.Rmd
+    Untracked:  -Toms-laptop.Rhistory
+    Untracked:  Manuscript/
+    Untracked:  Reported_heritability.xlsx
+    Untracked:  Rplot.pdf
+    Untracked:  S_plots.pdf
+    Untracked:  Selection_differential_plot.pdf
+    Untracked:  Selection_differentials.pdf
+    Untracked:  Selection_differentials_f.pdf
+    Untracked:  Selection_differentials_m.pdf
+    Untracked:  analysis/Random_plots.R
+    Untracked:  code/LICENSE
     Untracked:  code/gcta64
+    Untracked:  code/prettify
+    Untracked:  code/toy.map
+    Untracked:  code/toy.ped
+    Untracked:  data/SNP_heritability.csv
+    Untracked:  data/SNP_heritability_cleaned.csv
+    Untracked:  data/SNP_selection.csv
+    Untracked:  data/S_female.csv
+    Untracked:  data/rfm_dimorphism_model.rds
+    Untracked:  dimorphism_subset.pdf
+    Untracked:  fitness_variation.pdf
+    Untracked:  fits/
+    Untracked:  lifetime_fecundity_S.pdf
+    Untracked:  mating_latency_S.pdf
 
 Unstaged changes:
+    Modified:   .Rprofile
+    Modified:   .gitattributes
+    Modified:   .gitignore
+    Modified:   DGRP_sexual_conflict.Rproj
+    Modified:   README.md
+    Modified:   _workflowr.yml
+    Modified:   analysis/SNP_correlations.Rmd
+    Modified:   analysis/_site.yml
+    Modified:   analysis/license.Rmd
     Modified:   analysis/process_mashr.Rmd
     Modified:   analysis/run_GWAS.Rmd
     Modified:   analysis/run_mashr.Rmd
+    Modified:   code/README.md
+    Modified:   code/run_mashr.R
+    Modified:   data/README.md
+    Modified:   data/S_male.csv
+    Modified:   data/all.dgrp.phenos_unscaled.csv
+    Modified:   data/rfm.complete.csv
+    Modified:   output/README.md
 
 </code></pre>
 <p>
@@ -456,16 +465,50 @@ Message
 Rmd
 </td>
 <td>
+<a href="https://github.com/tomkeaney/DGRP_sexual_conflict/blob/5b9883ecc77ee0ab529aa2bd15efa0caf62b5f2b/analysis/index.Rmd" target="_blank">5b9883e</a>
+</td>
+<td>
+ausevo
+</td>
+<td>
+2022-05-10
+</td>
+<td>
+Add GCTA model outputs
+</td>
+</tr>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/tomkeaney/DGRP_sexual_conflict/9bdc7c4686d81c3b57bec6e78d07f041d8018aed/docs/index.html" target="_blank">9bdc7c4</a>
+</td>
+<td>
+lukeholman
+</td>
+<td>
+2021-08-07
+</td>
+<td>
+Build site.
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
 <a href="https://github.com/tomkeaney/DGRP_sexual_conflict/blob/ce545d3ed3fb4b0b2ffa362240b6e111e4da17b1/analysis/index.Rmd" target="_blank">ce545d3</a>
 </td>
 <td>
 lukeholman
 </td>
 <td>
-2021-08-06
+2021-08-07
 </td>
 <td>
-wflow_publish(“analysis/index.Rmd”)
+wflow_publish("analysis/index.Rmd")
 </td>
 </tr>
 <tr>
@@ -499,7 +542,7 @@ lukeholman
 2021-08-05
 </td>
 <td>
-wflow_publish(“analysis/index.Rmd”)
+wflow_publish("analysis/index.Rmd")
 </td>
 </tr>
 <tr>
@@ -648,15 +691,15 @@ Start workflowr project.
 <p>This website presents an analysis of selection acting on the DGRP. We particularly focus upon sexually antagonistic selection and test some well known hypotheses that relate to this concept.</p>
 <div id="analysis-of-phenotypic-line-means" class="section level2">
 <h2>Analysis of phenotypic line means</h2>
-<p>We present analyses of heritability and correlations between line means <a href="Main_analysis.html">here</a>.</p>
+<p>We present analyses of heritability and correlations between line means <a href="Main_analysis.html">here</a></p>
 </div>
 <div id="genome-wide-association-tests-using-plink" class="section level2">
 <h2>Genome-wide association tests using PLINK</h2>
-<p>The code used to run GWA tests can be viewed <a href="run_GWAS.html">here</a>.</p>
+<p>The code used to run GWA tests can be viewed <a href="run_GWAS.html">here</a></p>
 </div>
 <div id="estimating-genetic-correlations-from-variants-effect-sizes" class="section level2">
 <h2>Estimating genetic correlations from variants’ effect sizes</h2>
-<p>Graphs and tables relating to genetic correlations between traits can be viewed <a href="SNP_correlations.html">here</a>.</p>
+<p>Graphs and tables relating to genetic correlations between traits can be viewed <a href="SNP_correlations.html">here</a></p>
 </div>
 <div id="multivariate-adaptive-shrinkage-using-mashr" class="section level2">
 <h2>Multivariate adaptive shrinkage using <code>mashr</code></h2>
@@ -666,11 +709,15 @@ Start workflowr project.
 <h2>Results of the <code>mashr</code> analyses</h2>
 <p>Graphs and tables relating to the output of <code>mashr</code> <a href="process_mashr.html">here</a></p>
 </div>
+<div id="snp-heritabilities-and-the-robertson-price-identity" class="section level2">
+<h2>SNP-heritabilities’ and the Robertson-Price Identity</h2>
+<p>The code used to run GREML models to estimate SNP heritability and selection differentials <a href="SNP_heritabilities.html">here</a></p>
+</div>
 
 
 <!-- Adjust MathJax settings so that all math formulae are shown using
 TeX fonts only; see
-http://docs.mathjax.org/en/latest/configuration.html.  This will make
+https://docs.mathjax.org/en/latest/web/configuration.html. This will make
 the presentation more consistent at the cost of the webpage sometimes
 taking slightly longer to load. Note that this only works because the
 footer is added to webpages before the MathJax javascript. -->
@@ -679,6 +726,8 @@ footer is added to webpages before the MathJax javascript. -->
     "HTML-CSS": { availableFonts: ["TeX"] }
   });
 </script>
+
+
 
 
 
@@ -706,7 +755,7 @@ $(document).ready(function () {
 
 $(document).ready(function () {
   $('.tabset-dropdown > .nav-tabs > li').click(function () {
-    $(this).parent().toggleClass('nav-tabs-open')
+    $(this).parent().toggleClass('nav-tabs-open');
   });
 });
 </script>
