@@ -22,6 +22,7 @@ library(kableExtra)
 library(DT)
 library(MetBrewer)
 library(patchwork)
+library(rcartocolor)
 
 gcta <- file.path(getwd(), "code/gcta64")
 options(readr.show_col_types = FALSE)
@@ -160,7 +161,7 @@ Currently two phenotypes call errors when we run the univariate GREML model: `pa
 
 For now we simply don't run models for these traits, so there are no variance estimates for these traits.
 
-## Visualise heritability
+### Visualise heritability
 
 ```{r}
 
@@ -229,8 +230,6 @@ my_data_table(SNP_heritability)
 
 ```
 
-### How is heritability distributed?
-
 ```{r}
 p1 <-
   SNP_heritability %>% 
@@ -251,7 +250,7 @@ Here we use the `gcta64` command `--reml-bivar` to estimate the genetic covarian
 
 We use `rG` to calculate the Robertson-Price identity, which estimates the response to selection for a trait (or the selection differential... check).
 
-## Female fitness 
+### Female fitness 
  
 ```{r} 
 # wrangle data so that it is specific to the sex the trait was measured for i.e. female, male or pooled sexes
@@ -321,7 +320,7 @@ if(!file.exists("data/SNP_selection.csv")){
 
 ```
 
-## Male fitness
+### Male fitness
 
 ```{r}
 # wrangle data so that it is specific to the sex the trait was measured for i.e. female, male or pooled sexes
@@ -391,7 +390,7 @@ if(!file.exists("data/SNP_selection.csv")){
 
 ```
 
-## Data where the sexes were pooled
+### Data where the sexes were pooled
 
 ```{r}
 
@@ -468,7 +467,7 @@ if(!file.exists("data/SNP_selection.csv")){
 
 ```
 
-## Combine results and save
+### Combine results and save
 
 Note that when we combine the `SNP_heritability` tibble with the `SNP_selection` tibble we will get some duplicate columns. This is because the bivariate GREML calculates everything that the univariate GREML does. I'll check if they are identical and delete redundant columns if so. I get the feeling that they'll be slightly different because the bivariate GREML only uses the lines that have been measured for both traits; generally a smaller subset of those a trait was measured across.
 
@@ -567,21 +566,101 @@ all_SNP_data <-
   left_join(SNP_selection_response_estimates_wide, SNP_heritability)
 ```
 
-## Heritability and selection differentials
+$~$
+
+## Is heritability sex-specific?
+
+
+```{r}
+full_SNP_heritability_plot <- 
+  SNP_selection_response_estimates_wide %>% 
+  filter(`Variance_C(G)_tr12` > -1 & `Variance_V(G)/Vp_trait` > -1 & `Variance_C(G)_tr12` < 1 & `Variance_V(G)/Vp_trait` < 1) %>%
+  
+  ggplot(aes(x = Fitness_sex, y = `Variance_V(G)/Vp_trait`, fill = Fitness_sex)) +
+  geom_jitter(shape = 21, size = 3, alpha = 0.75) +
+  scale_fill_manual(values = met.brewer("VanGogh2", 2)) +
+  geom_boxplot(outlier.shape = NA, alpha = 0.8, fill = "white") +
+  labs(title = "All traits measured",
+       x = "Sex",
+       y = "SNP heritability") +
+  theme_bw() +
+  theme(legend.position = "none")
+
+  
+```
+
+
+```{r}
+data <- SNP_selection_response_estimates_wide %>% 
+  mutate(Trait = case_when(
+    str_ends(Trait, ".f") | str_ends(Trait, ".m")  ~ gsub('.{2}$', '', Trait)))
+
+a <- data %>% 
+  filter(Fitness_sex == "Male")
+ 
+
+b <- data %>% 
+  filter(Fitness_sex == "Female")
+
+# there are 264 traits for which we have measures in both sexes
+
+SNP_both_sexes <- inner_join(a, b, by = "Trait") %>% 
+  filter(Trait != "NA")
+
+subset_SNP_heritability_plot <- 
+  SNP_both_sexes %>% 
+  pivot_longer(cols = c(`Variance_V(G)/Vp_trait.x`, `Variance_V(G)/Vp_trait.y`), names_to = "Sex", values_to = "SNP_heritability") %>% 
+  mutate(Sex = if_else(str_ends(Sex, ".x"), "Male", "Female")) %>% 
+  select(-c(Fitness_sex.x, Fitness_sex.y)) %>% 
+  filter(SNP_heritability > -1 & SNP_heritability < 1) %>%
+  
+  ggplot(aes(x = Sex, y = SNP_heritability, fill = Sex)) +
+  geom_jitter(shape = 21, size = 3, alpha = 0.75) +
+  scale_fill_manual(values = met.brewer("VanGogh2", 2)) +
+  geom_boxplot(outlier.shape = NA, alpha = 0.8, fill = "white") +
+  labs(title = "Traits measured in both sexes",
+       x = "Sex",
+       y = NULL) +
+  theme_bw() +
+  theme(legend.position = "none")
+
+full_SNP_heritability_plot + subset_SNP_heritability_plot
+```
+
+
+
+## Testing general predictions of Fisher's theorem 
+
+$~$
+
+**1. Do traits correlated with fitness have lower heritabilities?**
+
+Following Fisher's theorem and assuming a constant environment, in the absence of new variation, selection is expected to erode all additive genetic variation for fitness. One implication of this expectation is that traits that are correlated with fitness should show reduced additive genetic variance relative to those that are not correlated with fitness _(Robertson 1955b)_. 
+
+There are previous studies that have compared fitness related traits i.e. those implicated with reproduction, with morphological traits, which are assumed to have lesser relationships with fitness.
+
+- The problem is associating these traits with _lifetime) fitness. This shouldn't be such a problem for us...
+
+- Multiple studies looking at this corollary use phenotypic correlations with fitness rather than genetic. Once again, this is no problem for us...
+
+- Even if there is lots of additive genetic variance for a trait and it is correlated with fitness, if fitness has a high environmental variance component the strength of selection on the trait will be weak.
+
+_Houle (1992)_ looks like an important meta-analysis type work
+
 
 ```{r}
 # some plots
 
 a_plot <-
   SNP_selection_response_estimates_wide %>% 
-  filter(`Variance_C(G)_tr12` > -1 & Variance_rG > -1 & `Variance_C(G)_tr12` < 1 & Variance_rG < 1,
-         `Trait guild` != "Metabolome" & `Trait guild` != "CHC", `Trait guild` != "Microbiome") %>% 
+  filter(`Variance_C(G)_tr12` > -1 & Variance_rG > -1 & `Variance_C(G)_tr12` < 1 & Variance_rG < 1) %>% 
+         #`Trait guild` != "Metabolome" & `Trait guild` != "CHC", `Trait guild` != "Microbiome") %>% 
   ggplot(aes(x = `Variance_C(G)_tr12`, y = Variance_rG, fill = Fitness_sex)) +
   geom_point(shape = 21, size = 3, alpha = 0.5) +
   scale_fill_manual(values = met.brewer("VanGogh2", 2)) +
   geom_abline(intercept = 0, slope = 1, linetype = 2) +
   labs(x = "SNP covariance between fitness and trait",
-       y = "Genetic correlation between fitness and trait (Rg)",
+       y = "Genetic correlation between fitness\nand trait (Rg)",
        fill = "Sex") +
   theme_bw() 
 
@@ -596,7 +675,7 @@ b_plot <-
   geom_point(shape = 21, size = 3, alpha = 0.5) +
   geom_smooth(method = "lm", colour = "black") +
   scale_fill_manual(values = met.brewer("VanGogh2", 2)) +
-  labs(x = "SNP covariance between fitness and trait",
+  labs(x = "SNP covariance between fitness\n and trait",
        y = "SNP heritability") +
   theme_bw() +
   theme(legend.position = "none")
@@ -611,7 +690,7 @@ c_plot <-
   geom_point(shape = 21, size = 3, alpha = 0.5) +
   geom_smooth(method = "lm", colour = "black") +
   scale_fill_manual(values = met.brewer("VanGogh2", 2)) +
-  labs(x = "Genetic correlation (Rg) between fitness and trait",
+  labs(x = "Genetic correlation (Rg)\n between fitness and trait",
        y = "SNP heritability") +
   theme_bw() +
   theme(legend.position = "none")
@@ -621,4 +700,145 @@ a_plot / (b_plot + c_plot)
 
 Figure X: **a** the relationship between the genetic correlation between fitness and trait (Rg) and the SNP covariance between fitness and trait. Both of these metrics could **potentially** be used to estimate the response to selection experienced by a trait (or the selection differential, not sure yet), following the Robertson-Price identity. **b** and **c** show the relationship between these metrics and heritability.
 
-I'm interested in this because Fisher's fundamental theorem suggests that traits that are correlated with fitness will have reduced levels of additive genetic variance relative to traits under less direct selection.
+$~$
+
+**2. Do traits correlated with fitness have higher levels of both additive and residual variance**
+
+Note that heritability can also decline with an increase in environmental variance and no decrease (or an increase) in genetic variance. If true, this makes a simple regression with heritability and fitness misleading.
+
+Using evolvability as his metric, _Houle (1992)_ found that characters assumed to be closely related to fitness have higher evolvabilities than do trait with looser relationships to fitness. This suggests that the negative relationship between fitness and heritability is due to increased environmental variance in fitness related traits, not a decrease in additive genetic variance. 
+
+$~$
+
+## Sexually antagonstic selection
+
+$~$
+
+We have found selection differentials **(or responses to selection)** acting on traits in females and males. For those traits where we have a measure of both, we can quantify sexually antagonistic selection by finding traits that have selection operating in opposite directions, depending on which sex the trait is expressed in. 
+
+[Innocenti and Morrow (2011)]( https://doi.org/10.1111/j.1558-5646.2010.01021.x) present an index for measuring the intensity for sexually antagonistic selection:
+
+$I = \frac{\beta_M \beta_F}{\sqrt{(\beta_M^{2} + \beta_F^{2})/2}}$
+
+
+Where $B_F$ and $B_M$ are the standardised selection gradients for females and males respectively.
+
+From **Innocenti and Morrow**:
+
+This index is positive when selection is concordant in the two sexes, negative when antagonistic in the two sexes, and is zero when selection is absent in one sex (note that it will miss conflict that occurs when strong stabilizing selection is present in that sex). Finally it is proportional to the absolute intensity of selection.
+
+Additionally, it has the desirable properties of being symmetrical and normally distributed for a random set of normally distributed $B_F$, $B_M$. |I| is also always included in the interval between the absolute values of the selection gradient in the two sexes, and it coincides with them when $B_F$ = $B_M$. As a potential drawback, it should be noted that such quantity is not defined when $B_F$ = $B_M$ = 0, even though it makes little sense to estimate how concordant or antagonistic directional selection is when it is absent in both sexes.
+
+
+$~$
+
+### Covariance
+
+```{r}
+
+
+# create our sexual antagonism tibble by joining the female and male tibbles by traits they both share
+
+SNP_antagonism <- SNP_both_sexes %>% 
+  rename(Trait_covariance_male_fitness = `Variance_C(G)_tr12.x`,
+         Trait_covariance_female_fitness = `Variance_C(G)_tr12.y`) %>% 
+  select(-c(Fitness_sex.x, Fitness_sex.y)) %>% 
+  # calculate the innocenti and morrow index
+  mutate(Selection_index = Trait_covariance_female_fitness * Trait_covariance_male_fitness / sqrt(((Trait_covariance_female_fitness)^2 + (Trait_covariance_male_fitness)^2)/2)) %>% 
+  # get rid of traits with unrealistic covariances
+  filter(Trait_covariance_male_fitness > -5,
+         Trait_covariance_female_fitness < 2 & Trait_covariance_female_fitness > -5)
+
+# plot the data
+
+sexual_concordance_plot <-
+  ggplot(data = SNP_antagonism, aes(x = Trait_covariance_female_fitness, y = Trait_covariance_male_fitness, fill = Selection_index)) +
+  #geom_hex(bins = 20) +
+  geom_point(shape = 21, alpha = 0.85, size = 4, show.legend = TRUE) + #width = 0.003, height = 0.003) +
+  #geom_point(shape = 21, alpha = 0.9, size = 5, show.legend = FALSE) +
+  geom_smooth(method = 'lm', color='black') +
+  geom_hline(yintercept = 0, linetype = 2) +
+  geom_vline(xintercept = 0, linetype = 2) +
+  #coord_cartesian(xlim = c(-0.35, 0.35), ylim = c(-0.4, 0.4)) +
+  scale_fill_carto_c(palette = "Geyser",
+                     breaks=c(-0.25, -0.125, 0, 0.125, 0.25),
+                     limits=c(-0.25,0.25)) +
+  labs(x = "Female selection differential",
+       y = "Male selection differential",
+       fill = "Concordance\n of selection\n") +
+  theme_bw() +
+  theme(panel.border= element_blank(),
+        axis.line=element_line(),
+        text = element_text(size=14),
+        panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        axis.title.x = element_text(size = 14),
+        axis.title.y = element_text(size = 14))
+
+sexual_concordance_plot
+
+
+```
+
+### Genetic correlation
+
+```{r}
+data <- SNP_selection_response_estimates_wide %>% 
+  select(Trait, Fitness_sex, Trait_sex, Variance_rG) %>% 
+  mutate(Trait = case_when(
+    str_ends(Trait, ".f") | str_ends(Trait, ".m")  ~ gsub('.{2}$', '', Trait)))
+
+a <- data %>% 
+  filter(Fitness_sex == "Male") %>% 
+  select(-Trait_sex) 
+ 
+
+b <- data %>% 
+  filter(Fitness_sex == "Female") %>% 
+  select(-Trait_sex)
+
+
+# create our sexual antagonism tibble by joining the female and male tibbles by traits they both share
+
+SNP_antagonism_rg <- inner_join(a, b, by = "Trait") %>% 
+  rename(Trait_rg_male_fitness = Variance_rG.x,
+         Trait_rg_female_fitness = Variance_rG.y) %>% 
+  select(-c(Fitness_sex.x, Fitness_sex.y)) %>% 
+  # calculate the innocenti and morrow index
+  mutate(Selection_index = Trait_rg_female_fitness * Trait_rg_male_fitness / sqrt(((Trait_rg_female_fitness)^2 + (Trait_rg_male_fitness)^2)/2)) %>% 
+  # get rid of traits with unrealistic covariances
+  filter(Trait != "NA",
+         Trait_rg_male_fitness > -1 & Trait_rg_male_fitness < 1,
+         Trait_rg_female_fitness < 1 & Trait_rg_female_fitness > -1)
+
+sexual_concordance_plot_rg <-
+  ggplot(data = SNP_antagonism_rg, aes(x = Trait_rg_female_fitness, y = Trait_rg_male_fitness, fill = Selection_index)) +
+  #geom_hex(bins = 20) +
+  geom_point(shape = 21, alpha = 0.75, size = 4, show.legend = TRUE) + #width = 0.003, height = 0.003) +
+  #geom_point(shape = 21, alpha = 0.9, size = 5, show.legend = FALSE) +
+  geom_smooth(method = 'lm', color='black') +
+  geom_hline(yintercept = 0, linetype = 2) +
+  geom_vline(xintercept = 0, linetype = 2) +
+  #coord_cartesian(xlim = c(-0.4, 0.4), ylim = c(-0.4, 0.4)) +
+  scale_fill_carto_c(palette = "Geyser",
+                     breaks=c(-1, -0.5, 0, 0.5, 1),
+                     limits=c(-1, 1)) +
+  labs(x = "Female selection differential (Rg)",
+       y = "Male selection differential (Rg)",
+       fill = "Concordance\n of selection\n") +
+  theme_bw() +
+  theme(panel.border= element_blank(),
+        axis.line=element_line(),
+        text = element_text(size=14),
+        panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        axis.title.x = element_text(size = 14),
+        axis.title.y = element_text(size = 14))
+
+sexual_concordance_plot_rg
+```
+
