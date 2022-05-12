@@ -11,7 +11,7 @@
 
 
 
-<title>Home</title>
+<title>Potential research questions</title>
 
 <script src="site_libs/header-attrs-2.13/header-attrs.js"></script>
 <script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
@@ -29,6 +29,9 @@
        h6 {font-size: 12px;}
        code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
        pre:not([class]) { background-color: white }</style>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
 <script src="site_libs/navigation-1.1/codefolding.js"></script>
 <link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
@@ -238,6 +241,69 @@ $(document).ready(function () {
 
 
 
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
 
 </head>
 
@@ -245,6 +311,16 @@ $(document).ready(function () {
 
 
 <div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
 
 
 
@@ -293,7 +369,7 @@ $(document).ready(function () {
 
 
 
-<h1 class="title toc-ignore">Home</h1>
+<h1 class="title toc-ignore">Potential research questions</h1>
 
 </div>
 
@@ -321,7 +397,7 @@ $(document).ready(function () {
 <strong>Last updated:</strong> 2022-05-12
 </p>
 <p>
-<strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 2 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 0
+<strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 7 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 0
 </p>
 <p>
 <strong>Knit directory:</strong> <code>DGRP_sexual_conflict/</code> <span class="glyphicon glyphicon-question-sign" aria-hidden="true" title="This is the local directory in which the code in this file was executed."> </span>
@@ -343,6 +419,66 @@ This reproducible <a href="https://rmarkdown.rstudio.com">R Markdown</a> analysi
 <div id="strongRMarkdownfilestronguptodate" class="panel-collapse collapse">
 <div class="panel-body">
 <p>Great! Since the R Markdown file has been committed to the Git repository, you know the exact version of the code that produced these results.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongEnvironmentstrongempty"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Environment:</strong> empty </a>
+</p>
+</div>
+<div id="strongEnvironmentstrongempty" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! The global environment was empty. Objects defined in the global environment can affect the analysis in your R Markdown file in unknown ways. For reproduciblity it’s best to always run the code in an empty environment.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSeedstrongcodesetseed20210706code"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Seed:</strong> <code>set.seed(20210706)</code> </a>
+</p>
+</div>
+<div id="strongSeedstrongcodesetseed20210706code" class="panel-collapse collapse">
+<div class="panel-body">
+<p>The command <code>set.seed(20210706)</code> was run prior to running the code in the R Markdown file. Setting a seed ensures that any results that rely on randomness, e.g. subsampling or permutations, are reproducible.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSessioninformationstrongrecorded"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Session information:</strong> recorded </a>
+</p>
+</div>
+<div id="strongSessioninformationstrongrecorded" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Recording the operating system, R version, and package versions is critical for reproducibility.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongCachestrongnone"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Cache:</strong> none </a>
+</p>
+</div>
+<div id="strongCachestrongnone" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Nice! There were no cached chunks for this analysis, so you can be confident that you successfully produced the results during this run.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongFilepathsstrongrelative"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>File paths:</strong> relative </a>
+</p>
+</div>
+<div id="strongFilepathsstrongrelative" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Using relative paths to the files within your workflowr project makes it easier to run your code on other machines.</p>
 </div>
 </div>
 </div>
@@ -432,7 +568,7 @@ Note that any generated files, e.g. HTML, png, CSS, etc., are not included in t
 <div id="versions" class="tab-pane fade">
 
 <p>
-These are the previous versions of the repository in which changes were made to the R Markdown (<code>analysis/index.Rmd</code>) and HTML (<code>docs/index.html</code>) files. If you’ve configured a remote Git repository (see <code>?wflow_git_remote</code>), click on the hyperlinks in the table below to view the files as they were in that past version.
+These are the previous versions of the repository in which changes were made to the R Markdown (<code>analysis/Ideas.Rmd</code>) and HTML (<code>docs/Ideas.html</code>) files. If you’ve configured a remote Git repository (see <code>?wflow_git_remote</code>), click on the hyperlinks in the table below to view the files as they were in that past version.
 </p>
 <div class="table-responsive">
 <table class="table table-condensed table-hover">
@@ -461,7 +597,7 @@ Message
 Rmd
 </td>
 <td>
-<a href="https://github.com/tomkeaney/DGRP_sexual_conflict/blob/95f4a97a95b2694250d10afcf070261b37734fb8/analysis/index.Rmd" target="_blank">95f4a97</a>
+<a href="https://github.com/tomkeaney/DGRP_sexual_conflict/blob/95f4a97a95b2694250d10afcf070261b37734fb8/analysis/Ideas.Rmd" target="_blank">95f4a97</a>
 </td>
 <td>
 ausevo
@@ -473,295 +609,6 @@ ausevo
 including ideas section
 </td>
 </tr>
-<tr>
-<td>
-html
-</td>
-<td>
-<a href="https://rawcdn.githack.com/tomkeaney/DGRP_sexual_conflict/cadce9bbc866d4f7c5fc422bed7432fd641fad28/docs/index.html" target="_blank">cadce9b</a>
-</td>
-<td>
-ausevo
-</td>
-<td>
-2022-05-11
-</td>
-<td>
-Build site.
-</td>
-</tr>
-<tr>
-<td>
-Rmd
-</td>
-<td>
-<a href="https://github.com/tomkeaney/DGRP_sexual_conflict/blob/90ba4729e0082d624c2996dff1f97141206253ff/analysis/index.Rmd" target="_blank">90ba472</a>
-</td>
-<td>
-ausevo
-</td>
-<td>
-2022-05-11
-</td>
-<td>
-typo fix
-</td>
-</tr>
-<tr>
-<td>
-html
-</td>
-<td>
-<a href="https://rawcdn.githack.com/tomkeaney/DGRP_sexual_conflict/a964455fab2b58a3d26031c30537049bcd27f9e0/docs/index.html" target="_blank">a964455</a>
-</td>
-<td>
-ausevo
-</td>
-<td>
-2022-05-11
-</td>
-<td>
-Build site.
-</td>
-</tr>
-<tr>
-<td>
-html
-</td>
-<td>
-<a href="https://rawcdn.githack.com/tomkeaney/DGRP_sexual_conflict/7bf0ee08d2c8b770d1c2d8aca0b2931897462adb/docs/index.html" target="_blank">7bf0ee0</a>
-</td>
-<td>
-ausevo
-</td>
-<td>
-2022-05-10
-</td>
-<td>
-Build site.
-</td>
-</tr>
-<tr>
-<td>
-Rmd
-</td>
-<td>
-<a href="https://github.com/tomkeaney/DGRP_sexual_conflict/blob/5b9883ecc77ee0ab529aa2bd15efa0caf62b5f2b/analysis/index.Rmd" target="_blank">5b9883e</a>
-</td>
-<td>
-ausevo
-</td>
-<td>
-2022-05-10
-</td>
-<td>
-Add GCTA model outputs
-</td>
-</tr>
-<tr>
-<td>
-html
-</td>
-<td>
-<a href="https://rawcdn.githack.com/tomkeaney/DGRP_sexual_conflict/9bdc7c4686d81c3b57bec6e78d07f041d8018aed/docs/index.html" target="_blank">9bdc7c4</a>
-</td>
-<td>
-lukeholman
-</td>
-<td>
-2021-08-07
-</td>
-<td>
-Build site.
-</td>
-</tr>
-<tr>
-<td>
-Rmd
-</td>
-<td>
-<a href="https://github.com/tomkeaney/DGRP_sexual_conflict/blob/ce545d3ed3fb4b0b2ffa362240b6e111e4da17b1/analysis/index.Rmd" target="_blank">ce545d3</a>
-</td>
-<td>
-lukeholman
-</td>
-<td>
-2021-08-07
-</td>
-<td>
-wflow_publish("analysis/index.Rmd")
-</td>
-</tr>
-<tr>
-<td>
-html
-</td>
-<td>
-<a href="https://rawcdn.githack.com/tomkeaney/DGRP_sexual_conflict/6fa1436de270825e4e66b6a2e50d78158dab08d9/docs/index.html" target="_blank">6fa1436</a>
-</td>
-<td>
-lukeholman
-</td>
-<td>
-2021-08-05
-</td>
-<td>
-Build site.
-</td>
-</tr>
-<tr>
-<td>
-Rmd
-</td>
-<td>
-<a href="https://github.com/tomkeaney/DGRP_sexual_conflict/blob/2afab53503febe969aa15b124241939bc993e117/analysis/index.Rmd" target="_blank">2afab53</a>
-</td>
-<td>
-lukeholman
-</td>
-<td>
-2021-08-05
-</td>
-<td>
-wflow_publish("analysis/index.Rmd")
-</td>
-</tr>
-<tr>
-<td>
-html
-</td>
-<td>
-<a href="https://rawcdn.githack.com/tomkeaney/DGRP_sexual_conflict/043902fed2d66e5b988a2f7a2dd70c734e1e95f8/docs/index.html" target="_blank">043902f</a>
-</td>
-<td>
-tkeaney
-</td>
-<td>
-2021-07-28
-</td>
-<td>
-Build site.
-</td>
-</tr>
-<tr>
-<td>
-Rmd
-</td>
-<td>
-<a href="https://github.com/tomkeaney/DGRP_sexual_conflict/blob/959123f80add4c3747918d1937e125003c982035/analysis/index.Rmd" target="_blank">959123f</a>
-</td>
-<td>
-tkeaney
-</td>
-<td>
-2021-07-28
-</td>
-<td>
-trying to fix a bug
-</td>
-</tr>
-<tr>
-<td>
-html
-</td>
-<td>
-<a href="https://rawcdn.githack.com/tomkeaney/DGRP_sexual_conflict/9e6630d1a258686756bc615d7aee0f31e7431db6/docs/index.html" target="_blank">9e6630d</a>
-</td>
-<td>
-tkeaney
-</td>
-<td>
-2021-07-07
-</td>
-<td>
-Build site.
-</td>
-</tr>
-<tr>
-<td>
-Rmd
-</td>
-<td>
-<a href="https://github.com/tomkeaney/DGRP_sexual_conflict/blob/e8442586237b24394b14c0087e0d333328215d74/analysis/index.Rmd" target="_blank">e844258</a>
-</td>
-<td>
-tkeaney
-</td>
-<td>
-2021-07-07
-</td>
-<td>
-Immediate fix
-</td>
-</tr>
-<tr>
-<td>
-html
-</td>
-<td>
-<a href="https://rawcdn.githack.com/tomkeaney/DGRP_sexual_conflict/11a83906f387d1ecbb39fc5ab60f5830bdac2d8f/docs/index.html" target="_blank">11a8390</a>
-</td>
-<td>
-tkeaney
-</td>
-<td>
-2021-07-07
-</td>
-<td>
-Build site.
-</td>
-</tr>
-<tr>
-<td>
-Rmd
-</td>
-<td>
-<a href="https://github.com/tomkeaney/DGRP_sexual_conflict/blob/42b8f12ec94d1089c153f97f0e4090edd191a279/analysis/index.Rmd" target="_blank">42b8f12</a>
-</td>
-<td>
-tkeaney
-</td>
-<td>
-2021-07-07
-</td>
-<td>
-Get the site up and running
-</td>
-</tr>
-<tr>
-<td>
-html
-</td>
-<td>
-<a href="https://rawcdn.githack.com/tomkeaney/DGRP_sexual_conflict/234178067395ba9c5d94588ed3b238fcdb596f20/docs/index.html" target="_blank">2341780</a>
-</td>
-<td>
-tkeaney
-</td>
-<td>
-2021-07-06
-</td>
-<td>
-Build site.
-</td>
-</tr>
-<tr>
-<td>
-Rmd
-</td>
-<td>
-<a href="https://github.com/tomkeaney/DGRP_sexual_conflict/blob/f49415b71442229681e19b17fc13ceb6af6dd383/analysis/index.Rmd" target="_blank">f49415b</a>
-</td>
-<td>
-tkeaney
-</td>
-<td>
-2021-07-06
-</td>
-<td>
-Start workflowr project.
-</td>
-</tr>
 </tbody>
 </table>
 </div>
@@ -769,34 +616,99 @@ Start workflowr project.
 </div>
 </div>
 </div>
-<p>This website presents an analysis of selection acting on the DGRP. We particularly focus upon sexually antagonistic selection and test some well known hypotheses that relate to this concept.</p>
-<div id="ideas" class="section level2">
-<h2>Ideas</h2>
-<p><a href="Ideas.html">Here</a> I document research questions that we can potentially test with this data-set</p>
+<div id="testing-general-predictions-of-fishers-theorem" class="section level2">
+<h2>Testing general predictions of Fisher’s theorem</h2>
+<p><span class="math inline">\(~\)</span></p>
+<p><strong>1. Do traits correlated with fitness have lower heritabilities?</strong></p>
+<p>Following Fisher’s theorem and assuming a constant environment, in the absence of new variation, selection is expected to erode all additive genetic variation for fitness. One implication of this expectation is that traits that are correlated with fitness should show reduced additive genetic variance relative to those that are not correlated with fitness <em>(Robertson 1955b)</em>.</p>
+<p>There are previous studies that have compared fitness related traits i.e. those implicated with reproduction, with morphological traits, which are assumed to have lesser relationships with fitness.</p>
+<ul>
+<li><p>The problem is associating these traits with _lifetime) fitness. This shouldn’t be such a problem for us…</p></li>
+<li><p>Multiple studies looking at this corollary use phenotypic correlations with fitness rather than genetic. Once again, this is no problem for us…</p></li>
+<li><p>Even if there is lots of additive genetic variance for a trait and it is correlated with fitness, if fitness has a high environmental variance component the strength of selection on the trait will be weak.</p></li>
+</ul>
+<p><em>Houle (1992)</em> looks like an important meta-analysis type work.</p>
+<p><strong>2. Do traits correlated with fitness have higher levels of both additive and residual variance</strong></p>
+<p>Note that heritability can also decline with an increase in environmental variance and no decrease (or an increase) in genetic variance. If true, this makes a simple regression with heritability and fitness misleading.</p>
+<p>Using evolvability as his metric, Houle (1992) found that characters assumed to be closely related to fitness have higher evolvabilities than do trait with looser relationships to fitness. This suggests that the negative relationship between fitness and heritability is due to increased environmental variance in fitness related traits, not a decrease in additive genetic variance.</p>
+<p><span class="math inline">\(~\)</span></p>
 </div>
-<div id="analysis-of-phenotypic-line-means" class="section level2">
-<h2>Analysis of phenotypic line means</h2>
-<p>We present analyses of heritability and correlations between line means <a href="Main_analysis.html">here</a></p>
+<div id="testing-hypotheses-regarding-sex-specific-selection" class="section level2">
+<h2>Testing hypotheses regarding sex-specific selection</h2>
+<p><span class="math inline">\(~\)</span></p>
+<p><strong>1. Is additive genetic variance for traits higher in males than it is in females?</strong></p>
+<p><em>Walsh and Lynch (2018)</em> raise an important point: to compare variances between traits, one needs a standardised measure. <em>Houle (1992)</em> suggests the coefficient of additive genetic variance, <span class="math inline">\(CV_A = \sigma_A / \mu\)</span>, where <span class="math inline">\(\mu\)</span> is the trait mean. Houle coined this term <strong><em>evolvability</em></strong>.</p>
+<p><strong>2. Do males exhibit higher heritabilities for traits than females?</strong></p>
+<p><strong>3. Are selection differentials across traits stronger for males than they are for females?</strong></p>
+<p><span class="math inline">\(~\)</span></p>
 </div>
-<div id="genome-wide-association-tests-using-plink" class="section level2">
-<h2>Genome-wide association tests using PLINK</h2>
-<p>The code used to run GWA tests can be viewed <a href="run_GWAS.html">here</a></p>
+<div id="testing-hypotheses-relating-to-sexually-antagonstic-selection" class="section level2">
+<h2>Testing hypotheses relating to sexually antagonstic selection</h2>
+<p><span class="math inline">\(~\)</span></p>
+<ol style="list-style-type: decimal">
+<li><strong>Is there a negative relationship between the intersex genetic correlation and sexual dimorphism?</strong></li>
+</ol>
+<p>If there is, it means that a shared genetic architecture between the sexes constrains the ability of selection to move traits towards their separate female and male optimas.</p>
+<p>Intralocus sexual conflict should therefore be stronger for traits that are more constrained by the intersex genetic correlation.</p>
+<p>If there isn’t, the resolution of intralocus sexual conflict may be easier than expected i.e. sharing a genome may not be the problem we think it is.</p>
+<p><strong>2. Can we detect sexually antagonistic selection</strong></p>
+<p><strong>3. Is SA selection stronger on reproductive traits than viability related traits?</strong></p>
+<p><strong>4. Does SA selection positively correlate with sexual dimorphism?</strong></p>
+<p>This one is a little tricky. One might expect a positive relationship, because why else would the trait be sexually dimorphic? But perhaps dimorphism has evolved to the extent that the conflict is resolved. The question is whether current dimorphism affects selection??</p>
+<p>If a males trait optima = 5 and a females = 10. No dimorphism, while assuming equally strong selection on both sexes, would suggest a trait mean of 7.5 for both sexes. Alleles that increase the mean will be favoured in females but selected against in males.</p>
+<p>Now if there is strong dimorphism. Selection on the trait stays the same - higher vales are selected in females and selected against in males. But females and males are more dissimilar now, such that alleles that effect males in one way don’t necessarily affect females in the same way.</p>
+<p>Upon reflection, I believe this is a way to test whether intralocus sexual conflict is ongoing in the DGRP population, or if it has been resolved by sexual dimorphism. If we observe a positive relationship between SA selection and dimorphism, this is indicative of ongoing sexual conflict i.e. dimorphism is incomplete. If there is a negative relationship, this is indicative of dimorphism being an effective resolution to sexual conflict. No relationship indicates that…</p>
+<p>A broad prediction for this one still isn’t clear for me.</p>
+<ol start="4" style="list-style-type: decimal">
+<li><strong>Do genomes with greater across the board sexual dimorphism have higher fitness?</strong></li>
+</ol>
+<p>The thinking here is that escaping sexual conflict increases fitness. Those DGRP that aren’t dimorphic are stuck suffering the consequences of conflict. Whether this hypothesis stacks up is dependent on the existence of genetic variation for sexual dimorphism across a whole range of traits. It may be that dimorphism is trait rather than genotype specific.</p>
+<p><span class="math inline">\(~\)</span></p>
 </div>
-<div id="estimating-genetic-correlations-from-variants-effect-sizes" class="section level2">
-<h2>Estimating genetic correlations from variants’ effect sizes</h2>
-<p>Graphs and tables relating to genetic correlations between traits can be viewed <a href="SNP_correlations.html">here</a></p>
+<div id="other-general-questions-that-relate-to-natural-selection" class="section level2">
+<h2>Other general questions that relate to natural selection</h2>
+<p><span class="math inline">\(~\)</span></p>
+<p><strong>1. Is selection stronger on reproductive traits than it is on viability related traits?</strong></p>
+<p><strong>2. Is selection more concordant in stressful conditions? And does stress increase the strength of selection?</strong></p>
+<p>Theory suggests it should, because male and female condition/fitness become more aligned in stressful environments. To illustrate this point, consider fitness in two contexts a) a benign environment where fitness depends on an individuals interaction with conspecifics and b) a stressful environment, where a large component of fitness is tied to viability/condition. The first context leaves plenty of room for sex-specific fitness, while the second is likely to effect the sexes in a similar way - they face a common hardship, which aligns fitness in the sexes.</p>
+<br>
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-sessioninfo" data-toggle="collapse" data-target="#workflowr-sessioninfo" style="display: block;">
+<span class="glyphicon glyphicon-wrench" aria-hidden="true"></span> Session information
+</button>
+</p>
+<div id="workflowr-sessioninfo" class="collapse">
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>R version 4.1.0 (2021-05-18)
+Platform: x86_64-apple-darwin17.0 (64-bit)
+Running under: macOS Big Sur 10.16
+
+Matrix products: default
+BLAS:   /Library/Frameworks/R.framework/Versions/4.1/Resources/lib/libRblas.dylib
+LAPACK: /Library/Frameworks/R.framework/Versions/4.1/Resources/lib/libRlapack.dylib
+
+locale:
+[1] en_AU.UTF-8/en_AU.UTF-8/en_AU.UTF-8/C/en_AU.UTF-8/en_AU.UTF-8
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+[1] workflowr_1.7.0
+
+loaded via a namespace (and not attached):
+ [1] Rcpp_1.0.8.3     bslib_0.3.1      compiler_4.1.0   pillar_1.7.0    
+ [5] later_1.3.0      git2r_0.30.1     jquerylib_0.1.4  tools_4.1.0     
+ [9] getPass_0.2-2    digest_0.6.29    jsonlite_1.8.0   evaluate_0.15   
+[13] tibble_3.1.6     lifecycle_1.0.1  pkgconfig_2.0.3  rlang_1.0.2     
+[17] cli_3.2.0        rstudioapi_0.13  yaml_2.3.5       xfun_0.30       
+[21] fastmap_1.1.0    httr_1.4.2       stringr_1.4.0    knitr_1.38      
+[25] sass_0.4.1       fs_1.5.2         vctrs_0.4.1      rprojroot_2.0.3 
+[29] glue_1.6.2       R6_2.5.1         processx_3.5.3   fansi_1.0.3     
+[33] rmarkdown_2.13   callr_3.7.0      magrittr_2.0.3   whisker_0.4     
+[37] ps_1.7.0         promises_1.2.0.1 htmltools_0.5.2  ellipsis_0.3.2  
+[41] httpuv_1.6.5     utf8_1.2.2       stringi_1.7.6    crayon_1.5.1    </code></pre>
 </div>
-<div id="multivariate-adaptive-shrinkage-using-mashr" class="section level2">
-<h2>Multivariate adaptive shrinkage using <code>mashr</code></h2>
-<p>The code used to run <code>mashr</code> can be viewed <a href="run_mashr.html">here</a></p>
-</div>
-<div id="results-of-the-mashr-analyses" class="section level2">
-<h2>Results of the <code>mashr</code> analyses</h2>
-<p>Graphs and tables relating to the output of <code>mashr</code> <a href="process_mashr.html">here</a></p>
-</div>
-<div id="snp-heritabilities-and-the-robertson-price-identity" class="section level2">
-<h2>SNP-heritabilities and the Robertson-Price Identity</h2>
-<p>The code used to run GREML models to estimate SNP heritability and selection differentials <a href="SNP_heritabilities.html">here</a></p>
 </div>
 
 
@@ -815,6 +727,8 @@ footer is added to webpages before the MathJax javascript. -->
 
 
 
+</div>
+</div>
 
 </div>
 
@@ -852,6 +766,35 @@ $(document).ready(function () {
 });
 </script>
 
+<script>
+$(document).ready(function ()  {
+
+    // temporarily add toc-ignore selector to headers for the consistency with Pandoc
+    $('.unlisted.unnumbered').addClass('toc-ignore')
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
 
 <!-- dynamically load mathjax for compatibility with self-contained -->
 <script>
