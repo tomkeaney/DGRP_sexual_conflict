@@ -10,6 +10,9 @@ editor_options:
 
 This website presents an analysis of selection acting on the DGRP. We particularly focus upon sexually antagonistic selection and test some well known hypotheses that relate to this concept.
 
+## Ideas
+[Here](Ideas.html) I document research questions that we can potentially test with this data-set
+
 ## Analysis of phenotypic line means
 We present analyses of heritability and correlations between line means [here](Main_analysis.html)
 
