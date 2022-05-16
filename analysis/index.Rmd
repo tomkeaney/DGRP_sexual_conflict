@@ -28,6 +28,9 @@ The code used to run `mashr` can be viewed [here](run_mashr.html)
 ## Results of the `mashr` analyses
 Graphs and tables relating to the output of `mashr` [here](process_mashr.html)
 
-## SNP-heritabilities and the Robertson-Price Identity
+## SNP-heritabilities and the Robertson-Price Identity using `GCTA`
 
 The code used to run GREML models to estimate SNP heritability and selection differentials [here](SNP_heritabilities.html)
+
+## Results of the `GCTA` analyses
+Graphs and tables relating to the output of `GCTA` [here](GCTA_results.html)
