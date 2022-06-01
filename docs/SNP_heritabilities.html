@@ -11,7 +11,7 @@
 
 
 
-<title>’GCTA analysis</title>
+<title>‘GCTA analysis’</title>
 
 <script src="site_libs/header-attrs-2.13/header-attrs.js"></script>
 <script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
@@ -369,7 +369,7 @@ div.tocify {
 
 
 
-<h1 class="title toc-ignore">’GCTA analysis</h1>
+<h1 class="title toc-ignore">‘GCTA analysis’</h1>
 
 </div>
 
@@ -394,7 +394,7 @@ div.tocify {
 <div class="tab-content">
 <div id="summary" class="tab-pane fade in active">
 <p>
-<strong>Last updated:</strong> 2022-05-16
+<strong>Last updated:</strong> 2022-06-01
 </p>
 <p>
 <strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 7 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 0
@@ -485,16 +485,16 @@ This reproducible <a href="https://rmarkdown.rstudio.com">R Markdown</a> analysi
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomtomkeaneyDGRPsexualconflicttree1c86981014c956e141ab746a22e6838bebc494e7targetblank1c86981a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/tomkeaney/DGRP_sexual_conflict/tree/1c86981014c956e141ab746a22e6838bebc494e7" target="_blank">1c86981</a> </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomtomkeaneyDGRPsexualconflicttreea4076aa5e76c8729c82465a320f59c221ba09a22targetblanka4076aaa"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/tomkeaney/DGRP_sexual_conflict/tree/a4076aa5e76c8729c82465a320f59c221ba09a22" target="_blank">a4076aa</a> </a>
 </p>
 </div>
-<div id="strongRepositoryversionstrongahrefhttpsgithubcomtomkeaneyDGRPsexualconflicttree1c86981014c956e141ab746a22e6838bebc494e7targetblank1c86981a" class="panel-collapse collapse">
+<div id="strongRepositoryversionstrongahrefhttpsgithubcomtomkeaneyDGRPsexualconflicttreea4076aa5e76c8729c82465a320f59c221ba09a22targetblanka4076aaa" class="panel-collapse collapse">
 <div class="panel-body">
 <p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility.
 </p>
 <p>
-The results in this page were generated with repository version <a href="https://github.com/tomkeaney/DGRP_sexual_conflict/tree/1c86981014c956e141ab746a22e6838bebc494e7" target="_blank">1c86981</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
+The results in this page were generated with repository version <a href="https://github.com/tomkeaney/DGRP_sexual_conflict/tree/a4076aa5e76c8729c82465a320f59c221ba09a22" target="_blank">a4076aa</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
 </p>
 <p>
 Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
@@ -508,6 +508,7 @@ Ignored files:
     Ignored:    gwas_data/
 
 Untracked files:
+    Untracked:  %
     Untracked:  -Toms-laptop.Rhistory
     Untracked:  Manuscript/
     Untracked:  Reported_heritability.xlsx
@@ -593,6 +594,40 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/tomkeaney/DGRP_sexual_conflict/blob/a4076aa5e76c8729c82465a320f59c221ba09a22/analysis/SNP_heritabilities.Rmd" target="_blank">a4076aa</a>
+</td>
+<td>
+ausevo
+</td>
+<td>
+2022-06-01
+</td>
+<td>
+adding analysis
+</td>
+</tr>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/tomkeaney/DGRP_sexual_conflict/55867df25da20bdccbcbd4649acba6149d7eb6d0/docs/SNP_heritabilities.html" target="_blank">55867df</a>
+</td>
+<td>
+ausevo
+</td>
+<td>
+2022-05-16
+</td>
+<td>
+Build site.
+</td>
+</tr>
 <tr>
 <td>
 Rmd
@@ -759,7 +794,7 @@ line_mean_phenotypes &lt;- read_csv(&quot;data/all.dgrp.phenos_unscaled.csv&quot
 — Yang et al 2010
 </footer>
 <blockquote>
-<p>“In contrast to single-SNP association analysis, the basic concept behind the <code>gcta64</code> method is to fit the effects of all the SNPs as random effects using a mixed linear model (MLM).”</p>
+<p>“In contrast to single-SNP association analysis, the basic concept behind the <code>GCTA</code> method is to fit the effects of all the SNPs as random effects using a mixed linear model (MLM).”</p>
 </blockquote>
 <footer>
 — Yang et al 2011
@@ -773,7 +808,7 @@ line_mean_phenotypes &lt;- read_csv(&quot;data/all.dgrp.phenos_unscaled.csv&quot
 </div>
 <div id="run-univariate-greml-models-to-find-heritabilites" class="section level3">
 <h3>Run univariate GREML models to find heritabilites</h3>
-<p>The below uses the <code>gcta64</code> command –reml to estimate the genetic variance (V(G)), i.e. the variance explained by the GRM), environmental variance (V(e)), their sum (Vp), and the so-called “SNP heritability” (V(G)/Vp).</p>
+<p>The below uses the <code>GCTA</code> command –reml to estimate the genetic variance (V(G)), environmental variance (V(e)), their sum (Vp), and the so-called “SNP heritability” (V(G)/Vp).</p>
 <pre class="r"><code>do_univariate_greml &lt;- function(trait1){
 
   # First make &#39;focal_data&#39;, a 2-column data frame with the line and the focal phenotype value
@@ -823,7 +858,8 @@ if(!file.exists(&quot;gwas_data/variance_components.csv&quot;)){
 <div id="wrangle-data-and-save" class="section level3">
 <h3>Wrangle data and save</h3>
 <pre class="r"><code>trait_info &lt;- read_csv(&quot;data/all.dgrp.phenos_unscaled.csv&quot;) %&gt;%
-  mutate(Trait = str_replace_all(Trait, &quot;[/]&quot;, &quot;_&quot;)) %&gt;% 
+  mutate(Trait = str_replace_all(Trait, &quot;[/]&quot;, &quot;_&quot;),
+         Sex = fct_recode(Sex, Pooled = &quot;Both&quot;)) %&gt;% 
   select(-trait_value) %&gt;% 
   distinct(Trait, Sex, `Trait guild`, `Trait description`, Reference)
 
@@ -860,6 +896,9 @@ write_csv(SNP_heritability, file = &quot;data/SNP_heritability_cleaned.csv&quot;
 <h2>Use <code>GCTA</code> to estimate genetic covariance between traits and fitness</h2>
 <p>Here we use the <code>gcta64</code> command <code>--reml-bivar</code> to estimate the genetic covariance <code>(C(G)_tr12)</code>, i.e. the co-variance explained by the known SNPs in the DGRP, and the genetic correlation (<code>rG</code>), in addition to the univariate parameters for trait 1 and trait 2 mentioned above. Note that for traits where the genetic variance is estimated to be low, the model cannot reliably estimate genetic covariance or correlations.</p>
 <p>We use <code>(C(G)_tr12)</code> to calculate the <strong>Robertson covariance</strong>, <span class="math inline">\(R_z = \sigma(A_w, A_z) = \sigma_A(w,z)\)</span>, which is sometimes referred to as the secondary theorem of natural selection. This is the additive covariance between a trait and fitness, or equivalently, the expected response to selection of a trait.</p>
+<p>We specify the following options in <code>GCTA</code>:</p>
+<p>–reml-bivar-lrt-rg 0: To test for the hypothesis of fixing the genetic correlation at a particular value, e.g. fixing genetic correlation at -1, 0 and 1. By default bivariate GCTA-GREML does not perform a log likelihood test unless this option is specified.</p>
+<p>Note that this means the p-values returned in the bivariate GREML output correspond to the genetic correlation <span class="math inline">\(r_G\)</span>. We focus our analysis on<code>(C(G)_tr12)</code>; therefore we do not report these p-values.</p>
 <div id="female-fitness" class="section level3">
 <h3>Female fitness</h3>
 <pre class="r"><code># wrangle data so that it is specific to the sex the trait was measured for i.e. female, male or pooled sexes
@@ -975,7 +1014,7 @@ do_bivar_greml_m &lt;- function(trait1, trait2){
     select(`Trait 1`, `Trait 2`, everything())
 }
 
-# run for all traits - this works, except I need to rewrite the function for each level of sex (done below)
+# run for all traits 
 
 if(!file.exists(&quot;data/SNP_selection.csv&quot;)){
   male_results &lt;- map2_dfr(&quot;fitness.early.m&quot;, male_trait_list, do_bivar_greml_m)
@@ -1042,7 +1081,7 @@ do_bivar_greml_p &lt;- function(trait1, trait2){
     select(`Trait 1`, `Trait 2`, everything())
 }
 
-# run for all traits - this works, except I need to rewrite the function for each level of sex (done below)
+# run for all traits
 
 if(!file.exists(&quot;data/SNP_selection.csv&quot;)){
   pooled_female &lt;- map2_dfr(&quot;fitness.early.f&quot;, pooled_trait_list, do_bivar_greml_p)
@@ -1062,99 +1101,158 @@ if(!file.exists(&quot;data/SNP_selection.csv&quot;)){
     filter(Source %in% c(&quot;V(G)_tr1&quot;, &quot;V(e)_tr1&quot;, &quot;Vp_tr1&quot;, &quot;V(G)/Vp_tr1&quot;,
                          &quot;V(G)_tr2&quot;, &quot;V(e)_tr2&quot;, &quot;Vp_tr2&quot;, &quot;V(G)/Vp_tr2&quot;,
                          &quot;C(G)_tr12&quot;, &quot;rG&quot;)) %&gt;% 
-    mutate(Variance = as.numeric(Variance),
-           Fitness_sex = if_else(`Trait 2` == &quot;fitness.early.f&quot;, &quot;Female&quot;, &quot;Male&quot;)) %&gt;% 
+    mutate(Variance = as.numeric(Variance)) %&gt;% 
     rename(Parameter = Source)
+  
+    a_pooled &lt;- 
+    pooled_results_concise %&gt;% 
+    filter(`Trait 1` == &quot;fitness.early.f&quot; | `Trait 1` == &quot;fitness.early.m&quot;) %&gt;% 
+    #rename(Trait = `Trait 1`) %&gt;% 
+    pivot_wider(names_from = Parameter, values_from = c(Variance, SE)) %&gt;% 
+    rename(# rename to more specific names. No name switching needed for this subset
+      `Variance_V(G)_trait` = `Variance_V(G)_tr2`,
+      `Variance_V(G)_fitness` = `Variance_V(G)_tr1`,
+      `Variance_V(e)_trait` = `Variance_V(e)_tr2`,
+      `Variance_V(e)_fitness` = `Variance_V(e)_tr1`,
+      Variance_Vp_trait = Variance_Vp_tr2,
+      Variance_Vp_fitness = Variance_Vp_tr1,
+      `Variance_V(G)/Vp_trait` = `Variance_V(G)/Vp_tr2`,
+      `Variance_V(G)/Vp_fitness` = `Variance_V(G)/Vp_tr1`,
+      `SE_V(G)_trait` = `SE_V(G)_tr2`,
+      `SE_V(G)_fitness` = `SE_V(G)_tr1`,
+      `SE_V(e)_trait` = `SE_V(e)_tr2`,
+      `SE_V(e)_fitness` = `SE_V(e)_tr1`,
+      SE_Vp_trait = SE_Vp_tr2,
+      SE_Vp_fitness = SE_Vp_tr1,
+      `SE_V(G)/Vp_trait` = `SE_V(G)/Vp_tr2`,
+      `SE_V(G)/Vp_fitness` = `SE_V(G)/Vp_tr1`)
+  
+  b_pooled &lt;-
+    pooled_results_concise %&gt;% 
+    filter(`Trait 2` == &quot;fitness.early.f&quot; | `Trait 2` == &quot;fitness.early.m&quot;) %&gt;% 
+    rename(Trait = `Trait 1`,
+           `Trait 1` = `Trait 2`) %&gt;% 
+    rename(`Trait 2` = Trait) %&gt;% 
+    pivot_wider(names_from = Parameter, values_from = c(Variance, SE)) %&gt;% 
+    rename(# switch the names so that they match the order of trait1 and trait2
+      `Variance_V(G)_trait` = `Variance_V(G)_tr1`,
+      `Variance_V(G)_fitness` = `Variance_V(G)_tr2`,
+      `Variance_V(e)_trait` = `Variance_V(e)_tr1`,
+      `Variance_V(e)_fitness` = `Variance_V(e)_tr2`,
+      Variance_Vp_trait = Variance_Vp_tr1,
+      Variance_Vp_fitness = Variance_Vp_tr2,
+      `Variance_V(G)/Vp_trait` = `Variance_V(G)/Vp_tr1`,
+      `Variance_V(G)/Vp_fitness` = `Variance_V(G)/Vp_tr2`,
+      `SE_V(G)_trait` = `SE_V(G)_tr1`,
+      `SE_V(G)_fitness` = `SE_V(G)_tr2`,
+      `SE_V(e)_trait` = `SE_V(e)_tr1`,
+      `SE_V(e)_fitness` = `SE_V(e)_tr2`,
+      SE_Vp_trait = SE_Vp_tr1,
+      SE_Vp_fitness = SE_Vp_tr2,
+      `SE_V(G)/Vp_trait` = `SE_V(G)/Vp_tr1`,
+      `SE_V(G)/Vp_fitness` = `SE_V(G)/Vp_tr2`)
+  
+  
+  
+  pooled_results_concise &lt;-
+    rbind(a_pooled, b_pooled) %&gt;% 
+    rename(Fitness_component = `Trait 1`,
+           Trait = `Trait 2`) %&gt;% 
+    mutate(Fitness_sex = if_else(Fitness_component == &quot;fitness.early.f&quot;, &quot;Female&quot;, &quot;Male&quot;)) %&gt;% 
+    select(Fitness_component, Trait, Fitness_sex, everything()) %&gt;% arrange(Trait)
+  
+  # join the  meta-data
+  
+   pooled_results_concise &lt;-
+     left_join(pooled_results_concise, trait_info)
+  
 } else &quot;Already calculated&quot;</code></pre>
 </div>
 <div id="combine-results-and-save" class="section level3">
 <h3>Combine results and save</h3>
-<p>Note that when we combine the <code>SNP_heritability</code> tibble with the <code>SNP_selection</code> tibble we will get some duplicate columns. This is because the bivariate GREML calculates everything that the univariate GREML does. I’ll check if they are identical and delete redundant columns if so. I get the feeling that they’ll be slightly different because the bivariate GREML only uses the lines that have been measured for both traits; generally a smaller subset of those a trait was measured across.</p>
+<p>Note that the <code>SNP_heritability</code> tibble and the <code>SNP_selection</code> tibble contain duplicate columns. This is because the bivariate GREML calculates everything that the univariate GREML does. I’ll check if they are identical and delete redundant columns if so. I get the feeling that they’ll be slightly different because the bivariate GREML only uses the lines that have been measured for both traits; generally a smaller subset of those a trait was measured across.</p>
 <pre class="r"><code>if(!file.exists(&quot;data/SNP_selection.csv&quot;)){
-  SNP_selection_response_estimates &lt;-
-    rbind(female_results_concise, male_results_concise, pooled_results_concise) %&gt;% 
+  female_male_data &lt;-
+    rbind(female_results_concise, male_results_concise) %&gt;% # note that the pooled data is binded later
     # create a common name so that we can join the meta data
     rename(Trait = `Trait 1`)
-  write_csv(SNP_selection_response_estimates, file = &quot;data/SNP_selection.csv&quot;)
   
-  # join the meta data
-  
-  SNP_selection_response_estimates &lt;- left_join(SNP_selection_response_estimates, trait_info)
+  # The code below is written to make sure fitness is in the same trait column throughout the tibble. We need to do this because Trait 1 is determined alphabetically, so it&#39;s sometimes fitness and sometimes is not.
   
   # wrangle so that each variance component is its own column
   
-  SNP_selection_response_estimates_wide &lt;-
-    SNP_selection_response_estimates %&gt;% 
-    pivot_wider(names_from = Parameter, values_from = c(Variance, SE)) %&gt;% 
-    unnest(cols = c(`Variance_V(G)_tr1`, `Variance_V(G)_tr2`, `Variance_C(G)_tr12`, 
-                    `Variance_V(e)_tr1`, `Variance_V(e)_tr2`, Variance_Vp_tr1, 
-                    Variance_Vp_tr2, `Variance_V(G)/Vp_tr1`, `Variance_V(G)/Vp_tr2`, 
-                    Variance_rG, `SE_V(G)_tr1`, `SE_V(G)_tr2`, `SE_C(G)_tr12`, 
-                    `SE_V(e)_tr1`, `SE_V(e)_tr2`, SE_Vp_tr1, SE_Vp_tr2, `SE_V(G)/Vp_tr1`, 
-                    `SE_V(G)/Vp_tr2`, SE_rG))
-  
-  # this part here is to make sure fitness is in the same trait column throughout the tibble. Trait 1 is determined alphabetically, so it&#39;s sometimes fitness and sometimes is not. We fix that below 
-  
   a &lt;- 
-    SNP_selection_response_estimates_wide %&gt;% 
+    female_male_data %&gt;% 
     filter(Trait == &quot;fitness.early.f&quot; | Trait == &quot;fitness.early.m&quot;) %&gt;% 
-    rename(`Trait 1` = Trait,
-           # rename to more specific names. No name switching needed for this subset
-           `Variance_V(G)_trait` = `Variance_V(G)_tr2`,
-           `Variance_V(G)_fitness` = `Variance_V(G)_tr1`,
-           `Variance_V(e)_trait` = `Variance_V(e)_tr2`,
-           `Variance_V(e)_fitness` = `Variance_V(e)_tr1`,
-           Variance_Vp_trait = Variance_Vp_tr2,
-           Variance_Vp_fitness = Variance_Vp_tr1,
-           `Variance_V(G)/Vp_trait` = `Variance_V(G)/Vp_tr2`,
-           `Variance_V(G)/Vp_fitness` = `Variance_V(G)/Vp_tr1`,
-           `SE_V(G)_trait` = `SE_V(G)_tr2`,
-           `SE_V(G)_fitness` = `SE_V(G)_tr1`,
-           `SE_V(e)_trait` = `SE_V(e)_tr2`,
-           `SE_V(e)_fitness` = `SE_V(e)_tr1`,
-           SE_Vp_trait = SE_Vp_tr2,
-           SE_Vp_fitness = SE_Vp_tr1,
-           `SE_V(G)/Vp_trait` = `SE_V(G)/Vp_tr2`,
-           `SE_V(G)/Vp_fitness` = `SE_V(G)/Vp_tr1`)
+    rename(`Trait 1` = Trait) %&gt;% 
+    pivot_wider(names_from = Parameter, values_from = c(Variance, SE)) %&gt;% 
+    rename(# rename to more specific names. No name switching needed for this subset
+      `Variance_V(G)_trait` = `Variance_V(G)_tr2`,
+      `Variance_V(G)_fitness` = `Variance_V(G)_tr1`,
+      `Variance_V(e)_trait` = `Variance_V(e)_tr2`,
+      `Variance_V(e)_fitness` = `Variance_V(e)_tr1`,
+      Variance_Vp_trait = Variance_Vp_tr2,
+      Variance_Vp_fitness = Variance_Vp_tr1,
+      `Variance_V(G)/Vp_trait` = `Variance_V(G)/Vp_tr2`,
+      `Variance_V(G)/Vp_fitness` = `Variance_V(G)/Vp_tr1`,
+      `SE_V(G)_trait` = `SE_V(G)_tr2`,
+      `SE_V(G)_fitness` = `SE_V(G)_tr1`,
+      `SE_V(e)_trait` = `SE_V(e)_tr2`,
+      `SE_V(e)_fitness` = `SE_V(e)_tr1`,
+      SE_Vp_trait = SE_Vp_tr2,
+      SE_Vp_fitness = SE_Vp_tr1,
+      `SE_V(G)/Vp_trait` = `SE_V(G)/Vp_tr2`,
+      `SE_V(G)/Vp_fitness` = `SE_V(G)/Vp_tr1`)
   
   b &lt;-
-    SNP_selection_response_estimates_wide %&gt;% 
+    female_male_data %&gt;% 
     filter(`Trait 2` == &quot;fitness.early.f&quot; | `Trait 2` == &quot;fitness.early.m&quot;) %&gt;% 
     rename(`Trait 1` = `Trait 2`,
-           `Trait 2` = Trait,
-           # switch the names so that they match the order of trait1 and trait2
-           `Variance_V(G)_trait` = `Variance_V(G)_tr1`,
-           `Variance_V(G)_fitness` = `Variance_V(G)_tr2`,
-           `Variance_V(e)_trait` = `Variance_V(e)_tr1`,
-           `Variance_V(e)_fitness` = `Variance_V(e)_tr2`,
-           Variance_Vp_trait = Variance_Vp_tr1,
-           Variance_Vp_fitness = Variance_Vp_tr2,
-           `Variance_V(G)/Vp_trait` = `Variance_V(G)/Vp_tr1`,
-           `Variance_V(G)/Vp_fitness` = `Variance_V(G)/Vp_tr2`,
-           `SE_V(G)_trait` = `SE_V(G)_tr1`,
-           `SE_V(G)_fitness` = `SE_V(G)_tr2`,
-           `SE_V(e)_trait` = `SE_V(e)_tr1`,
-           `SE_V(e)_fitness` = `SE_V(e)_tr2`,
-           SE_Vp_trait = SE_Vp_tr1,
-           SE_Vp_fitness = SE_Vp_tr2,
-           `SE_V(G)/Vp_trait` = `SE_V(G)/Vp_tr1`,
-           `SE_V(G)/Vp_fitness` = `SE_V(G)/Vp_tr2`)
+           `Trait 2` = Trait) %&gt;% 
+    pivot_wider(names_from = Parameter, values_from = c(Variance, SE)) %&gt;% 
+    rename(# switch the names so that they match the order of trait1 and trait2
+      `Variance_V(G)_trait` = `Variance_V(G)_tr1`,
+      `Variance_V(G)_fitness` = `Variance_V(G)_tr2`,
+      `Variance_V(e)_trait` = `Variance_V(e)_tr1`,
+      `Variance_V(e)_fitness` = `Variance_V(e)_tr2`,
+      Variance_Vp_trait = Variance_Vp_tr1,
+      Variance_Vp_fitness = Variance_Vp_tr2,
+      `Variance_V(G)/Vp_trait` = `Variance_V(G)/Vp_tr1`,
+      `Variance_V(G)/Vp_fitness` = `Variance_V(G)/Vp_tr2`,
+      `SE_V(G)_trait` = `SE_V(G)_tr1`,
+      `SE_V(G)_fitness` = `SE_V(G)_tr2`,
+      `SE_V(e)_trait` = `SE_V(e)_tr1`,
+      `SE_V(e)_fitness` = `SE_V(e)_tr2`,
+      SE_Vp_trait = SE_Vp_tr1,
+      SE_Vp_fitness = SE_Vp_tr2,
+      `SE_V(G)/Vp_trait` = `SE_V(G)/Vp_tr1`,
+      `SE_V(G)/Vp_fitness` = `SE_V(G)/Vp_tr2`)
   
-  SNP_selection_response_estimates_wide &lt;-
+  female_male_wide &lt;-
     rbind(a, b) %&gt;% 
     rename(Fitness_component = `Trait 1`,
            Trait = `Trait 2`)
   
+  # join meta data
   
-  SNP_selection_response_estimates_wide &lt;-
-    left_join(SNP_selection_response_estimates_wide, trait_info) %&gt;% 
+  female_male_wide &lt;-
+  left_join(female_male_wide, trait_info) %&gt;% 
+    # this next line removes the .f and .m suffix&#39;s for each trait, as this info is held in the `Fitness_sex` column
+    mutate(Trait = case_when(str_ends(Trait, &quot;.f&quot;) | str_ends(Trait, &quot;.m&quot;)  ~ gsub(&#39;.{2}$&#39;, &#39;&#39;, Trait)))
+  
+  # combine the pooled dataset with the female and male data
+  
+  SNP_selection_response_estimates &lt;- rbind(pooled_results_concise, female_male_wide) %&gt;% 
     select(Trait, Fitness_component, Fitness_sex, Sex, `Trait guild`, `Trait description`, Reference, everything()) %&gt;% 
-    # Trait_sex shows which sex the trait was measured in, while Fitness_sex shows the sex that `(C(G)_tr12)` and `rG` were calculated for
-    # These are generally the same, with the exception of traits that were measured with the sexes pooled (commonly larval traits)
-    # For these pooled traits we ran the bivariate GREML twice - once for female fitness and again for male fitness
     rename(Trait_sex = Sex)
-} else SNP_selection_response_estimates_wide &lt;- read_csv(&quot;data/SNP_selection.csv&quot;)</code></pre>
-<pre class="r"><code>write_csv(SNP_selection_response_estimates_wide, file = &quot;data/SNP_selection.csv&quot;)</code></pre>
+  
+      # Trait_sex shows which sex the trait was measured in, while Fitness_sex shows the sex that `(C(G)_tr12)` and `rG` were calculated for
+    # These are generally the same, with the exception of traits that were measured with the sexes pooled (commonly larval traits), coded as pooled in the trait_sex column
+    # For these pooled traits we ran the bivariate GREML twice - once for female fitness and again for male fitness
+  
+  write_csv(SNP_selection_response_estimates, file = &quot;data/SNP_selection.csv&quot;)
+  
+} else SNP_selection_response_estimates &lt;- read_csv(&quot;data/SNP_selection.csv&quot;)</code></pre>
 <br>
 <p>
 <button type="button" class="btn btn-default btn-workflowr btn-workflowr-sessioninfo" data-toggle="collapse" data-target="#workflowr-sessioninfo" style="display: block;">
