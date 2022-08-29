@@ -129,7 +129,7 @@ line_mean_phenotypes <- line_mean_phenotypes %>% filter(line %in% genotyped_line
 
 ## Create a reduced list of LD-pruned SNPs with PLINK
 
-To keep the computation time and memory usage manageable, we did not analyse every SNP that passed quality control (i.e. 1,646,652 SNPs), but rather a subset of them that were approximately in linkage disequilibrium. We identified this LD-pruned set of SNPs using the PLINK arguments `--indep-pairwise 100 10 0.2`, i.e. pruning within 100kB sliding windows, sliding 10 variants along with each step, and allowing a maximum pairwise $r^2$ threshold of 0.2 between loci. With these parameters, 1420071 SNPs were removed, leaving `r 1646652 - 1420071` for downstream analysis.
+To keep the computation time and memory usage manageable, we did not analyse every SNP that passed quality control (i.e. 1,646,652 SNPs), but rather a subset of them that were approximately in linkage disequilibrium. We identified this LD-pruned set of SNPs using the PLINK arguments `--indep-pairwise 100 10 0.2`, i.e. pruning within 100kB sliding windows, sliding 10 variants along with each step, and allowing a maximum pairwise $r^2$ threshold of 0.2 between loci. With these parameters, 1420071 SNPs were removed, leaving 226581 for downstream analysis.
 
 ```{r}
 # indep-pairwise arguments are: 
@@ -150,7 +150,7 @@ unlink("gwas_data/derived/plink.prune.out")
 
 
 ## Run all the GWAS
-Note: because plink defines the minor allele as the alt allele (so, lines fixed for the minor allele are scored as genotype: 2, and those with the major allele as genotype: 0), a _positive_ effect size in these association tests means the _minor_ allele is associated with a _higher_ value of the trait in question.
+Note: because PLINK defines the minor allele as the alt allele (so, lines fixed for the minor allele are scored as genotype: 2, and those with the major allele as genotype: 0), a _positive_ effect size in these association tests means the _minor_ allele is associated with a _higher_ value of the trait in question.
 
 ```{r}
 gwas_one_trait <- function(focal_phenotype){
@@ -199,7 +199,7 @@ gwas_one_trait <- function(focal_phenotype){
   #   write.table(row.names = FALSE, col.names = FALSE, 
   #               file = "gwas_data/derived/phenotype.txt", quote = FALSE)
 
-  # Run mixed-model GWAS (in practice, the relatedness is low so it just a runs linear model)
+  # Run mixed-model GWAS (in practice, the relatedness is low so it just a runs a linear model)
   print(focal_phenotype)
   run_command("{plink} --bfile dgrp2_QC_focal_lines  --assoc --maf 0.05 --out gwas_results/new", 
               path = "/gwas_data/derived")
@@ -227,38 +227,74 @@ unlink(c("gwas_data/derived/lines_to_keep.txt"))
 ```
 
 
-<!-- ```{r} -->
-<!-- # First make 'focal_data', a 2-column data frame with the line and the focal phenotype value -->
-<!-- focal_data <- line_mean_phenotypes %>%  -->
-<!--   select(line, lifespan.25C.2020.m, fitness.early.f)  -->
-<!-- names(focal_data)[2:3] <- c("focal_pheno1", "focal_pheno2") -->
+```{r eval=FALSE, echo=FALSE, include=FALSE}
+# experiments with bivariate greml in gcta64. Seems to fail very often, and gives untrustworthy estimates. Maybe not useful for the DGRP?
+# Make the genomic relatedness matrix for all the lines
+run_command(glue("{gcta} --bfile dgrp2_QC_all_lines_imputed_correct",
+                 " --make-grm",
+                 " --out gcta_GRM"), path = "/gwas_data/derived/")
 
-<!-- # Write a file with the line and phenotype data called phenotype.txt, for gcta64 -->
-<!-- pheno_data <- focal_data %>% -->
-<!--   mutate(line_copy = line) %>% -->
-<!--   select(line, line_copy, focal_pheno1) %>%  -->
-<!--   as.matrix() -->
-<!-- pheno_data[is.na(pheno_data)] <- -9 -->
-<!-- pheno_data %>% -->
-<!--   write.table(row.names = FALSE, col.names = FALSE, -->
-<!--               file = "gwas_data/derived/phenotype.txt", quote = FALSE) -->
+trait_guilds <- read_csv("data/all.dgrp.phenos_unscaled.csv") %>% 
+  select(Trait, `Trait guild`) %>% 
+  distinct() %>% 
+  mutate(`Trait guild` = replace(`Trait guild`, is.na(`Trait guild`), "Other"),
+         `Trait guild` = replace(`Trait guild`, `Trait guild` == "?", "Other"),
+         `Trait guild` = replace(`Trait guild`, `Trait guild` == "Population", "Other"),
+         `Trait guild` = replace(`Trait guild`, `Trait guild` == "Reproduction", "Other"))
+guilds <- trait_guilds$`Trait guild` %>% unique()
 
-<!-- run_command(glue("{gcta} --bfile dgrp2_QC_all_lines_imputed_correct", -->
-<!--                  " --make-grm",  -->
-<!--                  " --out gcta_GRM"), path = "/gwas_data/derived/") -->
+combos <- map_df(1:length(guilds), ~ {
+  t(combn(traits_for_gwas[traits_for_gwas %in% c(
+    "fitness.early.f", "fitness.early.m",
+    trait_guilds$Trait[trait_guilds$`Trait guild` == guilds[.x]])], 2)) %>% 
+    as.data.frame() %>% 
+    rename(trait1 = V1, trait2 = V2) %>% as_tibble() %>% 
+    mutate(guild = guilds[.x]) %>% select(guild, trait1, trait2)
+  })
 
-<!-- run_command(glue("{gcta} --grm gcta_GRM --make-bK-sparse 0.05 --out sparse_GRM"), path = "/gwas_data/derived/") -->
-
-<!-- # fastGWA mixed model (based on the sparse GRM generated above) -->
-<!-- run_command(glue("{gcta} --bfile dgrp2_QC_all_lines_imputed_correct --grm-sparse sparse_GRM --fastGWA-mlm --pheno phenotype.txt 1 --threads 10 --out geno_assoc"), path = "/gwas_data/derived/") -->
+combos <- combos %>% filter(guild %in% c("Other", "Behavioural", "Morphological", "Physiological", "Life history"))
 
 
+do_bivar_greml <- function(trait1, trait2){
+  print(paste(trait1, trait2))
+  # First make 'focal_data', a 2-column data frame with the line and the focal phenotype value
+  focal_data <- line_mean_phenotypes %>%
+    select(line, !! trait1, !! trait2)
+  names(focal_data)[2:3] <- c("focal_pheno1", "focal_pheno2")
+  
+  # Write a file with the line and phenotype data called phenotype.txt, for gcta64
+  pheno_data <- focal_data %>%
+    mutate(line_copy = line) %>%
+    select(line, line_copy, focal_pheno1, focal_pheno2) %>%
+    as.matrix()
+  
+  pheno_data %>%
+    write.table(row.names = FALSE, col.names = FALSE,
+                file = "gwas_data/derived/phenotype_pair.txt", quote = FALSE)
+  
+  # Note that the warnings come when gcta could not fit the model properly. I save these errors especially, so no need to print them.
+  console_output <- suppressWarnings(capture.output(
+    run_command(glue("{gcta}  --reml-bivar --reml-bivar-lrt-rg 0 --reml-maxit 10000 --grm gcta_GRM  --pheno phenotype_pair.txt  --out delete_me"), 
+                path = "/gwas_data/derived/")))
+  
+  errors <- console_output[str_detect(console_output, "[Ee]rror")]
+  if(length(errors) == 0) errors <- NA
+  if(length(errors) > 1) errors <- paste(errors, sep = "; ")
+  traits <- sort(c(trait1, trait2))
+  
+  rbind(read.delim("gwas_data/derived/delete_me.hsq", sep = "\t") , 
+        data.frame(Source = "Errors", Variance = errors, SE = NA)) %>% 
+    mutate(trait1 = traits[1], trait2 = traits[2]) %>% select(trait1, trait2, everything())
+}
+# do_bivar_greml("lifespan.25C.2020.m", "fitness.early.f")
+do_bivar_greml("fitness.early.m", "fitness.late.f")
 
-<!-- run_command(glue("{gcta} --bfile dgrp2_QC_all_lines_imputed_correct", -->
-<!--                  " --pheno phenotype.txt --grm gcta_GRM",  -->
-<!--                  " --reml-bivar 1 2 --reml-bivar-lrt-rg 0 --out gcta_test"), path = "/gwas_data/derived/") -->
+if(!file.exists("gwas_data/derived/bivariate_greml_results.tsv")){
+  all_gen_corrs <- map_df(1:nrow(combos), ~ do_bivar_greml(combos$trait1[.x], combos$trait2[.x]))
+  write_tsv(all_gen_corrs, "gwas_data/derived/bivariate_greml_results.tsv")
+}
 
-<!-- run_command(glue("{gcta} --bfile dgrp2_QC_all_lines_imputed_correct --pheno phenotype.txt --fastGWA-mlm --grm-sparse sparse_GRM --out gcta_test"), path = "/gwas_data/derived/") -->
-
-<!-- ``` -->
+unlink(c("gwas_data/derived/delete_me.log", "gwas_data/derived/phenotype_pair.txt", "gwas_data/derived/delete_me.hsq"))
+unlink(list.files("gwas_data/derived/", pattern = "gcta_GRM", full.names = TRUE))
+```
 

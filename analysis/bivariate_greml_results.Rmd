@@ -1,0 +1,127 @@
+---
+title: "bivariate_greml_results"
+author: "lukeholman"
+date: "2021-08-06"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+
+## Introduction
+
+```{r}
+library(tidyverse)
+
+
+trait_guilds <- read_csv("data/all.dgrp.phenos_unscaled.csv") %>% 
+  select(Trait, `Trait guild`) %>% 
+  distinct() %>% 
+  mutate(`Trait guild` = replace(`Trait guild`, is.na(`Trait guild`), "Other"),
+         `Trait guild` = replace(`Trait guild`, `Trait guild` == "?", "Other"),
+         `Trait guild` = replace(`Trait guild`, `Trait guild` == "Population", "Other"),
+         `Trait guild` = replace(`Trait guild`, `Trait guild` == "Reproduction", "Other")) %>% 
+  filter(!(Trait %in% c("fitness.early.f", "fitness.early.f", "fitness.late.m", "fitness.late.m")))
+guilds <- trait_guilds$`Trait guild` %>% unique()
+
+
+greml_results <- read_tsv("gwas_data/derived/bivariate_greml_results.tsv") %>% 
+  filter(!(trait1 %in% c("fitness.late.m", "fitness.late.f")) & !(trait2 %in% c("fitness.late.m", "fitness.late.f"))) %>% 
+  left_join(trait_guilds, by = c("trait1" = "Trait")) %>% rename(guild = `Trait guild`) %>% 
+  distinct(trait1, trait2, Source, Variance, SE, guild)
+
+greml_results$guild[is.na(greml_results$guild)] <- trait_guilds$`Trait guild`[match(greml_results$trait2[is.na(greml_results$guild)], trait_guilds$Trait)]
+  
+
+
+no_errors <- greml_results %>% 
+  filter(Source == "Errors") %>% 
+  filter(is.na(Variance)) %>% 
+  mutate(pasted = paste(trait1, trait2)) %>% 
+  select(pasted)
+
+greml_results <- greml_results %>% 
+ # filter(paste(trait1, trait2) %in% no_errors$pasted) %>% 
+  filter(!(Source %in% c("logL", "logL0", "LRT", "df", "Errors"))) %>% 
+  mutate(Variance = as.numeric(str_remove_all(Variance, " [(]one-tailed test[)]"))) 
+
+p_vals <- greml_results %>% filter(Source == "Pval") %>% 
+  select(trait1, trait2, Variance, guild) %>%  rename(p_val = Variance)
+
+greml_results <- greml_results %>% filter(Source == "rG") %>% 
+  select(trait1, trait2, guild, Variance, SE) %>%  rename(rG = Variance) %>% 
+  left_join(p_vals, by = c("trait1", "trait2", "guild")) %>% 
+  filter(!is.na(SE)) #%>% filter(SE < 1) # remove correlations measured with low precision
+
+rm(p_vals)
+
+greml_results %>% 
+  filter(trait1 == "fitness.early.f" | trait2 == "fitness.early.f") %>% arrange(p_val)
+
+greml_results <- greml_results %>% 
+    mutate(trait1_sex = substr(trait1, nchar(trait1)-1, nchar(trait1)),
+           trait2_sex = substr(trait2, nchar(trait2)-1, nchar(trait2)),
+           # trait1 = replace(trait1, trait1_sex == ".m", substr(trait1, 1, nchar(trait1)-2)[trait1_sex == ".m"]),
+           # trait1 = replace(trait1, trait1_sex == ".f", substr(trait1, 1, nchar(trait1)-2)[trait1_sex == ".f"]),
+           # trait2 = replace(trait2, trait2_sex == ".m", substr(trait2, 1, nchar(trait2)-2)[trait2_sex == ".m"]),
+           # trait2 = replace(trait2, trait2_sex == ".f", substr(trait2, 1, nchar(trait2)-2)[trait2_sex == ".f"]),
+           trait1_sex = case_when(trait1_sex == ".f" ~ "female", 
+                                  trait1_sex == ".m" ~ "male", TRUE ~ "both" ),
+           trait2_sex = case_when(trait2_sex == ".f" ~ "female", 
+                                  trait2_sex == ".m" ~ "male", TRUE ~ "both" ),
+           corr_sex_type = ifelse(trait1_sex == "female" & trait2_sex == "male", "between_sex", NA),
+           corr_sex_type = replace(corr_sex_type, trait2_sex == "female" & trait1_sex == "male", "between_sex"),
+           corr_sex_type = replace(corr_sex_type, trait1_sex == trait2_sex, "within_sex")) %>% 
+  arrange(p_val)
+```
+
+## Unclassified traits {.tabset}
+
+### Heatmap
+
+```{r}
+# Make nice pheatmaps
+make_heatmap <- function(corr_matrix, cuts = 6){
+  paletteLength <- 50
+  myColor <- colorRampPalette(c(brewer.pal(9, "Purples")[7], "white", brewer.pal(9, "Oranges")[7]))(paletteLength)
+  myBreaks <- c(seq(min(corr_matrix, na.rm=T), 0, length.out=ceiling(paletteLength/2) + 1), 
+                seq(max(corr_matrix, na.rm=T)/paletteLength, max(corr_matrix, na.rm=T), length.out=floor(paletteLength/2)))
+  
+  if(!is.na(cuts)){
+    pheatmap(corr_matrix, show_rownames = TRUE, col = myColor,
+             cutree_rows = cuts, cutree_cols = cuts)
+  }
+  else {
+    pheatmap(corr_matrix, show_rownames = TRUE, col = myColor)
+  }
+}
+```
+
+
+```{r}
+xx <- filter(greml_results, guild == "Morphological") %>% 
+  select(trait1, trait2, rG)
+xx <- rbind(xx, xx %>% rename(t1 = trait2, t2 = trait1) %>% rename(trait1 = t1, trait2 = t2))
+
+# focal_traits <- sort(unique(c(xx$trait1, xx$trait2)))
+# 
+# corr_matrix <- matrix(NA, nrow = length(focal_traits), ncol = length(focal_traits))
+# colnames(corr_matrix) <- focal_traits
+# rownames(corr_matrix) <- focal_traits
+# pasted_rows <- paste(xx$trait1, xx$trait2)
+# for(i in 1:nrow(corr_matrix)){
+#   for(j in 1:ncol(corr_matrix)){
+#     if(i == j) item <- NA
+#     else item <- xx$rG[pasted_rows == paste0(sort(c(focal_traits[i], focal_traits[j])), collapse = " ")]
+#     if(length(item) == 1) corr_matrix[i,j] <- item
+#   }
+# }
+
+  
+ggplot(xx, aes(trait1, trait2, fill = rG)) +
+  geom_tile() + 
+  scale_fill_gradient2() + 
+  theme(axis.text.x = element_text(angle = 45,  hjust=  1))
+
+
+```
+
