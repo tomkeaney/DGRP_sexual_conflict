@@ -1,0 +1,586 @@
+---
+title: "'GCTA analysis'"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+
+```{r, setup, include=FALSE}
+knitr::opts_chunk$set(
+  message = FALSE, warning = FALSE, results='hide'
+)
+```
+
+## Load packages and prepare for `GCTA` analysis
+
+Here we load the necessary packages to build this document and code in 'tidy' style. We also set the file path so that R can access the `gcta64` software. Finally, we build a helper function to pass `GCTA` commands to the terminal. This function allows us to code entirely within R-studio, which is our strong preference.
+
+```{r}
+library(tidyverse)
+library(glue)
+library(kableExtra)
+library(DT)
+library(MetBrewer)
+library(patchwork)
+library(rcartocolor)
+
+gcta <- file.path(getwd(), "code/gcta64")
+options(readr.show_col_types = FALSE)
+
+
+# helper function to pass commands to the terminal
+# Note that we set `intern = TRUE`, and pass the result of `system()` to `cat()`,
+# ensuring that the Terminal output will be printed in this knitr report.
+run_command <- function(shell_command, wd = getwd(), path = ""){
+  cat(system(glue("cd ", wd, path, "\n",shell_command), intern = TRUE), sep = '\n')
+}
+
+
+### useful code that I didn't end up needing
+
+  #remove the suffix that denotes the sex the trait was measured in and replace the level 'both' with 'pooled'
+ # mutate(Sex = recode(Sex, Both = "Pooled"),
+  #       Trait = case_when(
+   #        str_ends(Trait, ".f") | str_ends(Trait, ".m")  ~ gsub('.{2}$', '', Trait)),
+    #     `Trait 2` = case_when(
+     #      str_ends(`Trait 2`, ".f") | str_ends(`Trait 2`, ".m")  ~ gsub('.{2}$', '', `Trait 2`))) %>% 
+
+```
+
+## Load phenotype data
+
+```{r}
+traits <- read_csv("data/all.dgrp.phenos_unscaled.csv") 
+
+traits_for_gwas <- 
+  traits %>% 
+  # filter(!(`Trait guild` %in% allowed_guilds) | is.na(`Trait guild`)) %>% 
+  group_by(Trait) %>% 
+  summarise(lines_measured = length(unique(line))) %>% 
+  ungroup() %>% 
+  filter(lines_measured > 79) %>%
+  filter(Trait != "paraquat.resistance.2021.f" & Trait != "starvation.resistance.high.carb.diet.m") %>% # these traits call a gcta error, we remove for now
+  pull(Trait)  # find traits with 80+ replicates
+ 
+
+traits_for_gwas <- traits_for_gwas[!(grepl("fitness.late", traits_for_gwas))]
+
+# replace any slashes in the trait name, e.g. "1/3-Methylhistidine.high.yeast.f", as this is not ok to use as a file name
+traits_for_gwas <- str_replace_all(traits_for_gwas, "[/]", "_") 
+
+line_mean_phenotypes <- read_csv("data/all.dgrp.phenos_unscaled.csv") %>%
+  mutate(Trait = str_replace_all(Trait, "[/]", "_")) %>%  # change to match `traits_for_gwas` list
+  filter(Trait %in% traits_for_gwas) %>%
+   filter(Trait != "paraquat.resistance.2021.f" & Trait != "starvation.resistance.high.carb.diet.m") %>% # these traits produce a gcta error, we remove for now
+  select(line, Trait, trait_value) %>% 
+  #distinct(line, Trait, .keep_all = TRUE) %>% # Remove this line once Tom resolves the duplicates
+  spread(Trait, trait_value) %>% 
+  mutate_at(vars(-line), ~ as.numeric(scale(.x))) %>%  # scale the traits
+  mutate(line = paste("line", line, sep = "")) # add "line" in front of the line number to fit with plink/gcta formatting
+```
+
+
+## Use `GCTA` to estimate the genetic variances and heritabilities for each trait
+
+Here we estimate 'SNP-heritability' for each phenotype using a genomic relatedness matrix Restricted Maximum Likelihood (GREML) approach. GREML uses a set of SNPs $S$ that are known across a population of individuals (or lines, in our case) to estimate the relatedness between random individuals (lines) and compares that with phenotypic variation across that set of individuals. This allows us to estimate the variation in phenotype that is explained by the known set of SNPs in our population. We can then divide this variance by the total variation found for the phenotype, giving the SNP-heritability. Note that SNP-heritability should be smaller than other estimates of heritability such as broad- or narrow-sense heritability, as it is limited to additive effects from a subset of the genome, while the latter two estimates encompass a broader range of genetic effects. 
+
+We use the `GCTA` software to run this analysis. 
+
+A few helpful exerts from the literature about GREML are provided below:
+
+> "Data from a GWAS that are collected to detect statistical associations between SNPs and complex traits are usually analyzed by testing each SNP individually for an association with the trait. To account for the large number of significance tests carried out, a very stringent P value is used. This reduces the occurrence of false positives, but it may cause many real associations to be missed, especially if individual SNPs have a small effect on the trait." 
+
+`r tufte::quote_footer('--- Yang et al 2010')`
+
+> "In contrast to single-SNP association analysis, the basic concept behind the `GCTA` method is to fit the effects of all the SNPs as random effects using a mixed linear model (MLM)."
+
+`r tufte::quote_footer('--- Yang et al 2011')`
+
+### Make a genomic relatedness matrix for all the lines
+
+This uses the `GCTA` command `--make-grm` to make a genomic relatedness matrix (GRM) for the DGRP SNP data. This matrix is needed to run the GREML models below.
+
+```{r}
+run_command(glue("{gcta} --bfile dgrp2_QC_all_lines",
+                 " --make-grm",
+                 " --out gcta_GRM"), path = "/gwas_data/derived/")
+```
+
+### Run univariate GREML models to find heritabilites
+
+The below uses the `GCTA` command --reml to estimate the genetic variance (V(G)), environmental variance (V(e)), their sum (Vp), and the so-called “SNP heritability” (V(G)/Vp).
+
+```{r}
+
+do_univariate_greml <- function(trait1){
+
+  # First make 'focal_data', a 2-column data frame with the line and the focal phenotype value
+  focal_data <- line_mean_phenotypes %>%
+    select(line, !! trait1)
+  names(focal_data)[2] <- c("focal_phenotype")
+  
+  # Write a file with the line and phenotype data called phenotype.txt, for gcta64
+  pheno_data <- focal_data %>%
+    # filter(!(line %in% lines_to_prune)) %>% 
+    mutate(line_copy = line) %>%
+    select(line, line_copy, focal_phenotype) %>%
+    as.matrix()
+  
+  pheno_data %>%
+    write.table(row.names = FALSE, col.names = FALSE,
+                file = "gwas_data/derived/phenotype.txt", quote = FALSE)
+  
+  console_output <- suppressWarnings(capture.output(
+    run_command(glue("{gcta}  --reml --reml-maxit 10000 --grm gcta_GRM  --pheno phenotype.txt  --out delete_me"), 
+                path = "/gwas_data/derived/")))
+  
+  errors <- console_output[str_detect(console_output, "[Ee]rror")]
+  if(length(errors) == 0) errors <- NA
+  if(length(errors) > 1) errors <- paste(errors, sep = "; ")
+
+  rbind(read.delim("gwas_data/derived/delete_me.hsq", sep = "\t") , 
+        data.frame(Source = "Errors", Variance = errors, SE = NA)) %>% 
+    mutate(Trait = trait1) %>% select(Trait, everything())
+}
+
+# Now run the model for every trait and create a large tibble using map_dfr
+
+if(!file.exists("gwas_data/variance_components.csv")){
+  variance_components <-
+    map_dfr(traits_for_gwas, do_univariate_greml) %>% 
+    filter(Source %in% c("V(G)", "V(e)", "Vp", "V(G)/Vp")) %>% 
+    mutate(Variance = as.numeric(Variance)) %>% 
+    rename(Parameter = Source) %>% 
+    as_tibble()
+  write_csv(variance_components, file = "gwas_data/variance_components.csv")
+} else variance_components <- read_csv("gwas_data/variance_components.csv")
+
+```
+
+Currently two phenotypes call errors when we run the univariate GREML model: `paraquat.resistance.2021.f` and `starvation.resistance.high.carb.diet.m`. The error is _Error: the information matrix is not invertible._
+
+For now we simply don't run models for these traits, so there are no variance estimates for these traits.
+
+$~$
+
+### Wrangle data and save
+
+
+```{r}
+trait_info <- read_csv("data/all.dgrp.phenos_unscaled.csv") %>%
+  mutate(Trait = str_replace_all(Trait, "[/]", "_"),
+         Sex = fct_recode(Sex, Pooled = "Both")) %>% 
+  select(-trait_value) %>% 
+  distinct(Trait, Sex, `Trait guild`, `Trait description`, Reference)
+
+variance_components <- left_join(variance_components, trait_info)
+
+# wrangle so that each variance component is its own column
+
+variance_components_wide <- 
+  variance_components %>% 
+  pivot_wider(names_from = Parameter,
+              values_from = c(Variance, SE)) %>% 
+  mutate(across(where(is.numeric), round, 2)) %>% 
+  rename(`V(G)` = `Variance_V(G)`,
+         `V(e)` = `Variance_V(e)`,
+         `Vp` = `Variance_Vp`,
+         `V(G)/Vp` = `Variance_V(G)/Vp`)
+  
+# Below we remove the suffix that denotes the sex the trait was measured in and replace the level 'both' with 'pooled'
+
+SNP_heritability <-
+  variance_components_wide %>% 
+  mutate(Sex = recode(Sex, Both = "Pooled"),
+         Trait = case_when(
+           str_ends(Trait, ".f") | str_ends(Trait, ".m")  ~ gsub('.{2}$', '', Trait))) %>% 
+  select(Trait, Sex, everything()) %>%  # reorder the columns for the table %>% 
+  arrange(Trait)
+
+
+write_csv(SNP_heritability, file = "data/SNP_heritability_cleaned.csv")
+```
+
+$~$
+
+## Use `GCTA` to estimate genetic covariance between traits and fitness
+
+Here we use the `gcta64` command `--reml-bivar` to estimate the genetic covariance `(C(G)_tr12)`, i.e. the co-variance explained by the known SNPs in the DGRP, and the genetic correlation (`rG`), in addition to the univariate parameters for trait 1 and trait 2 mentioned above. Note that for traits where the genetic variance is estimated to be low, the model cannot reliably estimate genetic covariance or correlations.
+
+We use `(C(G)_tr12)` to calculate the **Robertson covariance**, $R_z = \sigma(A_w, A_z) = \sigma_A(w,z)$, which is sometimes referred to as the secondary theorem of natural selection. This is the additive covariance between a trait and fitness, or equivalently, the expected response to selection of a trait.
+
+We specify the following options in `GCTA`:
+
+--reml-bivar-lrt-rg 0: To test for the hypothesis of fixing the genetic correlation at a particular value, e.g. fixing genetic correlation at -1, 0 and 1. By default bivariate GCTA-GREML does not perform a log likelihood test unless this option is specified.
+
+Note that this means the p-values returned in the bivariate GREML output correspond to the genetic correlation $r_G$. We focus our analysis on`(C(G)_tr12)`; therefore we do not report these p-values.
+
+### Female fitness 
+ 
+```{r} 
+# wrangle data so that it is specific to the sex the trait was measured for i.e. female, male or pooled sexes
+
+female_line_means <- line_mean_phenotypes %>%
+  select(line, ends_with(".f"))
+
+female_trait_list <- line_mean_phenotypes %>% 
+  select(ends_with(".f")) %>% 
+  select(-fitness.early.f) %>% 
+  colnames()
+
+# build the function to run the bivariate GREML  
+
+do_bivar_greml_f <- function(trait1, trait2){
+
+  # First make 'focal_data', a 2-column data frame with the line and the focal phenotype value
+  focal_data <- female_line_means %>%
+    select(line, !! trait1, !! trait2)
+  names(focal_data)[2:3] <- c("focal_pheno1", "focal_pheno2")
+  
+  # Write a file with the line and phenotype data called phenotype.txt, for gcta64
+  pheno_data <- focal_data %>%
+    # filter(!(line %in% lines_to_prune)) %>% 
+    mutate(line_copy = line) %>%
+    select(line, line_copy, focal_pheno1, focal_pheno2) %>%
+    as.matrix()
+  
+  pheno_data %>%
+    write.table(row.names = FALSE, col.names = FALSE,
+                file = "gwas_data/derived/phenotype_pair.txt", quote = FALSE)
+  
+  # Note that the warnings come when gcta could not fit the model properly. I save these errors especially, so no need to print them.
+  console_output <- suppressWarnings(capture.output(
+    run_command(glue("{gcta}  --reml-bivar --reml-bivar-lrt-rg 0 --reml-maxit 10000 --grm gcta_GRM  --pheno phenotype_pair.txt  --out delete_me"), 
+                path = "/gwas_data/derived/")))
+  
+  errors <- console_output[str_detect(console_output, "[Ee]rror")]
+  if(length(errors) == 0) errors <- NA
+  if(length(errors) > 1) errors <- paste(errors, sep = "; ")
+  traits <- sort(c(trait1, trait2))
+  
+  rbind(read.delim("gwas_data/derived/delete_me.hsq", sep = "\t") , 
+        data.frame(Source = "Errors", Variance = errors, SE = NA)) %>% 
+    mutate(`Trait 1` = traits[1], `Trait 2` = traits[2]) %>% 
+    select(`Trait 1`, `Trait 2`, everything())
+}
+
+# run for all traits - this works, except I need to rewrite the function for each level of sex (done below)
+
+if(!file.exists("data/SNP_selection.csv")){
+  female_results <- map2_dfr("fitness.early.f", female_trait_list, do_bivar_greml_f)
+  # unlink deletes files
+  unlink(c("data/derived/delete_me.log", "data/derived/phenotype_pair.txt", "data/derived/delete_me.hsq"))
+  unlink(list.files("data/derived/", pattern = "gcta_GRM", full.names = TRUE))
+  # clean the data up
+  female_results_concise <-
+    female_results %>% 
+    as_tibble() %>% 
+    filter(Source %in% c("V(G)_tr1", "V(e)_tr1", "Vp_tr1", "V(G)/Vp_tr1",
+                         "V(G)_tr2", "V(e)_tr2", "Vp_tr2", "V(G)/Vp_tr2",
+                         "C(G)_tr12", "rG")) %>% 
+    mutate(Variance = as.numeric(Variance),
+           Fitness_sex = "Female") %>% 
+    rename(Parameter = Source)
+} else "Already calculated"
+
+```
+
+### Male fitness
+
+```{r}
+# wrangle data so that it is specific to the sex the trait was measured for i.e. female, male or pooled sexes
+
+male_line_means <- line_mean_phenotypes %>%
+  select(line, ends_with(".m"))
+
+male_trait_list <- line_mean_phenotypes %>% 
+  select(ends_with(".m")) %>% 
+  select(-fitness.early.m) %>% 
+  colnames()
+
+# build the function to run the bivariate GREML  
+
+do_bivar_greml_m <- function(trait1, trait2){
+
+  # First make 'focal_data', a 2-column data frame with the line and the focal phenotype value
+  focal_data <- male_line_means %>%
+    select(line, !! trait1, !! trait2)
+  names(focal_data)[2:3] <- c("focal_pheno1", "focal_pheno2")
+  
+  # Write a file with the line and phenotype data called phenotype.txt, for gcta64
+  pheno_data <- focal_data %>%
+    # filter(!(line %in% lines_to_prune)) %>% 
+    mutate(line_copy = line) %>%
+    select(line, line_copy, focal_pheno1, focal_pheno2) %>%
+    as.matrix()
+  
+  pheno_data %>%
+    write.table(row.names = FALSE, col.names = FALSE,
+                file = "gwas_data/derived/phenotype_pair.txt", quote = FALSE)
+  
+  # Note that the warnings come when gcta could not fit the model properly. I save these errors especially, so no need to print them.
+  console_output <- suppressWarnings(capture.output(
+    run_command(glue("{gcta}  --reml-bivar --reml-bivar-lrt-rg 0 --reml-maxit 10000 --grm gcta_GRM  --pheno phenotype_pair.txt  --out delete_me"), 
+                path = "/gwas_data/derived/")))
+  
+  errors <- console_output[str_detect(console_output, "[Ee]rror")]
+  if(length(errors) == 0) errors <- NA
+  if(length(errors) > 1) errors <- paste(errors, sep = "; ")
+  traits <- sort(c(trait1, trait2))
+  
+  rbind(read.delim("gwas_data/derived/delete_me.hsq", sep = "\t") , 
+        data.frame(Source = "Errors", Variance = errors, SE = NA)) %>% 
+    mutate(`Trait 1` = traits[1], `Trait 2` = traits[2]) %>% 
+    select(`Trait 1`, `Trait 2`, everything())
+}
+
+# run for all traits 
+
+if(!file.exists("data/SNP_selection.csv")){
+  male_results <- map2_dfr("fitness.early.m", male_trait_list, do_bivar_greml_m)
+  # unlink deletes files
+  unlink(c("data/derived/delete_me.log", "data/derived/phenotype_pair.txt", "data/derived/delete_me.hsq"))
+  unlink(list.files("data/derived/", pattern = "gcta_GRM", full.names = TRUE))
+  # clean the data up
+  male_results_concise <-
+    male_results %>% 
+    as_tibble() %>% 
+    filter(Source %in% c("V(G)_tr1", "V(e)_tr1", "Vp_tr1", "V(G)/Vp_tr1",
+                         "V(G)_tr2", "V(e)_tr2", "Vp_tr2", "V(G)/Vp_tr2",
+                         "C(G)_tr12", "rG")) %>% 
+    mutate(Variance = as.numeric(Variance),
+           Fitness_sex = "Male") %>% 
+    rename(Parameter = Source)
+} else "Already calculated"
+
+```
+
+### Data where the sexes were pooled
+
+```{r}
+
+# wrangle data so that it is specific to the sex the trait was measured for i.e. female, male or pooled sexes
+
+pooled_line_means <- line_mean_phenotypes %>%
+  select(line, fitness.early.f, fitness.early.m, !ends_with(c(".f", ".m")))
+
+pooled_trait_list <- line_mean_phenotypes %>% 
+  select(!ends_with(c(".f", ".m"))) %>%  
+  select(-line) %>% 
+  colnames()
+
+# build the function to run the bivariate GREML  
+
+do_bivar_greml_p <- function(trait1, trait2){
+
+  # First make 'focal_data', a 2-column data frame with the line and the focal phenotype value
+  focal_data <- pooled_line_means %>%
+    select(line, !! trait1, !! trait2)
+  names(focal_data)[2:3] <- c("focal_pheno1", "focal_pheno2")
+  
+  # Write a file with the line and phenotype data called phenotype.txt, for gcta64
+  pheno_data <- focal_data %>%
+    # filter(!(line %in% lines_to_prune)) %>% 
+    mutate(line_copy = line) %>%
+    select(line, line_copy, focal_pheno1, focal_pheno2) %>%
+    as.matrix()
+  
+  pheno_data %>%
+    write.table(row.names = FALSE, col.names = FALSE,
+                file = "gwas_data/derived/phenotype_pair.txt", quote = FALSE)
+  
+  # Note that the warnings come when gcta could not fit the model properly. I save these errors especially, so no need to print them.
+  console_output <- suppressWarnings(capture.output(
+    run_command(glue("{gcta}  --reml-bivar --reml-bivar-lrt-rg 0 --reml-maxit 10000 --grm gcta_GRM  --pheno phenotype_pair.txt  --out delete_me"), 
+                path = "/gwas_data/derived/")))
+  
+  errors <- console_output[str_detect(console_output, "[Ee]rror")]
+  if(length(errors) == 0) errors <- NA
+  if(length(errors) > 1) errors <- paste(errors, sep = "; ")
+  traits <- sort(c(trait1, trait2))
+  
+  rbind(read.delim("gwas_data/derived/delete_me.hsq", sep = "\t") , 
+        data.frame(Source = "Errors", Variance = errors, SE = NA)) %>% 
+    mutate(`Trait 1` = traits[1], `Trait 2` = traits[2]) %>% 
+    select(`Trait 1`, `Trait 2`, everything())
+}
+
+# run for all traits
+
+if(!file.exists("data/SNP_selection.csv")){
+  pooled_female <- map2_dfr("fitness.early.f", pooled_trait_list, do_bivar_greml_p)
+  # unlink deletes files
+  unlink(c("data/derived/delete_me.log", "data/derived/phenotype_pair.txt", "data/derived/delete_me.hsq"))
+  unlink(list.files("data/derived/", pattern = "gcta_GRM", full.names = TRUE))
+  pooled_male <- map2_dfr("fitness.early.m", pooled_trait_list, do_bivar_greml_p)
+  # unlink deletes files
+  unlink(c("data/derived/delete_me.log", "data/derived/phenotype_pair.txt", "data/derived/delete_me.hsq"))
+  unlink(list.files("data/derived/", pattern = "gcta_GRM", full.names = TRUE))
+  # clean the data up
+  pooled_results <- rbind(pooled_female, pooled_male)
+  
+  pooled_results_concise <-
+    pooled_results %>% 
+    as_tibble() %>% 
+    filter(Source %in% c("V(G)_tr1", "V(e)_tr1", "Vp_tr1", "V(G)/Vp_tr1",
+                         "V(G)_tr2", "V(e)_tr2", "Vp_tr2", "V(G)/Vp_tr2",
+                         "C(G)_tr12", "rG")) %>% 
+    mutate(Variance = as.numeric(Variance)) %>% 
+    rename(Parameter = Source)
+  
+    a_pooled <- 
+    pooled_results_concise %>% 
+    filter(`Trait 1` == "fitness.early.f" | `Trait 1` == "fitness.early.m") %>% 
+    #rename(Trait = `Trait 1`) %>% 
+    pivot_wider(names_from = Parameter, values_from = c(Variance, SE)) %>% 
+    rename(# rename to more specific names. No name switching needed for this subset
+      `Variance_V(G)_trait` = `Variance_V(G)_tr2`,
+      `Variance_V(G)_fitness` = `Variance_V(G)_tr1`,
+      `Variance_V(e)_trait` = `Variance_V(e)_tr2`,
+      `Variance_V(e)_fitness` = `Variance_V(e)_tr1`,
+      Variance_Vp_trait = Variance_Vp_tr2,
+      Variance_Vp_fitness = Variance_Vp_tr1,
+      `Variance_V(G)/Vp_trait` = `Variance_V(G)/Vp_tr2`,
+      `Variance_V(G)/Vp_fitness` = `Variance_V(G)/Vp_tr1`,
+      `SE_V(G)_trait` = `SE_V(G)_tr2`,
+      `SE_V(G)_fitness` = `SE_V(G)_tr1`,
+      `SE_V(e)_trait` = `SE_V(e)_tr2`,
+      `SE_V(e)_fitness` = `SE_V(e)_tr1`,
+      SE_Vp_trait = SE_Vp_tr2,
+      SE_Vp_fitness = SE_Vp_tr1,
+      `SE_V(G)/Vp_trait` = `SE_V(G)/Vp_tr2`,
+      `SE_V(G)/Vp_fitness` = `SE_V(G)/Vp_tr1`)
+  
+  b_pooled <-
+    pooled_results_concise %>% 
+    filter(`Trait 2` == "fitness.early.f" | `Trait 2` == "fitness.early.m") %>% 
+    rename(Trait = `Trait 1`,
+           `Trait 1` = `Trait 2`) %>% 
+    rename(`Trait 2` = Trait) %>% 
+    pivot_wider(names_from = Parameter, values_from = c(Variance, SE)) %>% 
+    rename(# switch the names so that they match the order of trait1 and trait2
+      `Variance_V(G)_trait` = `Variance_V(G)_tr1`,
+      `Variance_V(G)_fitness` = `Variance_V(G)_tr2`,
+      `Variance_V(e)_trait` = `Variance_V(e)_tr1`,
+      `Variance_V(e)_fitness` = `Variance_V(e)_tr2`,
+      Variance_Vp_trait = Variance_Vp_tr1,
+      Variance_Vp_fitness = Variance_Vp_tr2,
+      `Variance_V(G)/Vp_trait` = `Variance_V(G)/Vp_tr1`,
+      `Variance_V(G)/Vp_fitness` = `Variance_V(G)/Vp_tr2`,
+      `SE_V(G)_trait` = `SE_V(G)_tr1`,
+      `SE_V(G)_fitness` = `SE_V(G)_tr2`,
+      `SE_V(e)_trait` = `SE_V(e)_tr1`,
+      `SE_V(e)_fitness` = `SE_V(e)_tr2`,
+      SE_Vp_trait = SE_Vp_tr1,
+      SE_Vp_fitness = SE_Vp_tr2,
+      `SE_V(G)/Vp_trait` = `SE_V(G)/Vp_tr1`,
+      `SE_V(G)/Vp_fitness` = `SE_V(G)/Vp_tr2`)
+  
+  
+  
+  pooled_results_concise <-
+    rbind(a_pooled, b_pooled) %>% 
+    rename(Fitness_component = `Trait 1`,
+           Trait = `Trait 2`) %>% 
+    mutate(Fitness_sex = if_else(Fitness_component == "fitness.early.f", "Female", "Male")) %>% 
+    select(Fitness_component, Trait, Fitness_sex, everything()) %>% arrange(Trait)
+  
+  # join the  meta-data
+  
+   pooled_results_concise <-
+     left_join(pooled_results_concise, trait_info)
+  
+} else "Already calculated"
+
+```
+
+### Combine results and save
+
+Note that the `SNP_heritability` tibble and the `SNP_selection` tibble contain duplicate columns. This is because the bivariate GREML calculates everything that the univariate GREML does. I'll check if they are identical and delete redundant columns if so. I get the feeling that they'll be slightly different because the bivariate GREML only uses the lines that have been measured for both traits; generally a smaller subset of those a trait was measured across.
+
+```{r}
+
+if(!file.exists("data/SNP_selection.csv")){
+  female_male_data <-
+    rbind(female_results_concise, male_results_concise) %>% # note that the pooled data is binded later
+    # create a common name so that we can join the meta data
+    rename(Trait = `Trait 1`)
+  
+  # The code below is written to make sure fitness is in the same trait column throughout the tibble. We need to do this because Trait 1 is determined alphabetically, so it's sometimes fitness and sometimes is not.
+  
+  # wrangle so that each variance component is its own column
+  
+  a <- 
+    female_male_data %>% 
+    filter(Trait == "fitness.early.f" | Trait == "fitness.early.m") %>% 
+    rename(`Trait 1` = Trait) %>% 
+    pivot_wider(names_from = Parameter, values_from = c(Variance, SE)) %>% 
+    rename(# rename to more specific names. No name switching needed for this subset
+      `Variance_V(G)_trait` = `Variance_V(G)_tr2`,
+      `Variance_V(G)_fitness` = `Variance_V(G)_tr1`,
+      `Variance_V(e)_trait` = `Variance_V(e)_tr2`,
+      `Variance_V(e)_fitness` = `Variance_V(e)_tr1`,
+      Variance_Vp_trait = Variance_Vp_tr2,
+      Variance_Vp_fitness = Variance_Vp_tr1,
+      `Variance_V(G)/Vp_trait` = `Variance_V(G)/Vp_tr2`,
+      `Variance_V(G)/Vp_fitness` = `Variance_V(G)/Vp_tr1`,
+      `SE_V(G)_trait` = `SE_V(G)_tr2`,
+      `SE_V(G)_fitness` = `SE_V(G)_tr1`,
+      `SE_V(e)_trait` = `SE_V(e)_tr2`,
+      `SE_V(e)_fitness` = `SE_V(e)_tr1`,
+      SE_Vp_trait = SE_Vp_tr2,
+      SE_Vp_fitness = SE_Vp_tr1,
+      `SE_V(G)/Vp_trait` = `SE_V(G)/Vp_tr2`,
+      `SE_V(G)/Vp_fitness` = `SE_V(G)/Vp_tr1`)
+  
+  b <-
+    female_male_data %>% 
+    filter(`Trait 2` == "fitness.early.f" | `Trait 2` == "fitness.early.m") %>% 
+    rename(`Trait 1` = `Trait 2`,
+           `Trait 2` = Trait) %>% 
+    pivot_wider(names_from = Parameter, values_from = c(Variance, SE)) %>% 
+    rename(# switch the names so that they match the order of trait1 and trait2
+      `Variance_V(G)_trait` = `Variance_V(G)_tr1`,
+      `Variance_V(G)_fitness` = `Variance_V(G)_tr2`,
+      `Variance_V(e)_trait` = `Variance_V(e)_tr1`,
+      `Variance_V(e)_fitness` = `Variance_V(e)_tr2`,
+      Variance_Vp_trait = Variance_Vp_tr1,
+      Variance_Vp_fitness = Variance_Vp_tr2,
+      `Variance_V(G)/Vp_trait` = `Variance_V(G)/Vp_tr1`,
+      `Variance_V(G)/Vp_fitness` = `Variance_V(G)/Vp_tr2`,
+      `SE_V(G)_trait` = `SE_V(G)_tr1`,
+      `SE_V(G)_fitness` = `SE_V(G)_tr2`,
+      `SE_V(e)_trait` = `SE_V(e)_tr1`,
+      `SE_V(e)_fitness` = `SE_V(e)_tr2`,
+      SE_Vp_trait = SE_Vp_tr1,
+      SE_Vp_fitness = SE_Vp_tr2,
+      `SE_V(G)/Vp_trait` = `SE_V(G)/Vp_tr1`,
+      `SE_V(G)/Vp_fitness` = `SE_V(G)/Vp_tr2`)
+  
+  female_male_wide <-
+    rbind(a, b) %>% 
+    rename(Fitness_component = `Trait 1`,
+           Trait = `Trait 2`)
+  
+  # join meta data
+  
+  female_male_wide <-
+  left_join(female_male_wide, trait_info) %>% 
+    # this next line removes the .f and .m suffix's for each trait, as this info is held in the `Fitness_sex` column
+    mutate(Trait = case_when(str_ends(Trait, ".f") | str_ends(Trait, ".m")  ~ gsub('.{2}$', '', Trait)))
+  
+  # combine the pooled dataset with the female and male data
+  
+  SNP_selection_response_estimates <- rbind(pooled_results_concise, female_male_wide) %>% 
+    select(Trait, Fitness_component, Fitness_sex, Sex, `Trait guild`, `Trait description`, Reference, everything()) %>% 
+    rename(Trait_sex = Sex)
+  
+      # Trait_sex shows which sex the trait was measured in, while Fitness_sex shows the sex that `(C(G)_tr12)` and `rG` were calculated for
+    # These are generally the same, with the exception of traits that were measured with the sexes pooled (commonly larval traits), coded as pooled in the trait_sex column
+    # For these pooled traits we ran the bivariate GREML twice - once for female fitness and again for male fitness
+  
+  write_csv(SNP_selection_response_estimates, file = "data/SNP_selection.csv")
+  
+} else SNP_selection_response_estimates <- read_csv("data/SNP_selection.csv")
+
+```
