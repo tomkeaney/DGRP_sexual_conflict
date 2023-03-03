@@ -1,11 +1,9 @@
 name: DGRP_sexual_conflict
 output_dir: ../docs
 navbar:
-  title: Intralocus sexual conflict in the DGRP
+  title: The response to selection, sexual antagonism and sexual concordance in the DGRP
   left:
-  - text: Home
-    href: index.html
-  - text: Main analysis
+  - text: Analysis
     href: Main_analysis.html
   - text: License
     href: license.html

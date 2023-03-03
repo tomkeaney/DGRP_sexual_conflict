@@ -1,5 +1,5 @@
 ---
-title: "Sexually antagonistic selection in the DGRP"
+title: "The response to selection, sexual antagonism and sexual concordance in the DGRP"
 author: "Thomas Keaney and Luke Holman"
 output: html_document
 ---
@@ -8,7 +8,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, cache = FALSE)
 ```
 
-## Load packages and the data
+# Load packages and the data
 
 First load the packages
 
@@ -25,287 +25,462 @@ library(DT) # for interactive tables
 library(broom) # convert results of functions into tables
 library(ggtext) # for markdown features in ggplot
 library(MetBrewer)
+library(ggrepel)
+library(ggnewscale)
 
-DGRP_data <- left_join(
-  read_csv("data/all.dgrp.phenos_unscaled.csv") %>% 
-    mutate(line = as.factor(line)),
-  read_csv("data/meta_data_for_all_traits.csv") %>% 
-    group_by(Reference) %>% 
-    mutate(study_ID = as.factor(cur_group_id()))
-)
+DGRP_data <- 
+  left_join(
+    read_csv("data/all.dgrp.phenos_scaled.csv") %>% 
+      mutate(line = as.factor(line)),
+    read_csv("data/meta_data_for_all_traits.csv") %>%
+      group_by(Reference) %>% 
+      mutate(study_ID = as.factor(cur_group_id()),
+             Pooled = if_else(Sex == "Pooled", "Yes", "No"))) %>% 
+  left_join(read_rds("data/trait_names.rds"))
+
 ```
 
-## Selecting data appropriate for analysis
+# Selecting data appropriate for analysis
 
-We use a pruned dataset from the _DGRP database_ (Belonte, Keaney, _et al_. 2023). We select traits that have been measured in 80 or more lines and do not include the three mass datasets on the microbiome and metabolome (Everett _et al_. 2020, Jin _et al_. 2020 and Zhou _et al_. 2020). 
+We use data compiled in the _DGRP database_ (Belonte, Keaney, _et al_. 2023).
 
-```{r}
-# Remove traits that are difficult to interpret or that have transformed means
+First, we wrangle the data so that for each trait we have standardised line mean values for females and males, as well as fitness values for that line in females and males. We also include some helpful metadata for downstream analysis. 
 
-selected.dgrp.phenos_unscaled <-
-  DGRP_data %>% 
-  filter(Reference != "Jin et al (2020) PLOS Genetics" & # Normalised
-           Reference != "Zhou et al (2020) Genome Research" & # Normalised
-           Reference != "Everett et al (2020) Genome Research" & # values reported on log scale
-           `# lines measured` >= 80) # Filter by number of lines measured
-
-# how many traits do we have?
-num_unique_traits <- length(unique(selected.dgrp.phenos_unscaled$Trait))
-# how many studies are they measured across?
-num_unique_studies <- length(unique(selected.dgrp.phenos_unscaled$Reference))
-```
-
-After this selection process, `r num_unique_traits - 2` remain, that were measured across `r num_unique_studies - 1` studies.
-
-Next, we wrangle the data so that for each trait we have line mean values for females and males, as well as fitness values for that line in females and males. We also include some helpful metadata for downstream analysis. 
+We then pruned the dataset to only include traits (with standardised values, where the mean = 0 and sd = 1) that have been measured in single-sex cohorts, in 80 or more lines. We also remove 'intermediate' traits between genotype and phenotype from three mass datasets on the microbiome and metabolome (Everett _et al_. 2020, Jin _et al_. 2020 and Zhou _et al_. 2020). 
 
 ```{r}
 
-# Create a tibble that only contains data from traits that have been measured in both sexes
-
-# remove the fitness measures from the trait column and add a column called 'pooled' that specifies if the data was measured in both sexes at once
+# Apply the selection criteria with the filter() function, then add a column each for female and male fitness
 
 trait_data <-
-  selected.dgrp.phenos_unscaled %>%  filter(!str_detect(Trait, "fitness")) %>% 
-  mutate(Pooled = case_when(Sex == "Pooled" ~ "Yes",
-                           Sex != "Pooled" ~ "No"))
+  DGRP_data %>%  filter(!str_detect(Trait, "fitness"),
+                        `# lines measured` >= 80 &
+                          Pooled != "Yes" & 
+                          Reference != "Jin et al (2020) PLOS Genetics" & 
+                          Reference != "Everett et al (2020) Genome Research") %>% 
+  
+  left_join(
+    DGRP_data %>%
+      filter(str_detect(Trait, "fitness.early.life")) %>% 
+      select(line, Trait, trait_value) %>% 
+      pivot_wider(names_from = Trait, values_from = trait_value) %>% 
+      rename(female_fitness = fitness.early.life.f, male_fitness = fitness.early.life.m))
 
-trait_data_female <-
-  trait_data %>% filter(!str_ends(Trait, ".m")) %>% 
-  mutate(Trait = case_when(Sex == "Female" ~ gsub('.{2}$', '', Trait), # remove the sex indicating suffix's
-                           Sex == "Pooled" ~ Trait)) %>% 
-  rename(female_trait_value = trait_value) %>% 
-  select(-Sex)
 
-trait_data_male <-
-  trait_data %>% filter(!str_ends(Trait, ".f")) %>% 
-  mutate(Trait = case_when(Sex == "Male" ~ gsub('.{2}$', '', Trait), # remove the sex indicating suffix's
-                           Sex == "Pooled" ~ Trait)) %>% 
-  rename(male_trait_value = trait_value) %>% 
-  select(-Sex)
-
-trait_fitness_data <- 
-  full_join(trait_data_male, trait_data_female, 
-            by = c("Trait", "line", "Life_stage", "Trait guild", "study_ID", "Pooled"),
-            suffix = c(".male", ".female")) %>% 
-  select(line, Trait, Life_stage, `Trait guild`, female_trait_value, male_trait_value, `# lines measured.female`, `# lines measured.male`, study_ID, Pooled)
-
-# create a dataset with a new column - female_fitness 
-
-fitness_data_1 <-
-  selected.dgrp.phenos_unscaled %>%
-  filter(Trait == "fitness.early.life.f") %>% 
-  rename(female_fitness = trait_value) %>% 
-  select(line, female_fitness)
-
-# do the same for male_fitness
-
-fitness_data_2 <-
-  selected.dgrp.phenos_unscaled %>%  
-  filter(Trait == "fitness.early.life.m") %>% 
-  rename(male_fitness = trait_value) %>% 
-  select(line, male_fitness)
-
-# join
-
-fitness_data_join1 <-
-  left_join(trait_fitness_data, fitness_data_1)
-
-# second join, this time with trait and meta data
-
-trait_fitness_full_data <-
-  left_join(fitness_data_join1, fitness_data_2) #%>% 
-  #group_by(Trait) %>% # group the data by trait so that scaling works on a per trait basis
-  #mutate(trait_value = as.numeric(scale(trait_value))) # scale the data for each trait
+clean_meta_data <-
+  trait_data %>% 
+  select(Trait, Life_stage, `Trait guild`, study_ID, Trait_nice, Reference, `Trait description`) %>% 
+  distinct(Trait, .keep_all = TRUE)
 
 ```
 
 $~$
 
-## Calculating *R*: the response to selection
+**Table S1**. Traits and studies found during a literature search that considered studies published up until January 2022. The 'included' column indicates whether the trait was included in the analysis.
+
+```{r}
+# how many studies did we start with?
+
+table_data <- left_join(
+  DGRP_data %>%
+    distinct(Trait, .keep_all = TRUE) %>% 
+    mutate(Measured_in = case_when(Sex == "Female" ~ "Females",
+                                   Sex == "Male" ~ "Males",
+                                   Sex == "Pooled" ~ "Mixed sex cohorts")) %>% 
+    select(Trait_nice, Trait, Reference, `# lines measured`, Measured_in),
+  
+  trait_data %>%
+    distinct(Trait) %>% 
+    mutate(Included = "Yes")
+) %>% 
+  mutate(Included = if_else(is.na(Included), "No", Included)) %>% 
+  select(-Trait) %>% 
+  rename(Trait = Trait_nice, `Measured in` = Measured_in) %>% 
+  arrange(desc(Included))
+
+# Create a function to build HTML searchable tables
+
+my_data_table <- function(df){
+  datatable(
+    df, rownames=FALSE,
+    autoHideNavigation = TRUE,
+    extensions = c("Scroller",  "Buttons"),
+    options = list(
+      autoWidth = TRUE,
+      dom = 'Bfrtip',
+      deferRender=TRUE,
+      scrollX=TRUE, scrollY=1000,
+      scrollCollapse=TRUE,
+      buttons =
+        list('pageLength', 'colvis', 'csv', list(
+          extend = 'pdf',
+          pageSize = 'A4',
+          orientation = 'landscape',
+          filename = 'Trait_table')),
+      pageLength = 2115
+    )
+  )
+}
+
+my_data_table(table_data)
+```
 
 $~$
 
-If we follow the accepted assumption that line means represent the breeding value for a trait for that given line, the variance across lines equals the genetic variance in the DGRP population for that trait.
+Find the number of traits and studies included in our analysis.
 
-We can then estimate the response to selection ($R$) for a trait using **Robertson's secondary theorem of natural selection** (also known as the **Robertson covariance**), which states that $R$ is equivalent to the covariance between a traits breeding values ($A_z$) and the breeding values for relative fitness ($A_w$):
+```{r}
 
-$$R = \sigma(A_z, A_w)$$
+# how many studies and traits do we have after filtering?
+
+num_unique_traits <- table_data %>% filter(Included == "Yes") %>% nrow()
+# in females
+num_unique_traits_f <- table_data %>% filter(Included == "Yes" & `Measured in` == "Females") %>% nrow()
+# in males
+num_unique_traits_m <- table_data %>% filter(Included == "Yes" & `Measured in` == "Males") %>% nrow()
+# how many studies are they measured across in total?
+num_unique_studies <- table_data %>% filter(Included == "Yes") %>%  distinct(Reference) %>% nrow()
+# in females
+num_unique_studies_f <- table_data %>% filter(Included == "Yes" & `Measured in` == "Females") %>% distinct(Reference) %>% nrow()
+# in males
+num_unique_studies_m <- table_data %>% filter(Included == "Yes" & `Measured in` == "Males") %>% distinct(Reference) %>% nrow()
+
+```
+
+After this selection process, `r num_unique_traits` remain, that were measured across `r num_unique_studies` studies. There are `r num_unique_traits_f` measured in females and `r num_unique_traits_m` in males across `r num_unique_studies_f` and `r num_unique_studies_m` respectively.  
 
 $~$
 
-### Build models to calculate $R$
+
+# Calculating *R*: the response to selection
+
+$~$
+
+We assume that line means approximate the breeding value for a trait for that given line, and that the variance across lines equals the genetic variance in the DGRP population for that trait.
+
+We can then estimate the response to selection ($R$) for a trait using **Robertson's Secondary Theorem of Natural Selection** (also known as the **Robertson covariance**; Robertson, 1968), which states that $R$ is equivalent to the covariance between a traits breeding values ($A_z$) and the breeding values for relative fitness ($A_w$):
+
+$$R = \sigma(A_w, Az)$$
+The secondary theorem typically does not partition $R$ between the sexes. However, because we have $A_w$ values in both sexes and often $A_z$ values for each sex, we calculate four versions of $R$:
+
+For traits expressed in females:
+
+$$R_{FF} = \sigma(A_w^F, A_z^F)$$
+
+and
+
+$$R_{MF} = \sigma(A_w^M, A_z^F)$$
+For traits expressed in males:
+
+$$R_{MM} = \sigma(A_w^M, A_z^M)$$
+
+and
+
+$$R_{FM} = \sigma(A_w^F, A_z^M)$$
+
+where the first subscripted letter indicates which sex breeding values for fitness were measured in.
+
+$R_{MF}$ and $R_{FM}$ indicate the expected response when a trait is measured in one sex and fitness is measured in the other. We calculate these versions of $R$ because a trait can respond to selection acting on the other sex even if it is not expressed, because the phenotype is a multivariate amalgamation of traits and genetic correlations between traits are likely abundant. For example, alleles encoding a female-specific CHC may also effect male desiccation resistance, which could be under selection in males. 
+
+$~$
+
+### Build models to calculate $R_{FF}$ & $R_{MF}$
+
+Some description of the model structure here - take from paper
 
 Build functions to run the models
 
 ```{r}
 
-#female_selection_model <-
- # brm(data = trait_fitness_full_data %>% filter(Trait == "flight.performance"),
-  #    family = gaussian,
-   #   bf(mvbind(female_fitness, female_trait_value) ~ 0, sigma ~ 0) + set_rescor(TRUE),
-    #  prior(lkj(2), class = rescor),
-     # chains = 4, cores = 4, 
-      #seed = 1)   
+# RFF estimates
 
-female_selection_model <-
-  brm(data = trait_fitness_full_data %>% filter(Trait == "flight.performance"),
+female_traits <- trait_data %>% filter(Sex == "Female")
+
+trait_list_female <- unique(female_traits$Trait) # an input to the map_dfr() function that we'll need in a few chunks time
+
+# code the model structure we will use for all traits using one example - `flight.performance.f`. We can then use the update() function to run this model many times, once for each trait measured in females. update() makes this process many times faster, because the model can immediately start sampling, without the need to recompile. 
+
+RFF_model <-
+  brm(data = female_traits %>% filter(Trait == "flight.performance.f"),
       family = gaussian,
-      bf(mvbind(female_fitness, female_trait_value) ~ 1) + set_rescor(TRUE),
-      prior(lkj(2), class = rescor),
+      bf(mvbind(female_fitness, trait_value) ~ 1) + set_rescor(TRUE),
+      prior = c(prior(normal(0, 0.1), class = Intercept, resp = femalefitness),
+                prior(normal(0, 0.1), class = Intercept, resp = traitvalue),
+                prior(normal(1, 0.1), class = sigma, resp = femalefitness),
+                prior(normal(1, 0.1), class = sigma, resp = traitvalue),
+                prior(lkj(2), class = rescor)),
       chains = 4, cores = 4, iter = 6000, warmup = 2000,
-      seed = 1, file = "fits/test_model_female")   
+      seed = 1, file = "fits/RFF_test_model")   
 
-# sample from the posterior - this will create a tibble with two columns - Trait and rfm
+# make a function to update the model and the posterior sample output with the 'selected trait'
 
-posterior <- as_draws_df(female_selection_model) %>% 
-  rename(Response_to_selection_female = rescor__femalefitness__femaletraitvalue) %>% 
-  mutate(BG_female = Response_to_selection_female / sigma_femaletraitvalue^2, 
-         Trait = "flight.performance") %>% 
-  select(Trait, Response_to_selection_female, sigma_femaletraitvalue, BG_female) %>% 
-  as_tibble()
-
-# make a function to update the model and the posterior sample output with your desired trait
-
-R_female_calculator <- function(selected_trait){
+RFF_calculator <- function(selected_trait){
   
-  data <- trait_fitness_full_data %>% filter(Trait == selected_trait)
+  data <- female_traits %>% filter(Trait == selected_trait)
   
   model <- update(
-    female_selection_model, newdata = data,
+    RFF_model, newdata = data,
       chains = 4, cores = 4, iter = 6000, warmup = 2000,
       seed = 1)
   
   posterior <- 
     as_draws_df(model) %>% 
-    rename(Response_to_selection_female = rescor__femalefitness__femaletraitvalue) %>% 
-    mutate(Trait = selected_trait,
-           V_G_trait = sigma_femaletraitvalue^2,
-           S_female = Response_to_selection_female / V_G_trait) %>% 
-    select(Trait, Response_to_selection_female, V_G_trait, S_female) %>% 
+    rename(Response_to_selection_female = rescor__femalefitness__traitvalue) %>% 
+    mutate(Trait = selected_trait) %>% 
+    select(Trait, Response_to_selection_female) %>% 
     as_tibble()
   
   posterior
 }
 
-# Find the traits that have been measured in females (this includes pooled traits currently)
+# RMF estimates
 
-Female_measurements <- trait_fitness_full_data %>% filter(female_trait_value != "NA")
-
-trait_list_female <- unique(Female_measurements$Trait)
-
-
-# male estimates
-
-male_selection_model <-
-  brm(data = trait_fitness_full_data %>% filter(Trait == "posterior.lobe.size"),
+RMF_model <-
+  brm(data = female_traits %>% filter(Trait == "flight.performance.f"),
       family = gaussian,
-      bf(mvbind(male_fitness, male_trait_value) ~ 1) + set_rescor(TRUE),
-      prior(lkj(2), class = rescor),
+      bf(mvbind(male_fitness, trait_value) ~ 1) + set_rescor(TRUE),
+      prior = c(prior(normal(0, 0.1), class = Intercept, resp = malefitness),
+                prior(normal(0, 0.1), class = Intercept, resp = traitvalue),
+                prior(normal(1, 0.1), class = sigma, resp = malefitness),
+                prior(normal(1, 0.1), class = sigma, resp = traitvalue),
+                prior(lkj(2), class = rescor)),
       chains = 4, cores = 4, iter = 6000, warmup = 2000,
-      seed = 1, file = "fits/test_model_male")   
-
-# sample from the posterior - this will create a tibble with two columns - Trait and rfm
-
-post <- as_draws_df(male_selection_model) %>% 
-  rename(Response_to_selection_male = rescor__malefitness__maletraitvalue) %>% 
-  mutate(V_G_trait = sigma_maletraitvalue^2,
-         BG_male = Response_to_selection_male / V_G_trait, 
-         Trait = "posterior.lobe.size") %>% 
-  select(Trait, Response_to_selection_male, V_G_trait, BG_male) %>% 
-  as_tibble()
+      seed = 1, file = "fits/RMF_test_model")
 
 # make a function to update the model and the posterior sample output with your desired trait
 
-R_male_calculator <- function(selected_trait){
+RMF_calculator <- function(selected_trait){
   
-  data <- trait_fitness_full_data %>% filter(Trait == selected_trait)
+  data <- female_traits %>% filter(Trait == selected_trait)
   
   model <- update(
-    male_selection_model, newdata = data,
+    RMF_model, newdata = data,
     chains = 4, cores = 4, iter = 6000, warmup = 2000,
     seed = 1)
   
   posterior <- 
     as_draws_df(model) %>% 
-    rename(Response_to_selection_male = rescor__malefitness__maletraitvalue) %>% 
-    mutate(Trait = selected_trait,
-           V_G_trait = sigma_maletraitvalue^2,
-           S_male = Response_to_selection_male / V_G_trait) %>% 
-    select(Trait, Response_to_selection_male, V_G_trait, S_male) %>% 
+    rename(Response_to_selection_male = rescor__malefitness__traitvalue) %>% 
+    mutate(Trait = selected_trait) %>% 
+    select(Trait, Response_to_selection_male) %>% 
     as_tibble()
   
   posterior
 }
 
-male_measurements <- trait_fitness_full_data %>% filter(male_trait_value != "NA")
-
-trait_list_male <- unique(male_measurements$Trait)
-
-```
-
-Run the models using `R_female_calculator` and `R_male_calculator`
-
-```{r}
-# run the female function
-
-Run_function <- FALSE # Change this to TRUE to run the models
-
-if(Run_function){
-  R_female <- map_dfr(trait_list_female, R_female_calculator) # map_dfr returns a data frame created by row-binding each output
-  write_csv(R_female, file = "data/R_female.csv")
-} else R_female <- read_csv("data/R_female.csv")
-
-# run the male function
-
-if(Run_function){
-  R_male <- map_dfr(trait_list_male, R_male_calculator) # map_dfr returns a data frame created by row-binding each output
-  write_csv(R_male, file = "data/R_male.csv")
-} else R_male <- read_csv("data/R_male.csv")
 ```
 
 $~$
 
-Combine the two data frames and estimate the net response to selection as 
+### Build models to calculate $R_{FM}$ & $R_{MF}$
 
-$$R_{net} = \frac{R_F + R_M}{2}$$
+$~$
+
+```{r}
+
+# RMM estimates
+
+male_traits <- trait_data %>% filter(Sex == "Male")
+
+trait_list_male <- unique(male_traits$Trait)
+
+RMM_model <-
+  brm(data = male_traits %>% filter(Trait == "flight.performance.m"),
+      family = gaussian,
+      bf(mvbind(male_fitness, trait_value) ~ 1) + set_rescor(TRUE),
+      prior = c(prior(normal(0, 0.1), class = Intercept, resp = malefitness),
+                prior(normal(0, 0.1), class = Intercept, resp = traitvalue),
+                prior(normal(1, 0.1), class = sigma, resp = malefitness),
+                prior(normal(1, 0.1), class = sigma, resp = traitvalue),
+                prior(lkj(2), class = rescor)),
+      chains = 4, cores = 4, iter = 6000, warmup = 2000,
+      seed = 1, file = "fits/RMM_test_model")   
+
+# make a function to update the model and the posterior sample output with your desired trait
+
+RMM_calculator <- function(selected_trait){
+  
+  data <- male_traits %>% filter(Trait == selected_trait)
+  
+  model <- update(
+    RMM_model, newdata = data,
+    chains = 4, cores = 4, iter = 6000, warmup = 2000,
+    seed = 1)
+  
+  posterior <- 
+    as_draws_df(model) %>% 
+    rename(Response_to_selection_male = rescor__malefitness__traitvalue) %>%
+    mutate(Trait = selected_trait) %>% 
+    select(Trait, Response_to_selection_male) %>% 
+    as_tibble()
+  
+  posterior
+}
+
+# RFM estimates
+
+RFM_model <-
+  brm(data = male_traits %>% filter(Trait == "flight.performance.m"),
+      family = gaussian,
+      bf(mvbind(female_fitness, trait_value) ~ 1) + set_rescor(TRUE),
+      prior = c(prior(normal(0, 0.1), class = Intercept, resp = femalefitness),
+                prior(normal(0, 0.1), class = Intercept, resp = traitvalue),
+                prior(normal(1, 0.1), class = sigma, resp = femalefitness),
+                prior(normal(1, 0.1), class = sigma, resp = traitvalue),
+                prior(lkj(2), class = rescor)),
+      chains = 4, cores = 4, iter = 6000, warmup = 2000,
+      seed = 1, file = "fits/RFM_test_model")   
+
+# make a function to update the model and the posterior sample output with your desired trait
+
+RFM_calculator <- function(selected_trait){
+  
+  data <- male_traits %>% filter(Trait == selected_trait)
+  
+  model <- update(
+    RFM_model, newdata = data,
+      chains = 4, cores = 4, iter = 6000, warmup = 2000,
+      seed = 1)
+  
+  posterior <- 
+    as_draws_df(model) %>% 
+    rename(Response_to_selection_female = rescor__femalefitness__traitvalue) %>% 
+    mutate(Trait = selected_trait) %>% 
+    select(Trait, Response_to_selection_female) %>% 
+    as_tibble()
+  
+  posterior
+}
+```
+
+$~$
+
+**Correlation ~ Covariance**
+
+The `brms` model computes the posterior distribution of the residual correlation between standardised trait and fitness breeding values. Standardising traits to have standard deviation of 1 makes correlation equal to covariance. For our own sanity, we plot the residual correlation against covariance and show that, outside a small amount of noise at the extremes, correlation ~ covariance. We calculated point estimates of these variables for each trait measured in females using the `cor` and `cov` functions.
+
+```{r}
+cor_cov_calculator <- function(selected_trait){
+  
+  data <- trait_data %>% filter(Trait == selected_trait,
+                                             !is.na(female_fitness),
+                                             !is.na(trait_value))
+  
+  output <- 
+    bind_cols(
+      cor(data$female_fitness, data$trait_value) %>% 
+        as_tibble() %>%
+        rename(cor = value),
+      
+      
+      cov(data$female_fitness, data$trait_value) %>% 
+        as_tibble() %>%
+        rename(cov = value)) %>% 
+    mutate(Trait = selected_trait)
+  
+  output
+}
+
+cor_cov <- map_dfr(trait_list_female, cor_cov_calculator)
+
+cor_cov %>% 
+  ggplot(aes(cor, cov)) +
+  geom_point(size = 2) +
+  labs(x = "Trait correlation with fitness", y = "Trait covariance with fitness") +
+  theme_bw() + 
+  theme(text = element_text(size = 14))
+
+```
+
+$~$
+
+### Run the models for all the traits
+
+Run the models using `RFF_calculator`, `RMF_calculator`, `RMM_calculator` and `RFM_calculator`
+
+```{r}
+# run the RFF function
+
+Run_function <- FALSE # Change this to TRUE to run the models
+
+if(Run_function){
+  RFF <- map_dfr(trait_list_female, RFF_calculator) # map_dfr returns a data frame created by row-binding each output
+  write_csv(RFF, file = "data/RFF.csv")
+} else RFF <- read_csv("data/RFF.csv")
+
+# run the RMF function
+
+if(Run_function){
+  RMF <- map_dfr(trait_list_female, RMF_calculator) 
+  write_csv(RMF, file = "data/RMF.csv")
+} else RMF <- read_csv("data/RMF.csv")
+
+# run the RMM function
+
+if(Run_function){
+  RMM <- map_dfr(trait_list_male, RMM_calculator) 
+  write_csv(RMM, file = "data/RMM.csv")
+} else RMM <- read_csv("data/RMM.csv")
+
+# run the RFM function
+
+if(Run_function){
+  RFM <- map_dfr(trait_list_male, RFM_calculator) 
+  write_csv(RFM, file = "data/RFM.csv")
+} else RFM <- read_csv("data/RFM.csv")
+
+```
+
+$~$
+
+### Wrangle the posteriors to interpret R
+
+$~$
+
+Combine the data frames and estimate the overall expected response to selection as 
+
+$$R_{overall}^F = \frac{R_{FF} + R_{MF}}{2}$$
+and
+
+$$R_{overall}^M = \frac{R_{MM} + R_{FM}}{2}$$
 
 In the same code chunk, we also calculate the difference between the sexes for the response to selection in each trait as
 
-$$R_F - R_M$$
+$$\Delta R^F = R_{FF} - R_{MF}$$
+and
+
+$$\Delta R^M = R_{FM} - R_{MM}$$
+
 
 to test for the weak form of intralocus sexual conflict, as per Bonduriansky and Chenoweth (2009). Note that this measure does not reveal whether a trait is truly sexually antagonistic, as a difference is possible when a selection response is sexually concordant but with sex differences in strength. A difference can also result from the absence of a response in one sex and a strong response in the other. 
 
 ```{r}
-Common_traits <- 
-  inner_join(
-    R_female %>% distinct(Trait),
-    R_male %>% distinct(Trait))
 
+R_female_traits <-
+  bind_cols(RFF, RMF) %>% 
+  filter(Trait...1 == Trait...3) %>% 
+  rename(Trait = Trait...1) %>% 
+  mutate(Trait_Sex = "Female",
+         R_overall = (Response_to_selection_female + Response_to_selection_male)/2,
+         R_diff = Response_to_selection_female - Response_to_selection_male) %>% 
+    select(Trait, Trait_Sex, everything(), -(Trait...3)) 
 
-R_both_sexes <-
-  bind_cols(
-    
-    left_join(
-      Common_traits,
-      R_female %>% 
-        select(Trait, Response_to_selection_female)) %>% 
-      rename(Trait_female = Trait),
-    
-    left_join(
-      Common_traits,
-      R_male %>% 
-        select(Trait, Response_to_selection_male)) %>% 
-      rename(Trait_male = Trait)
-  ) %>% 
-  # the next line ground truths that bind_cols is binding the right columns
-  # if bind_cols has worked the next line will not affect the tibble
-  filter(Trait_female == Trait_male) %>% 
-  select(-Trait_male) %>% 
-  rename(Trait = Trait_female) %>% 
-  # now the important things
-  mutate(Net_response = (Response_to_selection_female + Response_to_selection_male) /2,
-         Diff_in_response = Response_to_selection_female - Response_to_selection_male)
+R_male_traits <-
+  bind_cols(RFM, RMM) %>% 
+  rename(Trait = Trait...1) %>%  
+  mutate(Trait_Sex = "Male",
+         R_overall = (Response_to_selection_female + Response_to_selection_male)/2,
+         R_diff = Response_to_selection_female - Response_to_selection_male) %>% 
+  select(Trait, Trait_Sex, everything(), -(Trait...3)) 
+
+R_all_traits <- bind_rows(R_female_traits, R_male_traits)
+
+R_long_form <-
+  R_all_traits %>% 
+  select(1:4) %>% 
+    pivot_longer(cols = 3:4, names_to = "Fitness_Sex", values_to = "R") %>% 
+    mutate(Fitness_Sex = case_when(Fitness_Sex == "Response_to_selection_female" ~ "Female",
+                                   Fitness_Sex == "Response_to_selection_male" ~ "Male"))
 
 ```
 
@@ -315,9 +490,9 @@ $~$
 
 $~$
 
-```{r, fig.height=40}
+```{r, fig.height=30, fig.width=12}
 p1 <-
-  R_female %>% 
+  R_female_traits %>% 
   group_by(Trait) %>% 
   mutate(avg_R = median(Response_to_selection_female)) %>%
   ggplot(aes(Response_to_selection_female, fct_reorder(Trait, avg_R))) +
@@ -327,23 +502,15 @@ p1 <-
   coord_cartesian(xlim = c(-0.5, 0.5)) +
   geom_vline(linetype = 2, xintercept = 0, linewidth = 1) +
   labs(x = "Response to selection in females",
-       y = "Trait") +
+       y = "Trait expressed in females") +
   theme_bw() + 
   theme(legend.position = "none",
         panel.grid.minor = element_blank(),
         text = element_text(size=14),
-        axis.text.y = element_text(size = 8)) 
+        axis.text.y = element_text(size = 8))
 
-p1
-```
-
-**Figure S1**. The response to selection in females for all traits in our dataset.
-
-$~$
-
-```{r, fig.height=40}
 p2 <-
-  R_male %>% 
+  R_female_traits %>% 
   group_by(Trait) %>% 
   mutate(avg_R = median(Response_to_selection_male)) %>%
   ggplot(aes(Response_to_selection_male, fct_reorder(Trait, avg_R))) +
@@ -353,251 +520,519 @@ p2 <-
   coord_cartesian(xlim = c(-0.5, 0.5)) +
   geom_vline(linetype = 2, xintercept = 0, linewidth = 1) +
   labs(x = "Response to selection in males",
-       y = "Trait") +
+       y = "Trait expressed in females") +
   theme_bw() + 
   theme(legend.position = "none",
         panel.grid.minor = element_blank(),
         text = element_text(size=14),
         axis.text.y = element_text(size = 8)) 
 
-p2
+
+p1 + p2 +
+  plot_annotation(tag_levels = 'a')
 
 ```
 
-**Figure S2**. The response to selection in males for all traits in our dataset.
+**Figure S1**. The estimated response to selection in **a** females and **b** males for all traits measured in females. Innermost bands approximate the median, while outer bands show the 66 and 95% credible intervals.
 
 $~$
 
-Choose the top 20 traits for each sex in terms of absolute $R$ and present them in a Table
+```{r, fig.height=30, fig.width=12}
 
-**Table 1**. The top 20 traits with the strongest responses to selection in the DGRP. The sign of $R$ indicates the direction of the response.
+p3 <-
+  R_male_traits %>% 
+  group_by(Trait) %>% 
+  mutate(avg_R = median(Response_to_selection_male)) %>%
+  ggplot(aes(Response_to_selection_male, fct_reorder(Trait, avg_R))) +
+  stat_interval(.width = c(0.05, 0.66, 0.95), 
+                height = 1, show.legend = F) +
+  rcartocolor::scale_color_carto_d(palette = "Peach") +
+  coord_cartesian(xlim = c(-0.5, 0.5)) +
+  geom_vline(linetype = 2, xintercept = 0, linewidth = 1) +
+  labs(x = "Response to selection in males",
+       y = "Trait expressed in males") +
+  theme_bw() + 
+  theme(legend.position = "none",
+        panel.grid.minor = element_blank(),
+        text = element_text(size=14),
+        axis.text.y = element_text(size = 8))
+
+p4 <- 
+  R_male_traits %>% 
+  group_by(Trait) %>% 
+  mutate(avg_R = median(Response_to_selection_female)) %>%
+  ggplot(aes(Response_to_selection_female, fct_reorder(Trait, avg_R))) +
+  stat_interval(.width = c(0.05, 0.66, 0.95), 
+                height = 1, show.legend = F) +
+  rcartocolor::scale_color_carto_d(palette = "Purp") +
+  coord_cartesian(xlim = c(-0.5, 0.5)) +
+  geom_vline(linetype = 2, xintercept = 0, linewidth = 1) +
+  labs(x = "Response to selection in females",
+       y = "Trait expressed in males") +
+  theme_bw() + 
+  theme(legend.position = "none",
+        panel.grid.minor = element_blank(),
+        text = element_text(size=14),
+        axis.text.y = element_text(size = 8)) 
+
+
+
+
+p3 + p4 +
+  plot_annotation(tag_levels = 'a')
+
+```
+
+**Figure S2**. The response to selection in **a** males and **b** females for all traits measured in males. Innermost bands approximate the median, while outer bands show the 66 and 95% credible intervals.
+
+$~$
+
+Choose the top 20 traits measured in females in terms of absolute $R_{FF}$ and $R_{MF}$ and present them in a Table
+
+**Table 1**. The traits in measured in females with the strongest responses to selection in the DGRP. The sign of $R$ indicates the direction of the response, with positive expected responses bolded. Estimated error is the standard deviation of the posterior distribution. The notable column indicates that the 95% CI does not overlap zero.
 
 ```{r}
-R_summary <-
+
+R_summary_female <-
   bind_cols(
-    R_female %>%
+    R_female_traits %>% 
       select(Trait, Response_to_selection_female) %>% 
       group_by(Trait) %>% 
-      summarise_draws("median", "sd", ~quantile(.x, probs = c(0.025, 0.975)), .cores = 4) %>%
+      summarise_draws("median", "sd", ~quantile(.x, probs = c(0.025, 0.975), na.rm = TRUE), .cores = 4) %>%
       ungroup() %>% 
-      select(-variable) %>% 
-      rename(`R` = median, `Estimated error` = sd,
-             `2.5% CI` = `2.5%`, `97.5% CI` = `97.5%`, `Trait in females` = Trait)  %>% 
-      mutate(R_abs = abs(`R`)) %>% 
+      left_join(trait_data %>% distinct(Trait, Trait_nice)) %>% # add the nice names
+      rename(`R in females` = median, `Estimated error` = sd,
+             `2.5% CI` = `2.5%`, `97.5% CI` = `97.5%`, `Trait in females` = Trait_nice)  %>% 
+      mutate(R_abs = abs(`R in females`)) %>% 
       arrange(-R_abs) %>% 
-      slice_head(n = 20) %>% 
-      select(-R_abs) %>% 
-      mutate(across(`R`:`97.5% CI`, ~ round(.x, digits = 3)),
+      mutate(across(3:6, ~ round(.x, digits = 3)),
              Notable = case_when(`2.5% CI` < 0 & `97.5% CI` < 0 ~ "*",
                                  `2.5% CI` > 0 & `97.5% CI` > 0 ~ "*",
-                                 TRUE ~ " ")),
+                                 TRUE ~ " ")) %>% 
+      filter(Notable == "*") %>% 
+      select(`Trait in females`, `R in females`, `Estimated error`, `2.5% CI`, `97.5% CI`, Notable) %>% 
+      # the next lines add empty rows and remove the NA values in them. We do this so we bind the two dataframes 
+      add_row() %>%
+      add_row() %>%
+      add_row() %>%
+      mutate_all(~replace(., is.na(.), "")),
     
-    # note that I use the hack to give the CI columns very similar names. I put a space i.e. " " within the male CI names to make the names appear the same without calling an indexing error 
-    
-    R_male %>%
+    R_female_traits %>% 
       select(Trait, Response_to_selection_male) %>% 
       group_by(Trait) %>% 
-      summarise_draws("median", "sd", ~quantile(.x, probs = c(0.025, 0.975)), .cores = 4) %>%
+      summarise_draws("median", "sd", ~quantile(.x, probs = c(0.025, 0.975), na.rm = TRUE), .cores = 4) %>%
       ungroup() %>% 
-      select(-variable) %>% 
-      rename(`R ` = median, `Estimated error ` = sd,
-             `2.5% CI ` = `2.5%`, `97.5% CI ` = `97.5%`, `Trait in males` = Trait) %>% 
-      mutate(R_abs = abs(`R `)) %>% 
+      left_join(trait_data %>% distinct(Trait, Trait_nice)) %>% # add the nice names
+      rename(`R in males` = median, `Estimated error ` = sd,
+             `2.5% CI ` = `2.5%`, `97.5% CI ` = `97.5%`, `Trait in females ` = Trait_nice)  %>% 
+      mutate(R_abs = abs(`R in males`)) %>% 
       arrange(-R_abs) %>% 
-      slice_head(n = 20) %>% 
-      select(-R_abs) %>% 
-      mutate(across(`R `:`97.5% CI `, ~ round(.x, digits = 3)),
+      mutate(across(3:6, ~ round(.x, digits = 3)),
              `Notable ` = case_when(`2.5% CI ` < 0 & `97.5% CI ` < 0 ~ "*",
                                     `2.5% CI ` > 0 & `97.5% CI ` > 0 ~ "*",
-                                    TRUE ~ " "))
+                                    TRUE ~ " ")) %>% 
+      filter(`Notable ` == "*") %>% 
+      select(`Trait in females `, `R in males`, `Estimated error `, `2.5% CI `, `97.5% CI `, `Notable `)
   )
 
-kbl(R_summary) %>%
+
+kbl(R_summary_female) %>%
   kable_minimal(font_size = 12) %>% 
-  column_spec(1, width = "22em") %>% 
-  column_spec(7, width = "24em")  
+  column_spec(1,
+              bold = if_else(R_summary_female$`R in females` > 0, TRUE, FALSE),
+              width = "22em") %>% 
+  column_spec(7,
+              bold = if_else(R_summary_female$`R in males` > 0, TRUE, FALSE),
+              width = "24em")  
 
 ```
 
 $~$
 
-**Table 2**. The top 20 traits with the strongest net responses to selection in the DGRP. We use the mean of $R_F$ and $R_M$ as the net response to selection. The sign of $R$ indicates the direction of the response. 
+**Table 2**. The traits in measured in males with the strongest responses to selection in the DGRP. The sign of $R$ indicates the direction of the response, with positive expected responses bolded. Estimated error is the standard deviation of the posterior distribution. The notable column indicates that the 95% CI does not overlap zero.
 
 ```{r}
-R_both_sexes %>% 
-  select(Trait, Net_response) %>% 
-  group_by(Trait) %>% 
-  summarise_draws("median", "sd", ~quantile(.x, probs = c(0.025, 0.975)), .cores = 4) %>%
-  ungroup() %>% 
-  select(-variable) %>% 
-  rename(`Net R` = median, `Estimated error ` = sd, `2.5% CI` = `2.5%`, `97.5% CI` = `97.5%`) %>% 
-  mutate(R_abs = abs(`Net R`)) %>% 
-  arrange(-R_abs) %>% 
-  slice_head(n = 20) %>% 
-  select(-R_abs) %>% 
-  mutate(across(`Net R`:`97.5% CI`, ~ round(.x, digits = 3)),
-         `Notable ` = case_when(`2.5% CI` < 0 & `97.5% CI` < 0 ~ "*",
-                                `2.5% CI` > 0 & `97.5% CI` > 0 ~ "*",
-                                TRUE ~ " ")) %>%
-  
-  kbl() %>%
+R_summary_male <-
+  bind_cols(
+    R_male_traits %>% 
+      select(Trait, Response_to_selection_female) %>% 
+      group_by(Trait) %>% 
+      summarise_draws("median", "sd", ~quantile(.x, probs = c(0.025, 0.975), na.rm = TRUE), .cores = 4) %>%
+      ungroup() %>% 
+      left_join(trait_data %>% distinct(Trait, Trait_nice)) %>% # add the nice names
+      rename(`R in females` = median, `Estimated error` = sd,
+             `2.5% CI` = `2.5%`, `97.5% CI` = `97.5%`, `Trait in males` = Trait_nice)  %>% 
+      mutate(R_abs = abs(`R in females`)) %>% 
+      arrange(-R_abs) %>% 
+      mutate(across(3:6, ~ round(.x, digits = 3)),
+             Notable = case_when(`2.5% CI` < 0 & `97.5% CI` < 0 ~ "*",
+                                 `2.5% CI` > 0 & `97.5% CI` > 0 ~ "*",
+                                 TRUE ~ " ")) %>% 
+      filter(Notable == "*") %>% 
+      select(`Trait in males`, `R in females`, `Estimated error`, `2.5% CI`, `97.5% CI`, Notable) %>% 
+      # the next lines add empty rows and remove the NA values in them. We do this so we bind the two dataframes 
+      add_row() %>% 
+      add_row() %>%
+      add_row() %>%
+      add_row() %>%
+      add_row() %>%
+      add_row() %>%
+      add_row() %>%
+      add_row() %>%
+      add_row() %>%
+      add_row() %>%
+      add_row() %>%
+      add_row() %>%
+      mutate_all(~replace(., is.na(.), "")),
+    
+    R_male_traits %>% 
+      select(Trait, Response_to_selection_male) %>% 
+      group_by(Trait) %>% 
+      summarise_draws("median", "sd", ~quantile(.x, probs = c(0.025, 0.975), na.rm = TRUE), .cores = 4) %>%
+      ungroup() %>% 
+      left_join(trait_data %>% distinct(Trait, Trait_nice)) %>% # add the nice names
+      rename(`R in males` = median, `Estimated error ` = sd,
+             `2.5% CI ` = `2.5%`, `97.5% CI ` = `97.5%`, `Trait in males ` = Trait_nice)  %>% 
+      mutate(R_abs = abs(`R in males`)) %>% 
+      arrange(-R_abs) %>% 
+      mutate(across(3:6, ~ round(.x, digits = 3)),
+             `Notable ` = case_when(`2.5% CI ` < 0 & `97.5% CI ` < 0 ~ "*",
+                                    `2.5% CI ` > 0 & `97.5% CI ` > 0 ~ "*",
+                                    TRUE ~ " ")) %>% 
+      filter(`Notable ` == "*") %>% 
+      select(`Trait in males `, `R in males`, `Estimated error `, `2.5% CI `, `97.5% CI `, `Notable `)
+  )
+
+
+kbl(R_summary_male) %>%
+  kable_minimal(font_size = 12) %>% 
+  column_spec(1,
+              bold = if_else(R_summary_male$`R in females` > 0, TRUE, FALSE),
+              width = "22em") %>% 
+  column_spec(7,
+              bold = if_else(R_summary_male$`R in males` > 0, TRUE, FALSE),
+              width = "28em")  
+
+```
+
+
+**Table S2**. The traits with the strongest overall responses to selection in the DGRP (out of 232 in females and 243 in males). The sign of $R$ indicates the direction of the response, with positive expected responses bolded. Estimated error is the standard deviation of the posterior distribution. The notable column indicates whether the 95% CI overlaps with zero.
+
+```{r}
+
+R_total_summary <-
+  bind_rows(
+    left_join(
+      R_female_traits %>% 
+        select(Trait, R_overall) %>% 
+        group_by(Trait) %>% 
+        summarise_draws("median", "sd", ~quantile(.x, probs = c(0.025, 0.975), na.rm = TRUE), .cores = 4) %>%
+        ungroup() %>% 
+        left_join(trait_data %>% distinct(Trait, Trait_nice)) %>% # add the nice names
+        rename(`R overall` = median, `Estimated error` = sd,
+               `2.5% CI` = `2.5%`, `97.5% CI` = `97.5%`)  %>% 
+        mutate(R_abs = abs(`R overall`)) %>% 
+        arrange(-R_abs) %>% 
+        mutate(across(3:6, ~ round(.x, digits = 3)),
+               Notable = case_when(`2.5% CI` < 0 & `97.5% CI` < 0 ~ "*",
+                                   `2.5% CI` > 0 & `97.5% CI` > 0 ~ "*",
+                                   TRUE ~ " ")) %>% 
+        filter(Notable == "*"),
+      
+      R_female_traits %>% 
+        select(Trait, Response_to_selection_female, Response_to_selection_male) %>% 
+        group_by(Trait) %>% 
+        summarise(`R in females` = round(median(Response_to_selection_female), 3),
+                  `R in males` = round(median(Response_to_selection_male), 3)) %>% 
+        ungroup()
+    ) %>% 
+      select(Trait_nice, `R in females`, `R in males`, `R overall`, `Estimated error`, `2.5% CI`, `97.5% CI`, Notable) %>% 
+      rename(Trait = Trait_nice),
+    
+    
+    left_join(
+      R_male_traits %>% 
+        select(Trait, R_overall) %>% 
+        group_by(Trait) %>% 
+        summarise_draws("median", "sd", ~quantile(.x, probs = c(0.025, 0.975), na.rm = TRUE), .cores = 4) %>%
+        ungroup() %>% 
+        left_join(trait_data %>% distinct(Trait, Trait_nice)) %>% # add the nice names
+        rename(`R overall` = median, `Estimated error` = sd,
+               `2.5% CI` = `2.5%`, `97.5% CI` = `97.5%`)  %>% 
+        mutate(R_abs = abs(`R overall`)) %>% 
+        arrange(-R_abs) %>% 
+        mutate(across(3:6, ~ round(.x, digits = 3)),
+               Notable = case_when(`2.5% CI` < 0 & `97.5% CI` < 0 ~ "*",
+                                   `2.5% CI` > 0 & `97.5% CI` > 0 ~ "*",
+                                   TRUE ~ " ")) %>% 
+        filter(Notable == "*"),
+      
+      R_male_traits %>% 
+        select(Trait, Response_to_selection_female, Response_to_selection_male) %>% 
+        group_by(Trait) %>% 
+        summarise(`R in females` = round(median(Response_to_selection_female), 3),
+                  `R in males` = round(median(Response_to_selection_male), 3)) %>% 
+        ungroup()
+    ) %>% 
+      select(Trait_nice, `R in females`, `R in males`, `R overall`, `Estimated error`, `2.5% CI`, `97.5% CI`, Notable) %>% 
+      rename(Trait = Trait_nice)
+  )
+    
+
+kbl(R_total_summary) %>%
   kable_minimal(full_width = F, font_size = 12) %>% 
-  column_spec(1, width = "21em")
+  column_spec(1,
+              bold = if_else(R_total_summary$`R overall` > 0, TRUE, FALSE),
+              width = "21em")%>% 
+  pack_rows("Traits measured in females", 1, 31, hline_after = TRUE, italic = TRUE) %>% 
+  pack_rows("Traits measured in males", 32, 52, hline_after = TRUE, italic = TRUE)
+
 ```
 
 $~$
 
-**Table 3**. The top 20 traits with the largest difference between the sexes in the response to selection in the DGRP. We use $R_F - R_M$ as the difference.
+**Table 3**. The traits with the largest $\Delta R$ between the sexes in the DGRP. Traits where $R_F > R_M$ are indicated in bold. Estimated error is the standard deviation of the posterior distribution. The notable column indicates whether the 95% CI overlaps with zero.
 
 ```{r}
-R_both_sexes %>% 
-  select(Trait, Diff_in_response) %>% 
-  group_by(Trait) %>% 
-  summarise_draws("median", "sd", ~quantile(.x, probs = c(0.025, 0.975)), .cores = 4) %>%
-  ungroup() %>% 
-  select(-variable) %>% 
-  rename(`Female R - Male R` = median, `Estimated error ` = sd, `2.5% CI` = `2.5%`, `97.5% CI` = `97.5%`)  %>% 
-  mutate(R_abs = abs(`Female R - Male R`)) %>% 
-  arrange(-R_abs) %>% 
-  slice_head(n = 20) %>% 
-  select(-R_abs) %>% 
-  mutate(across(`Female R - Male R`:`97.5% CI`, ~ round(.x, digits = 3)),
-         `Notable ` = case_when(`2.5% CI` < 0 & `97.5% CI` < 0 ~ "*",
-                                `2.5% CI` > 0 & `97.5% CI` > 0 ~ "*",
-                                TRUE ~ " ")) %>% 
-  
-  kbl() %>%
+
+R_diff_summary <-
+  bind_rows(
+    left_join(
+      R_female_traits %>% 
+        select(Trait, R_diff) %>% 
+        group_by(Trait) %>% 
+        summarise_draws("median", "sd", ~quantile(.x, probs = c(0.025, 0.975), na.rm = TRUE), .cores = 4) %>%
+        ungroup() %>% 
+        left_join(trait_data %>% distinct(Trait, Trait_nice)) %>% # add the nice names
+        rename(`Female R - Male R` = median, `Estimated error` = sd,
+               `2.5% CI` = `2.5%`, `97.5% CI` = `97.5%`)  %>% 
+        mutate(R_abs = abs(`Female R - Male R`)) %>% 
+        arrange(-R_abs) %>% 
+        mutate(across(3:6, ~ round(.x, digits = 3)),
+               Notable = case_when(`2.5% CI` < 0 & `97.5% CI` < 0 ~ "*",
+                                   `2.5% CI` > 0 & `97.5% CI` > 0 ~ "*",
+                                   TRUE ~ " ")) %>% 
+        filter(Notable == "*"),
+      
+      R_female_traits %>% 
+        select(Trait, Response_to_selection_female, Response_to_selection_male) %>% 
+        group_by(Trait) %>% 
+        summarise(`R in females` = round(median(Response_to_selection_female), 3),
+                  `R in males` = round(median(Response_to_selection_male), 3)) %>% 
+        ungroup()
+    ) %>% 
+      select(Trait_nice, `R in females`, `R in males`, `Female R - Male R`, `Estimated error`, `2.5% CI`, `97.5% CI`, Notable) %>% 
+      rename(Trait = Trait_nice),
+    
+    
+    left_join(
+      R_male_traits %>% 
+        select(Trait, R_diff) %>% 
+        group_by(Trait) %>% 
+        summarise_draws("median", "sd", ~quantile(.x, probs = c(0.025, 0.975), na.rm = TRUE), .cores = 4) %>%
+        ungroup() %>% 
+        left_join(trait_data %>% distinct(Trait, Trait_nice)) %>% # add the nice names
+        rename(`Female R - Male R` = median, `Estimated error` = sd,
+               `2.5% CI` = `2.5%`, `97.5% CI` = `97.5%`)  %>% 
+        mutate(R_abs = abs(`Female R - Male R`)) %>% 
+        arrange(-R_abs) %>% 
+        mutate(across(3:6, ~ round(.x, digits = 3)),
+               Notable = case_when(`2.5% CI` < 0 & `97.5% CI` < 0 ~ "*",
+                                   `2.5% CI` > 0 & `97.5% CI` > 0 ~ "*",
+                                   TRUE ~ " ")) %>% 
+        filter(Notable == "*"),
+      
+      R_male_traits %>% 
+        select(Trait, Response_to_selection_female, Response_to_selection_male) %>% 
+        group_by(Trait) %>% 
+        summarise(`R in females` = round(median(Response_to_selection_female), 3),
+                  `R in males` = round(median(Response_to_selection_male), 3)) %>% 
+        ungroup()
+    ) %>% 
+      select(Trait_nice, `R in females`, `R in males`, `Female R - Male R`, `Estimated error`, `2.5% CI`, `97.5% CI`, Notable) %>% 
+      rename(Trait = Trait_nice)
+  )
+
+kbl(R_diff_summary) %>%
   kable_minimal(full_width = F, font_size = 12) %>% 
-    column_spec(1, width = "21em")
+  column_spec(1,
+              bold = if_else(R_diff_summary$`Female R - Male R` > 0, TRUE, FALSE),
+              width = "21em") %>% 
+  pack_rows("Traits measured in females", 1, 8, hline_after = TRUE, italic = TRUE) %>% 
+  pack_rows("Traits measured in males", 9, 19, hline_after = TRUE, italic = TRUE)
 ```
 
 $~$
 
 ## Estimate across-trait grand means for $R$ in each sex
 
+First, fit a simple model to estimate the overall absolute response, |$R_{overall}$| across traits
+
 ```{r}
 
-R_meta <-
-  bind_rows(
-    left_join(
-      
-      R_female %>% 
-        select(Trait, Response_to_selection_female) %>%
-        group_by(Trait) %>% 
-        summarise_draws("median", "sd", ~quantile(.x, probs = c(0.025, 0.975)), .cores = 4) %>%
-        ungroup() %>% 
-        select(Trait, median, sd) %>% 
-        rename(Response_to_selection = median),
-      
-      trait_fitness_full_data %>% 
-        distinct(Trait, .keep_all = TRUE) %>% 
-        select(Trait, Life_stage, `Trait guild`, study_ID, Pooled)
-    ) %>% 
-      mutate(Sex = "Female"),
-    
-    left_join(
-      
-      R_male %>% 
-        select(Trait, Response_to_selection_male) %>%
-        group_by(Trait) %>% 
-        summarise_draws("median", "sd", ~quantile(.x, probs = c(0.025, 0.975)), .cores = 4) %>%
-        ungroup() %>% 
-        select(Trait, median, sd) %>% 
-        rename(Response_to_selection = median),
-      
-      trait_fitness_full_data %>% 
-        distinct(Trait, .keep_all = TRUE) %>% 
-        select(Trait, Life_stage, `Trait guild`, study_ID, Pooled)
-    ) %>% 
-      mutate(Sex = "Male")
-  ) %>% 
-  rename(Trait_guild = `Trait guild`) %>% 
-  mutate(absolute_response = abs(Response_to_selection))
+R_overall_medians <-
+  R_all_traits %>% 
+  select(Trait, Trait_Sex, R_overall) %>% 
+  group_by(Trait, Trait_Sex) %>% 
+  summarise_draws("median", "sd", ~quantile(.x, probs = c(0.025, 0.975), na.rm = TRUE), .cores = 4) %>% 
+  ungroup() %>% 
+  select(-variable) %>% 
+  left_join(clean_meta_data) %>% 
+  mutate(absolute_R_overall = abs(median),
+         Trait_Sex = as.factor(Trait_Sex),
+         Trait = as.factor(Trait)) 
 
-
-grand_R_model <- 
-  brm(absolute_response | weights(1/sd) ~ 1 + Sex + (1|study_ID) + (1|Trait),
-      family = brmsfamily(family = "Gamma"), # for all positive values after taking the absolute value
-      data = R_meta,
-      prior = c(#prior(exponential(1), class = Intercept),
-        prior(exponential(1), class = sd),
-        prior(exponential(1), class = shape),
-        prior(normal(0, 0.25), class = b)),
-      warmup = 4000, iter = 8000,
+R_intercept_model <- 
+  brm(absolute_R_overall | weights(1/sd) ~ 1 + Trait_Sex + (1|study_ID),
+      family = brmsfamily(family = "Gamma"), # gamma is appropriate for the half-normal distribution created by taking the absolute
+      data = R_overall_medians,
+      prior = c(prior(normal(-2.2, 1), class = Intercept),
+                prior(exponential(1), class = sd),
+                prior(exponential(1), class = shape),
+                prior(normal(0, 0.25), class = b)),
+      warmup = 4000, iter = 12000,
       seed = 1, cores = 4, chains = 4,
-      control = list(adapt_delta = 0.99, max_treedepth = 15),
-      file = "fits/grand_R_model")
+      control = list(adapt_delta = 0.9, max_treedepth = 10),
+      file = "fits/intercept_R_model")
 
-print(grand_R_model)
+print(R_intercept_model)
 
 ```
 
-Get model predictions and plot
+$~$
+
+Find summary measures to report in results section
 
 ```{r}
-R_posterior <-
-  grand_R_model %>% 
-  as_draws_df() %>% 
-  mutate(Males = inv_logit_scaled(b_Intercept + b_SexMale),
-         Females = inv_logit_scaled(b_Intercept),
-         sex_diff = Males - Females,
-         percent_diff = sex_diff / Females * 100) %>% 
-  select(Females, Males, sex_diff, percent_diff) %>% 
-  pivot_longer(cols = everything(), names_to = "Parameter", values_to = "R_stat")
+
+new_data <- tibble(Trait_Sex = c("Female", "Male"))
+
+  fitted(R_intercept_model, newdata = new_data, re_formula = NA, summary = F) %>% 
+  as.data.frame() %>% 
+  rename(Female_trait_R = V1, Male_trait_R = V2) %>% 
+  as_tibble() %>% 
+  mutate(percent_diff = ((Female_trait_R - Male_trait_R) / Male_trait_R)*100) %>% 
+  pivot_longer(cols = everything(), names_to = "Parameter", values_to = "R_mean") %>% 
+  group_by(Parameter) %>% 
+  median_qi(R_mean)
+
+```
+
+$~$
+
+Now fit the model to test whether R depends on the sex fitness and trait values were measured in:
+
+```{r}
+
+R_medians <-
+  R_long_form %>%
+  group_by(Trait, Fitness_Sex, Trait_Sex) %>% 
+  summarise_draws("median", "sd", ~quantile(.x, probs = c(0.025, 0.975), na.rm = TRUE), .cores = 4) %>% 
+  ungroup() %>% 
+  select(-variable) %>% 
+  left_join(clean_meta_data) %>% 
+  mutate(absolute_R = abs(median),
+         Fitness_Sex = as.factor(Fitness_Sex),
+         Trait_Sex = as.factor(Trait_Sex),
+         Trait = as.factor(Trait)) 
+
+median_R_model <- 
+  brm(absolute_R | weights(1/sd) ~ 1 + Fitness_Sex * Trait_Sex + (1|study_ID) + (1|Trait),
+      family = brmsfamily(family = "Gamma"), # gamma is appropriate for the half-normal distribution created by taking the absolute
+      data = R_medians,
+      prior = c(prior(normal(-2.2, 1), class = Intercept),
+                prior(exponential(1), class = sd),
+                prior(exponential(1), class = shape),
+                prior(normal(0, 0.25), class = b)),
+      warmup = 4000, iter = 12000,
+      seed = 1, cores = 4, chains = 4,
+      control = list(adapt_delta = 0.9, max_treedepth = 10),
+      file = "fits/median_R_model")
+
+print(median_R_model)
+```
+
+$~$
+
+Get model predictions and plot
+
+```{r, fig.width=10, fig.height=5}
+
+new_data <- expand_grid(Fitness_Sex = c("Female", "Male"),
+                        Trait_Sex = c("Female", "Male"))
+
+R_fitted <-
+  fitted(median_R_model, newdata = new_data, re_formula = NA, summary = F) %>% 
+  as.data.frame() %>% 
+  rename(FemaleFitness_FemaleTrait = V1, FemaleFitness_MaleTrait = V2, 
+         MaleFitness_FemaleTrait = V3, MaleFitness_MaleTrait = V4) %>% 
+  as_tibble() %>% 
+  mutate(percent_diff_female = ((MaleFitness_FemaleTrait - FemaleFitness_FemaleTrait) / FemaleFitness_FemaleTrait)*100,
+         percent_diff_male = ((MaleFitness_MaleTrait - FemaleFitness_MaleTrait)/ FemaleFitness_MaleTrait)*100) %>% 
+  pivot_longer(cols = everything(), names_to = "Parameter", values_to = "R_mean") %>% 
+  mutate(Fitness_Sex = case_when(str_detect(Parameter, "FemaleFitness") ~ "Female",
+                                 str_detect(Parameter, "MaleFitness") ~ "Male"),
+         Trait_Sex = case_when(str_detect(Parameter, "FemaleTrait") ~ "Female",
+                               str_detect(Parameter, "MaleTrait") ~ "Male",
+                               str_detect(Parameter, "percent_diff_female") ~ "Female",
+                               str_detect(Parameter, "percent_diff_male") ~ "Male"))
 
 R_p1 <-
-  R_posterior %>% 
-  filter(Parameter == c("Females", "Males")) %>% 
-  ggplot(aes(x = R_stat, y = Parameter)) +
-  stat_halfeye(.width = c(0.66, 0.95), alpha = 0.9, 
-               fill = carto_pal(7, "Peach")[4],
-               point_interval = "median_qi", point_fill = "white",
-               shape = 21, point_size = 4, stroke = 1.5,
-               slab_colour = "black") + # width indicates the uncertainty intervals: here we have 66% and 95% intervals + # width indicates the uncertainty intervals: here we have 66% and 95% intervals+
-  xlab(expression(italic(R)* ", the response to selection")) +
-  ylab("Sex") +
-  #coord_cartesian(ylim = c(1.5,2.1)) +
-  #scale_x_continuous(breaks = c(0.6, 0.9, 1.2, 1.5, 1.8), limits = c(0.5, 2)) +
+  R_fitted %>% 
+  filter(!str_detect(Parameter, "percent")) %>% 
+  ggplot(aes(x = R_mean, y = Trait_Sex, fill = Fitness_Sex)) + #fill = Fitness_Sex)) +
+  stat_slab(alpha = 0.9, shape = 21) +#,
+  labs(x = expression("Across-trait estimated magnitude for "* italic(R)),
+       y = "Sex traits were measured in",
+       fill = "Sex under selection") +
+  scale_fill_manual(values = c(carto_pal(7, "Purp")[5], carto_pal(7, "Peach")[5])) +
   theme_minimal() + 
   theme(panel.background = element_rect(fill='transparent'),
-        panel.grid.major.y = element_blank(),
+        #panel.grid.major.y = element_blank(),
         panel.grid.minor.y = element_blank(),
         plot.background = element_rect(fill='transparent', color=NA),
-        legend.position = "none",
-        text = element_text(size=14))
+        legend.position = "bottom",
+        text = element_text(size=17))
 
 R_p2 <-
-  R_posterior %>% 
-  filter(Parameter == "percent_diff") %>% 
-  ggplot(aes(x = R_stat, y = NULL)) +
-  stat_halfeye(.width = c(0.66, 0.95), alpha = 0.9, 
-               fill = carto_pal(7, "Peach")[4],
+  R_fitted %>% 
+  filter(str_detect(Parameter, "percent")) %>%
+  ggplot(aes(x = R_mean, y = Trait_Sex, fill = Trait_Sex)) +
+  stat_halfeye(.width = c(0.66, 0.95), alpha = 0.9,
                point_interval = "median_qi", point_fill = "white",
-               shape = 21, point_size = 4, stroke = 1.5,
-               slab_colour = "black") + # width indicates the uncertainty intervals: here we have 66% and 95% intervals + # width indicates the uncertainty intervals: here we have 66% and 95% intervals+
+               shape = 21, point_size = 4, stroke = 1.5) + # width indicates the uncertainty intervals: here we have 66% and 95% intervals + # width indicates the uncertainty intervals: here we have 66% and 95% intervals+
+  scale_fill_manual(values = c(carto_pal(7, "Peach")[5], carto_pal(7, "Peach")[5], carto_pal(7, "Purp")[5])) +
   geom_vline(xintercept = 0, linetype = 2, linewidth = 1.2) +
-  coord_cartesian(ylim = c(-0.1,1)) +
-  xlab(expression("% increase in "*italic(R)* " from females to males")) +
-  ylab(NULL) +
+  coord_cartesian(xlim = c(-5, 50)) +
+  xlab(expression("% increase in "*italic(R)* " through males")) +
+  ylab("Sex traits were measured in") +
   theme_minimal() + 
   theme(panel.background = element_rect(fill='transparent'),
-        panel.grid.major.y = element_blank(),
+        #panel.grid.major.y = element_blank(),
         panel.grid.minor.y = element_blank(),
         plot.background = element_rect(fill='transparent', color=NA),
-        axis.text.y = element_blank(),
         legend.position = "none",
-        text = element_text(size=14))
+        text = element_text(size=17))
 
-R_p1 / R_p2 +
+R_p1 + R_p2 +
   plot_annotation(tag_levels = 'a')
   
 ```
 
-**Figure XX**. **a** $\overline{R}$, the estimated mean response to selection (absolute value) across all traits measured in the DGRP, for females and males. For each trait $R = \sigma(A_z, A_w)$, where $A_z$ is the trait breeding value and $A_w$ is the breeding value for fitness. **b** traits have a stronger mean response to selection in males compared to females.
+**Figure 2**. **a** the posterior distribution for the across-trait median response to selection (absolute value) on females and males. For each trait $R = \sigma(A_z, A_w)$, where $A_z$ is the trait breeding value and $A_w$ is the breeding value for fitness. **b** the across-trait median response is stronger in males than in females. Points indicate the median estimate with associated 66 and 95% credible intervals.
 
 $~$
 
-## Identifying traits under sexually antagonistic selection
+**Calculating stats for the results section**
+
+```{r}
+R_fitted %>% 
+  group_by(Parameter) %>% 
+  median_qi(R_mean)
+```
+
+
+## Identifying traits responding to sexually antagonistic selection
 
 $~$
 
@@ -605,114 +1040,194 @@ We have found $R$ for traits in females and males. For those traits where we hav
 
 $$I = \frac{\beta'_M \beta'_F}{\sqrt{\frac{(\beta'_M)^2 + (\beta'_F)^2}{2}}}$$
 
-Where $\beta'_F$ and $\beta'_M$ = are phenotypic selection gradients. We substitute $R_F$ and $R_M$ for $\beta'_F$ and $\beta'_M$. This makes our test for sexually antagonistic traits more conservative, as non-zero $R$ requires both directional selection on the trait and the presence of additive genetic variance for the trait. 
+Where $\beta'_F$ and $\beta'_M$ = are phenotypic selection gradients. Taking traits expressed in females as an example, we substitute $R_FF$ and $R_MF$ for $\beta'_F$ and $\beta'_M$. This makes our test for sexually antagonistic traits more conservative, as non-zero $R$ requires both directional selection on the trait and the presence of additive genetic variance for the trait. 
 
 This index is positive when selection is concordant in the two sexes, negative when antagonistic in the two sexes, and is zero when selection is absent in one sex (note that it will miss conflict that occurs when strong stabilizing selection is present in that sex). Finally it is proportional to the absolute intensity of selection (track the diagonals in the visualisation below to get a sense of this). Note that because we use $R$ instead of $\beta'$, $I$ is bounded between -1 to 1 in our analysis.  
 
 Additionally, it is symmetrical and normally distributed for a random set of normally distributed $\beta'_M$, $\beta'_F$. $|I|$ is also always included in the interval between the absolute values of the selection gradient in the two sexes, and it coincides with them when $\beta'_M = \beta'_F$. As a potential drawback, it should be noted that such quantity is not defined when $\beta'_M = \beta'_F = 0$.
  
-First let's test that we've coded $I$ correctly. We simulate combinations of $R_F$ and $R_M$ and calculate $I$.
+First let's look at the $I$ parameter space. We simulate combinations of $R_F$ and $R_M$ and calculate $I$.
  
 ```{r}
 # Let's test that the I index behaves as it should
 
 sim_I <-
-  expand_grid(R_F = seq(from = -1, to = 1, by = 0.01),
-         R_M = seq(from = -1, to = 1, by = 0.01)) %>% 
+  expand_grid(R_F = seq(from = -0.5, to = 0.5, by = 0.01),
+         R_M = seq(from = -0.5, to = 0.5, by = 0.01)) %>% 
   mutate(I = R_F * R_M / sqrt(((R_F)^2 + (R_M)^2)/2))
 
-sim_I %>% 
+I_plot <-
+  sim_I %>% 
   ggplot(aes(x = R_F, y = R_M, fill = I)) +
   geom_raster() +
-  stat_contour(aes(z = I), colour = "black", binwidth = 0.1) +
+  stat_contour(aes(z = I), colour = "black", binwidth = 0.075) +
   stat_contour(aes(z = I), colour = "black", breaks = 8, linetype = 2) +
-  scale_fill_gradientn(colours = met.brewer(name = "Paquin", 7)) + #OKeeffe1 or paquin also good
+  scale_fill_gradientn(colours = met.brewer(name = "Paquin", 7),
+                       labels = c("Antagonistic", -0.25, 0, 0.25, "Concordant")) + #OKeeffe1 or paquin also good
   scale_x_continuous(expand = c(0, 0)) + 
   scale_y_continuous(expand = c(0, 0)) +
-  labs(x = "Response to selection in females", y = "Response to selection in males") +
+  labs(x = "Response to selection in females", y = "Response to selection in males", fill = "I index") +
   theme_tidybayes() +
-  theme(text = element_text(size = 14))
+  theme(text = element_text(size = 17),
+        legend.position = "right",
+        legend.direction = "vertical")
+
+I_plot
 ```
  
 Calculate $I$ for each draw of each trait
+
+**Table S3**. The traits with the most extreme _I_ index values in the DGRP. Estimated error is the standard deviation of the posterior distribution. The notable column indicates whether the 95% CI overlaps with zero.
  
 ```{r}
 
 I_index <-
-  R_both_sexes %>% 
-  mutate(I = Response_to_selection_female * Response_to_selection_male / sqrt(((Response_to_selection_female)^2 + (Response_to_selection_male)^2)/2))
-
+  R_all_traits %>% 
+  mutate(I = Response_to_selection_female * Response_to_selection_male / 
+           sqrt(((Response_to_selection_female)^2 + (Response_to_selection_male)^2)/2))
 # make the table
 
-bind_rows(
-  I_index %>% 
-    select(Trait, I) %>% 
-    group_by(Trait) %>% 
-    summarise_draws("median", "sd", ~quantile(.x, probs = c(0.025, 0.975)), .cores = 4) %>%
-    ungroup() %>% 
-    select(-variable) %>% 
-    rename(I = median, `Estimated error ` = sd, `2.5% CI` = `2.5%`, `97.5% CI` = `97.5%`)  %>% 
-    mutate(I_abs = abs(I)) %>% 
-    arrange(-I) %>% 
-    slice_head(n = 20) %>% 
-    select(-I_abs) %>% 
-    mutate(across(I:`97.5% CI`, ~ round(.x, digits = 3)),
-           `Notable ` = case_when(`2.5% CI` < 0 & `97.5% CI` < 0 ~ "*",
-                                  `2.5% CI` > 0 & `97.5% CI` > 0 ~ "*",
-                                  TRUE ~ " ")), 
+bind_cols(
   
-  I_index %>% 
-    select(Trait, I) %>% 
-    group_by(Trait) %>% 
-    summarise_draws("median", "sd", ~quantile(.x, probs = c(0.025, 0.975)), .cores = 4) %>%
-    ungroup() %>% 
-    select(-variable) %>% 
-    rename(I = median, `Estimated error ` = sd, `2.5% CI` = `2.5%`, `97.5% CI` = `97.5%`)  %>% 
-    mutate(I_abs = abs(I)) %>% 
-    arrange(I) %>% 
-    slice_head(n = 20) %>% 
-    select(-I_abs) %>% 
-    mutate(across(I:`97.5% CI`, ~ round(.x, digits = 3)),
-           `Notable ` = case_when(`2.5% CI` < 0 & `97.5% CI` < 0 ~ "*",
-                                  `2.5% CI` > 0 & `97.5% CI` > 0 ~ "*",
-                                  TRUE ~ " "))
+  bind_rows(
+    I_index %>% 
+      filter(Trait_Sex == "Female") %>% 
+      select(Trait, I) %>% 
+      group_by(Trait) %>% 
+      summarise_draws("median", "sd", ~quantile(.x, probs = c(0.025, 0.975), na.rm = TRUE), .cores = 4) %>%
+      ungroup() %>% 
+      rename(I = median, `Estimated error` = sd, `2.5% CI` = `2.5%`, `97.5% CI` = `97.5%`)  %>%
+      arrange(-I) %>% 
+      slice_head(n = 20) %>% 
+      select(-variable) %>% 
+      mutate(across(I:`97.5% CI`, ~ round(.x, digits = 3)),
+             `Notable` = case_when(`2.5% CI` < 0 & `97.5% CI` < 0 ~ "*",
+                                   `2.5% CI` > 0 & `97.5% CI` > 0 ~ "*",
+                                   TRUE ~ " ")), 
+    
+    I_index %>% 
+      filter(Trait_Sex == "Female") %>% 
+      select(Trait, I) %>% 
+      group_by(Trait) %>% 
+      summarise_draws("median", "sd", ~quantile(.x, probs = c(0.025, 0.975), na.rm = TRUE), .cores = 4) %>%
+      ungroup() %>% 
+      rename(I = median, `Estimated error` = sd, `2.5% CI` = `2.5%`, `97.5% CI` = `97.5%`)  %>%
+      arrange(I) %>% 
+      slice_head(n = 20) %>% 
+      select(-variable) %>% 
+      mutate(across(I:`97.5% CI`, ~ round(.x, digits = 3)),
+             `Notable` = case_when(`2.5% CI` < 0 & `97.5% CI` < 0 ~ "*",
+                                   `2.5% CI` > 0 & `97.5% CI` > 0 ~ "*",
+                                   TRUE ~ " "))
+  ) %>% 
+    left_join(trait_data %>% distinct(Trait, Trait_nice)) %>% # add the nice names 
+    rename(`Trait in females` = Trait_nice) %>% 
+    select(`Trait in females`, everything(), -Trait), 
+  
+  
+  bind_rows(
+    I_index %>% 
+      filter(Trait_Sex == "Male") %>% 
+      select(Trait, I) %>% 
+      group_by(Trait) %>% 
+      summarise_draws("median", "sd", ~quantile(.x, probs = c(0.025, 0.975), na.rm = TRUE), .cores = 4) %>%
+      ungroup() %>% 
+      rename(`I ` = median, `Estimated error ` = sd, `2.5% CI ` = `2.5%`, `97.5% CI ` = `97.5%`)  %>%
+      arrange(-`I `) %>% 
+      slice_head(n = 20) %>% 
+      select(-variable) %>% 
+      mutate(across(`I `:`97.5% CI `, ~ round(.x, digits = 3)),
+             `Notable ` = case_when(`2.5% CI ` < 0 & `97.5% CI ` < 0 ~ "*",
+                                    `2.5% CI ` > 0 & `97.5% CI ` > 0 ~ "*",
+                                    TRUE ~ " ")), 
+    
+    I_index %>% 
+      filter(Trait_Sex == "Male") %>% 
+      select(Trait, I) %>%  
+      group_by(Trait) %>% 
+      summarise_draws("median", "sd", ~quantile(.x, probs = c(0.025, 0.975), na.rm = TRUE), .cores = 4) %>%
+      ungroup() %>% 
+      select(-variable) %>% 
+      rename(`I ` = median, `Estimated error ` = sd, `2.5% CI ` = `2.5%`, `97.5% CI ` = `97.5%`)  %>%
+      arrange(`I `) %>% 
+      slice_head(n = 20) %>% 
+      mutate(across(`I `:`97.5% CI `, ~ round(.x, digits = 3)),
+             `Notable ` = case_when(`2.5% CI ` < 0 & `97.5% CI ` < 0 ~ "*",
+                                    `2.5% CI ` > 0 & `97.5% CI ` > 0 ~ "*",
+                                    TRUE ~ " "))
+  ) %>% 
+    left_join(trait_data %>% distinct(Trait, Trait_nice)) %>% # add the nice names 
+    rename(`Trait in males` = Trait_nice) %>% 
+    select(`Trait in males`, everything(), -Trait), 
+  
 ) %>% 
-    
-    
+  
   kbl() %>%
   kable_minimal(full_width = F, font_size = 12) %>% 
-  column_spec(1, width = "25em") %>% 
-  pack_rows("Sexually concordant R", 1, 20) %>% 
-  pack_rows("Sexually antagonistic R", 21, 40)
+  column_spec(1, width = "27em") %>% 
+  pack_rows("Sexually concordant R", 1, 20, italic = TRUE) %>% 
+  pack_rows("Sexually antagonistic R", 21, 40, italic = TRUE) %>% 
+  column_spec(7, width = "27em")
 
 ```
 
-Fit the $\overline{I}$ model
+Build panel a for Figure 3.
 
 ```{r}
 
-I_data <-
-  left_join(
-    I_index %>% 
-       select(Trait, I) %>% 
-    group_by(Trait) %>% 
-    summarise_draws("median", "sd", ~quantile(.x, probs = c(0.025, 0.975)), .cores = 4) %>%
-    ungroup() %>% 
-    select(-variable),
-    
-    trait_fitness_full_data %>% distinct(Trait, Life_stage, study_ID, `Trait guild`)
-  ) %>% 
-  rename(I = median, Trait_guild = `Trait guild`)
+I_summary <- 
+  I_index %>% 
+  group_by(Trait, Trait_Sex) %>% 
+  summarise(R_F = median(Response_to_selection_female),
+            R_M = median(Response_to_selection_male),
+            I = median(I)) %>%
+  ungroup() %>% 
+  mutate(I_abs = abs(I)) %>% 
+  left_join(trait_data %>% distinct(Trait, Trait_nice))
 
-# fit the model
+I_plot_labelled <-
+  I_plot +
+  new_scale_fill() +
+  geom_point(data = I_summary, #%>% filter(Trait_Sex == "Female"),
+             aes(x = R_F, y = R_M, fill = Trait_Sex),
+             size = 4, alpha = 0.75, shape = 21) +
+  scale_fill_manual(values = c("Female" = "white", "Male" = "lightblue")) +
+  labs(fill = "Sex measured in") +
+  new_scale_fill() +
+  geom_label_repel(data = I_summary %>% filter(I_abs > 0.15),  
+                   aes(label = Trait_nice, fill = if_else(I > 0, met.brewer(name = "Paquin", 7)[3], met.brewer(name = "Paquin", 7)[5])), size = 3, alpha = 0.9,
+                   min.segment.length = 0, seed = 1, box.padding = 0.5, point.padding = 0.5) +
+  scale_fill_manual(values = c(met.brewer(name = "Paquin", 7)[3], met.brewer(name = "Paquin", 7)[5]), guide = "none")
+     
+```
+
+Fit the across-trait $I$ model
+
+```{r}
+
+I_medians <-
+  I_index %>% 
+  select(Trait, Trait_Sex, I) %>% 
+  group_by(Trait, Trait_Sex) %>% 
+  summarise_draws("median", "sd", ~quantile(.x, probs = c(0.025, 0.975), na.rm = TRUE), .cores = 4) %>%
+  ungroup() %>% 
+  rename(I = median) %>% 
+  select(-variable) %>% 
+  left_join(trait_data %>% 
+              distinct(Trait, .keep_all = TRUE) %>% 
+              select(Trait, Trait_nice, Life_stage, `Trait guild`, study_ID))
+
+
+ # fit the model
 
 I_model <- 
-  brm(data = I_data, 
-      I | weights(sd) ~ 1 + (1|study_ID),
+  brm(data = I_medians, 
+      I | weights(sd) ~ 1 + Trait_Sex + (1|study_ID),
       family = gaussian,
       prior = c(prior(normal(0, 0.25), class = Intercept),
                 prior(exponential(1), class = sd),
-                prior(exponential(5), class = sigma)), 
+                prior(exponential(5), class = sigma),
+                prior(normal(0, 0.25))), 
       warmup = 4000, iter = 8000,
       seed = 1, cores = 4, chains = 4,
       control = list(adapt_delta = 0.9, max_treedepth = 10),
@@ -725,73 +1240,352 @@ print(I_model)
 Get model predictions and plot
 
 ```{r}
+
+new_data <- tibble(Trait_Sex = c("Female", "Male"))
+
+I_fitted <-
+  fitted(I_model, newdata = new_data, re_formula = NA, summary = F) %>% 
+  as.data.frame() %>% 
+  rename(Females = V1, Males = V2) %>% 
+  as_tibble() %>% 
+  pivot_longer(cols = everything(), names_to = "Trait_Sex", values_to = "I")
+
+
 I_posterior <- 
-    as_draws_df(I_model) %>% 
-      select(b_Intercept, sigma)
+  as_draws_df(I_model) %>% 
+  mutate(Females = b_Intercept,
+         Males = b_Intercept + b_Trait_SexMale) %>% 
+    select(Females, Males, sigma) 
 
 I_posterior_long <-
 bind_cols(
 I_posterior,
-    tibble(predictive_I = rnorm(16000, mean = I_posterior$b_Intercept, sd = I_posterior$sigma))
+    tibble(predictive_I_female = rnorm(16000, mean = I_posterior$Females, sd = I_posterior$sigma),
+           predictive_I_male = rnorm(16000, mean = I_posterior$Males, sd = I_posterior$sigma))
   ) %>% 
   select(-sigma) %>% 
   pivot_longer(cols = everything(), names_to = "parameter", values_to = "I")
 
 ```
 
-Plot
+## Build Figure 3
 
-```{r}
-I_grand_mean <-
-  I_posterior_long %>% 
-  filter(parameter == "b_Intercept") %>% 
-  ggplot(aes(x = I, y = NULL)) +
+```{r, fig.width=10, fig.height=12}
+I_across_trait <-
+  I_fitted %>% 
+  ggplot(aes(x = I, y = Trait_Sex)) +
   stat_halfeye(aes(fill = after_stat(x > 0)),
                .width = c(0.66, 0.95), alpha = 0.9, 
-               #fill = carto_pal(7, "Peach")[3],
                point_interval = "median_qi", point_fill = "white",
-               shape = 21, point_size = 4, stroke = 1.5,
-               slab_colour = "black") + # width indicates the uncertainty intervals: here we have 66% and 95% intervals + # width indicates the uncertainty intervals: here we have 66% and 95% intervals+
+               shape = 21, point_size = 4, stroke = 1.5) + 
   scale_fill_manual(values = c(met.brewer(name = "Tam", n = 8)[4], met.brewer(name = "Tsimshian", n = 7)[3])) +
-  ylab(NULL) +
-  xlab(expression(italic(I)* " index grand mean")) +
-  coord_cartesian(ylim = c(-0.1,1)) +
-  #scale_x_continuous(breaks = c(0.6, 0.9, 1.2, 1.5, 1.8), limits = c(0.5, 2)) +
+  ylab("Sex traits were measured in") +
+  xlab(expression(italic(I)* " across-trait mean (posterior)")) +
   theme_minimal() + 
   theme(panel.background = element_rect(fill='transparent'),
         panel.grid.major.y = element_blank(),
         panel.grid.minor.y = element_blank(),
         plot.background = element_rect(fill='transparent', color=NA),
         legend.position = "none",
-        axis.text.y = element_blank(),
-        text = element_text(size=14))
+        text = element_text(size=17))
 
-I_predictive_dist <-
-  I_posterior_long %>% 
-  filter(parameter == "predictive_I") %>% 
-  ggplot(aes(x = I, y = NULL)) +
-  stat_halfeye(aes(fill = after_stat(x > 0)),
-               .width = c(0.66, 0.95), alpha = 0.9, 
-               #fill = carto_pal(7, "Peach")[3],
-               point_interval = "median_qi", point_fill = "white",
-               shape = 21, point_size = 4, stroke = 1.5,
-               slab_colour = "black") + # width indicates the uncertainty intervals: here we have 66% and 95% intervals + # width indicates the uncertainty intervals: here we have 66% and 95% intervals+
-  scale_fill_manual(values = c(met.brewer(name = "Tam", n = 8)[4], met.brewer(name = "Tsimshian", n = 7)[3])) +
-  ylab(NULL) +
-  xlab(expression(italic(I)* " posterior predictive distribution")) +
-  coord_cartesian(ylim = c(-0.1,1)) +
-  #scale_x_continuous(breaks = c(0.6, 0.9, 1.2, 1.5, 1.8), limits = c(0.5, 2)) +
-  theme_minimal() + 
-  theme(panel.background = element_rect(fill='transparent'),
-        panel.grid.major.y = element_blank(),
-        panel.grid.minor.y = element_blank(),
-        plot.background = element_rect(fill='transparent', color=NA),
-        legend.position = "none",
-        axis.text.y = element_blank(),
-        text = element_text(size=14))
-
-I_grand_mean / I_predictive_dist +
-  plot_annotation(tag_levels = 'a')
+I_plot_labelled / I_across_trait +
+  plot_annotation(tag_levels = 'a') +
+  plot_layout(heights = c(2, 1))
 ```
 
-**Figure XX**. **a** $\overline{I}$, the estimated mean $I$ index across all traits measured in both sexes in the DGRP, with associated 66 and 95% credible intervals. $I$ is calculated using the response to selection rather than selection gradients in our analysis. **b** The entire posterior predictive distribution for $I$, with associated 66 and 95% prediction intervals. This distribution shows where any randomly selected trait phenotyped across the DGRP is predicted to fall, based upon all previously phenotyped traits (that meet our criteria). In both panels, red area indicates parameter space where traits have sexually antagonistic responses to selection, while green area indicates traits that have sexually concordant responses to selection.
+**Figure 3**. **a** The _I_ index parameter space for traits in the DGRP measured in females and males. Each point indicates the median for a trait included in our analysis, with the most sexually concordant and most sexually antagonistic labelled. Contours show 0.075 intervals in _I_. **b** the across trait mean _I_, split by the sex traits were measured in. Red area indicates parameter space where traits have sexually antagonistic responses to selection, while green area indicates traits that have sexually concordant responses to selection. White points show the median, with associated 66 and 95% credible intervals. 
+
+$~$
+
+# All our metrics in one place {.tabset}
+
+## $R_{FF}$
+
+```{r}
+
+R_female_traits %>% 
+  select(Trait, Response_to_selection_female) %>% 
+  group_by(Trait) %>% 
+  summarise_draws("median", "sd", ~quantile(.x, probs = c(0.025, 0.975), na.rm = TRUE), .cores = 4) %>%
+  ungroup() %>% 
+  left_join(trait_data %>% distinct(Trait, Trait_nice)) %>% # add the nice names
+  rename(`R in females` = median, `Estimated error` = sd,
+         `2.5% CI` = `2.5%`, `97.5% CI` = `97.5%`, `Trait in females` = Trait_nice)  %>% 
+  mutate(R_abs = abs(`R in females`)) %>% 
+  arrange(-R_abs) %>% 
+  mutate(across(3:6, ~ round(.x, digits = 3)),
+         Notable = case_when(`2.5% CI` < 0 & `97.5% CI` < 0 ~ "*",
+                             `2.5% CI` > 0 & `97.5% CI` > 0 ~ "*",
+                             TRUE ~ " ")) %>% 
+  left_join(clean_meta_data) %>% 
+  select(`Trait in females`, `R in females`, `Estimated error`, `2.5% CI`, `97.5% CI`, Notable, Reference, `Trait description`) %>% 
+  my_data_table()
+
+```
+
+## $R_{MF}$
+
+```{r}
+
+R_female_traits %>% 
+  select(Trait, Response_to_selection_male) %>% 
+  group_by(Trait) %>% 
+  summarise_draws("median", "sd", ~quantile(.x, probs = c(0.025, 0.975), na.rm = TRUE), .cores = 4) %>%
+  ungroup() %>% 
+  left_join(trait_data %>% distinct(Trait, Trait_nice)) %>% # add the nice names
+  rename(`R in males` = median, `Estimated error` = sd,
+         `2.5% CI` = `2.5%`, `97.5% CI` = `97.5%`, `Trait in females` = Trait_nice)  %>% 
+  mutate(R_abs = abs(`R in males`)) %>% 
+  arrange(-R_abs) %>% 
+  mutate(across(3:6, ~ round(.x, digits = 3)),
+         Notable = case_when(`2.5% CI` < 0 & `97.5% CI` < 0 ~ "*",
+                             `2.5% CI` > 0 & `97.5% CI` > 0 ~ "*",
+                             TRUE ~ " ")) %>% 
+  left_join(clean_meta_data) %>% 
+  select(`Trait in females`, `R in males`, `Estimated error`, `2.5% CI`, `97.5% CI`, Notable, Reference, `Trait description`) %>% 
+  my_data_table()
+
+```
+
+## $R_{MM}$
+
+```{r}
+
+R_male_traits %>% 
+  select(Trait, Response_to_selection_male) %>% 
+  group_by(Trait) %>% 
+  summarise_draws("median", "sd", ~quantile(.x, probs = c(0.025, 0.975), na.rm = TRUE), .cores = 4) %>%
+  ungroup() %>% 
+  left_join(trait_data %>% distinct(Trait, Trait_nice)) %>% # add the nice names
+  rename(`R in males` = median, `Estimated error` = sd,
+         `2.5% CI` = `2.5%`, `97.5% CI` = `97.5%`, `Trait in males` = Trait_nice)  %>% 
+  mutate(R_abs = abs(`R in males`)) %>% 
+  arrange(-R_abs) %>% 
+  mutate(across(3:6, ~ round(.x, digits = 3)),
+         Notable = case_when(`2.5% CI` < 0 & `97.5% CI` < 0 ~ "*",
+                             `2.5% CI` > 0 & `97.5% CI` > 0 ~ "*",
+                             TRUE ~ " ")) %>% 
+  left_join(clean_meta_data) %>% 
+  select(`Trait in males`, `R in males`, `Estimated error`, `2.5% CI`, `97.5% CI`, Notable, Reference, `Trait description`) %>% 
+  my_data_table()
+
+```
+  
+## $R_{FM}$
+
+```{r}
+
+R_male_traits %>% 
+  select(Trait, Response_to_selection_female) %>% 
+  group_by(Trait) %>% 
+  summarise_draws("median", "sd", ~quantile(.x, probs = c(0.025, 0.975), na.rm = TRUE), .cores = 4) %>%
+  ungroup() %>% 
+  left_join(trait_data %>% distinct(Trait, Trait_nice)) %>% # add the nice names
+  rename(`R in females` = median, `Estimated error` = sd,
+         `2.5% CI` = `2.5%`, `97.5% CI` = `97.5%`, `Trait in males` = Trait_nice)  %>% 
+  mutate(R_abs = abs(`R in females`)) %>% 
+  arrange(-R_abs) %>% 
+  mutate(across(3:6, ~ round(.x, digits = 3)),
+         Notable = case_when(`2.5% CI` < 0 & `97.5% CI` < 0 ~ "*",
+                             `2.5% CI` > 0 & `97.5% CI` > 0 ~ "*",
+                             TRUE ~ " ")) %>% 
+  left_join(clean_meta_data) %>% 
+  select(`Trait in males`, `R in females`, `Estimated error`, `2.5% CI`, `97.5% CI`, Notable, Reference, `Trait description`) %>% 
+  my_data_table()
+
+```
+
+## $R_{overall}$ for traits measured in females 
+
+```{r}
+
+R_female_traits %>% 
+  select(Trait, R_overall) %>% 
+  group_by(Trait) %>% 
+  summarise_draws("median", "sd", ~quantile(.x, probs = c(0.025, 0.975), na.rm = TRUE), .cores = 4) %>%
+  ungroup() %>% 
+  left_join(trait_data %>% distinct(Trait, Trait_nice)) %>% # add the nice names
+  rename(`R overall` = median, `Estimated error` = sd,
+         `2.5% CI` = `2.5%`, `97.5% CI` = `97.5%`, `Trait in females` = Trait_nice)  %>% 
+  mutate(R_abs = abs(`R overall`)) %>% 
+  arrange(-R_abs) %>% 
+  mutate(across(3:6, ~ round(.x, digits = 3)),
+         Notable = case_when(`2.5% CI` < 0 & `97.5% CI` < 0 ~ "*",
+                             `2.5% CI` > 0 & `97.5% CI` > 0 ~ "*",
+                             TRUE ~ " ")) %>% 
+  left_join(clean_meta_data) %>% 
+  left_join(R_female_traits %>% 
+              select(Trait, Response_to_selection_female, Response_to_selection_male) %>% 
+              group_by(Trait) %>% 
+              summarise(`R in females` = round(median(Response_to_selection_female), 3),
+                        `R in males` = round(median(Response_to_selection_male), 3)) %>% 
+              ungroup()
+  ) %>% 
+  select(`Trait in females`, `R overall`, `R in females`, `R in males`,
+         `Estimated error`, `2.5% CI`, `97.5% CI`, Notable, Reference, `Trait description`) %>% 
+  my_data_table() 
+
+```
+
+## $R_{overall}$ for traits measured in males 
+
+```{r}
+
+R_male_traits %>% 
+  select(Trait, R_overall) %>% 
+  group_by(Trait) %>% 
+  summarise_draws("median", "sd", ~quantile(.x, probs = c(0.025, 0.975), na.rm = TRUE), .cores = 4) %>%
+  ungroup() %>% 
+  left_join(trait_data %>% distinct(Trait, Trait_nice)) %>% # add the nice names
+  rename(`R overall` = median, `Estimated error` = sd,
+         `2.5% CI` = `2.5%`, `97.5% CI` = `97.5%`, `Trait in males` = Trait_nice)  %>% 
+  mutate(R_abs = abs(`R overall`)) %>% 
+  arrange(-R_abs) %>% 
+  mutate(across(3:6, ~ round(.x, digits = 3)),
+         Notable = case_when(`2.5% CI` < 0 & `97.5% CI` < 0 ~ "*",
+                             `2.5% CI` > 0 & `97.5% CI` > 0 ~ "*",
+                             TRUE ~ " ")) %>% 
+  left_join(clean_meta_data) %>% 
+  left_join(R_male_traits %>% 
+              select(Trait, Response_to_selection_female, Response_to_selection_male) %>% 
+              group_by(Trait) %>% 
+              summarise(`R in females` = round(median(Response_to_selection_female), 3),
+                        `R in males` = round(median(Response_to_selection_male), 3)) %>% 
+              ungroup()
+  ) %>% 
+  select(`Trait in males`, `R overall`, `R in females`, `R in males`,
+         `Estimated error`, `2.5% CI`, `97.5% CI`, Notable, Reference, `Trait description`) %>% 
+  my_data_table() 
+
+```
+
+## $\Delta R$ for traits measured in females 
+
+```{r}
+
+R_female_traits %>% 
+  select(Trait, R_diff) %>% 
+  group_by(Trait) %>% 
+  summarise_draws("median", "sd", ~quantile(.x, probs = c(0.025, 0.975), na.rm = TRUE), .cores = 4) %>%
+  ungroup() %>% 
+  left_join(trait_data %>% distinct(Trait, Trait_nice)) %>% # add the nice names
+  rename(`Female R - Male R` = median, `Estimated error` = sd,
+         `2.5% CI` = `2.5%`, `97.5% CI` = `97.5%`, `Trait in females` = Trait_nice)  %>% 
+  mutate(R_abs = abs(`Female R - Male R`)) %>% 
+  arrange(-R_abs) %>% 
+  mutate(across(3:6, ~ round(.x, digits = 3)),
+         Notable = case_when(`2.5% CI` < 0 & `97.5% CI` < 0 ~ "*",
+                             `2.5% CI` > 0 & `97.5% CI` > 0 ~ "*",
+                             TRUE ~ " ")) %>% 
+  left_join(clean_meta_data) %>% 
+  left_join(R_female_traits %>% 
+              select(Trait, Response_to_selection_female, Response_to_selection_male) %>% 
+              group_by(Trait) %>% 
+              summarise(`R in females` = round(median(Response_to_selection_female), 3),
+                        `R in males` = round(median(Response_to_selection_male), 3)) %>% 
+              ungroup()
+  ) %>% 
+  select(`Trait in females`, `Female R - Male R`, `R in females`, `R in males`,
+         `Estimated error`, `2.5% CI`, `97.5% CI`, Notable, Reference, `Trait description`) %>% 
+  my_data_table() 
+
+```
+
+## $\Delta R$ for traits measured in males 
+
+```{r}
+
+R_male_traits %>% 
+  select(Trait, R_diff) %>% 
+  group_by(Trait) %>% 
+  summarise_draws("median", "sd", ~quantile(.x, probs = c(0.025, 0.975), na.rm = TRUE), .cores = 4) %>%
+  ungroup() %>% 
+  left_join(trait_data %>% distinct(Trait, Trait_nice)) %>% # add the nice names
+  rename(`Female R - Male R` = median, `Estimated error` = sd,
+         `2.5% CI` = `2.5%`, `97.5% CI` = `97.5%`, `Trait in males` = Trait_nice)  %>% 
+  mutate(R_abs = abs(`Female R - Male R`)) %>% 
+  arrange(-R_abs) %>% 
+  mutate(across(3:6, ~ round(.x, digits = 3)),
+         Notable = case_when(`2.5% CI` < 0 & `97.5% CI` < 0 ~ "*",
+                             `2.5% CI` > 0 & `97.5% CI` > 0 ~ "*",
+                             TRUE ~ " ")) %>% 
+  left_join(clean_meta_data) %>% 
+  left_join(R_male_traits %>% 
+              select(Trait, Response_to_selection_female, Response_to_selection_male) %>% 
+              group_by(Trait) %>% 
+              summarise(`R in females` = round(median(Response_to_selection_female), 3),
+                        `R in males` = round(median(Response_to_selection_male), 3)) %>% 
+              ungroup()
+  ) %>% 
+  select(`Trait in males`, `Female R - Male R`, `R in females`, `R in males`,
+         `Estimated error`, `2.5% CI`, `97.5% CI`, Notable, Reference, `Trait description`) %>% 
+  my_data_table() 
+
+```
+
+## _I_ for traits measured in females 
+
+```{r}
+
+I_index %>% 
+  filter(Trait_Sex == "Female") %>% 
+  select(Trait, I) %>% 
+  group_by(Trait) %>% 
+  summarise_draws("median", "sd", ~quantile(.x, probs = c(0.025, 0.975), na.rm = TRUE), .cores = 4) %>%
+  ungroup() %>% 
+  left_join(trait_data %>% distinct(Trait, Trait_nice)) %>% # add the nice names
+  rename(I = median, `Estimated error` = sd,
+         `2.5% CI` = `2.5%`, `97.5% CI` = `97.5%`, `Trait in females` = Trait_nice)  %>% 
+  mutate(R_abs = abs(I)) %>% 
+  arrange(-R_abs) %>% 
+  mutate(across(3:6, ~ round(.x, digits = 3)),
+         Notable = case_when(`2.5% CI` < 0 & `97.5% CI` < 0 ~ "*",
+                             `2.5% CI` > 0 & `97.5% CI` > 0 ~ "*",
+                             TRUE ~ " ")) %>% 
+  left_join(clean_meta_data) %>% 
+  left_join(R_female_traits %>% 
+              select(Trait, Response_to_selection_female, Response_to_selection_male) %>% 
+              group_by(Trait) %>% 
+              summarise(`R in females` = round(median(Response_to_selection_female), 3),
+                        `R in males` = round(median(Response_to_selection_male), 3)) %>% 
+              ungroup()
+  ) %>% 
+  select(`Trait in females`, I, `R in females`, `R in males`,
+         `Estimated error`, `2.5% CI`, `97.5% CI`, Notable, Reference, `Trait description`) %>% 
+  my_data_table() 
+
+```
+
+## _I_ for traits measured in males 
+
+```{r}
+
+I_index %>% 
+  filter(Trait_Sex == "Male") %>% 
+  select(Trait, I) %>% 
+  group_by(Trait) %>% 
+  summarise_draws("median", "sd", ~quantile(.x, probs = c(0.025, 0.975), na.rm = TRUE), .cores = 4) %>%
+  ungroup() %>% 
+  left_join(trait_data %>% distinct(Trait, Trait_nice)) %>% # add the nice names
+  rename(I = median, `Estimated error` = sd,
+         `2.5% CI` = `2.5%`, `97.5% CI` = `97.5%`, `Trait in males` = Trait_nice)  %>% 
+  mutate(R_abs = abs(I)) %>% 
+  arrange(-R_abs) %>% 
+  mutate(across(3:6, ~ round(.x, digits = 3)),
+         Notable = case_when(`2.5% CI` < 0 & `97.5% CI` < 0 ~ "*",
+                             `2.5% CI` > 0 & `97.5% CI` > 0 ~ "*",
+                             TRUE ~ " ")) %>% 
+  left_join(clean_meta_data) %>% 
+  left_join(R_male_traits %>% 
+              select(Trait, Response_to_selection_female, Response_to_selection_male) %>% 
+              group_by(Trait) %>% 
+              summarise(`R in females` = round(median(Response_to_selection_female), 3),
+                        `R in males` = round(median(Response_to_selection_male), 3)) %>% 
+              ungroup()
+  ) %>% 
+  select(`Trait in males`, I, `R in females`, `R in males`,
+         `Estimated error`, `2.5% CI`, `97.5% CI`, Notable, Reference, `Trait description`) %>% 
+  my_data_table() 
+
+```
