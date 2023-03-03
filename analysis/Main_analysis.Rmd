@@ -1304,6 +1304,29 @@ $~$
 
 ```{r}
 
+my_data_table <- function(df){
+  datatable(
+    df, rownames=FALSE,
+    autoHideNavigation = TRUE,
+    extensions = c("Scroller",  "Buttons"),
+    options = list(
+      #autoWidth = TRUE,
+     # columnDefs = list(list(width = '40%', targets = list(8))),
+      dom = 'Bfrtip',
+      deferRender=TRUE,
+      scrollX=TRUE, scrollY=1000,
+      scrollCollapse=TRUE,
+      buttons =
+        list('pageLength', 'colvis', 'csv', list(
+          extend = 'pdf',
+          pageSize = 'A4',
+          orientation = 'landscape',
+          filename = 'Trait_table')),
+      pageLength = 2115
+    )
+  )
+}
+
 R_female_traits %>% 
   select(Trait, Response_to_selection_female) %>% 
   group_by(Trait) %>% 
