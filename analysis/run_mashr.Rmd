@@ -1,7 +1,5 @@
 ---
-title: "run_mashr"
-author: "lukeholman"
-date: "2021-07-28"
+title: "Code to run mashr on HPC cluster"
 output: workflowr::wflow_html
 editor_options:
   chunk_output_type: console

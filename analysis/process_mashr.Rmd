@@ -11,6 +11,9 @@ knitr::opts_chunk$set(
 )
 ```
 
+## Overview
+
+In this document we load the results of `mashr` analysis of the GWAS results, and examine them two different ways. Firstly (under heading 1), we identify all the significantly pleiotropic SNPs that affects female fitness, male fitness, and a focal phenotypic trait, and look at the relative abundance of different types of SNPs among them. Secondly (heading 2), we use the estimated mixture proportions from `mashr` to infer the relative abundance of different types of SNPs in the total set: this includes all SNPs (whether or not they reached statistical significance).
 
 ```{r}
 library(tidyverse)
@@ -161,7 +164,7 @@ all_mashr_results <- future_lapply(files, process_mashr_results)
 <!--   geom_hex() -->
 <!-- ``` -->
 
-## Plots classifying the significant SNPs {.tabset}
+## 1. Plots classifying the significant SNPs {.tabset}
 
 The following plots show the number of statistically significant pleiotropic SNPs, defined as those that affect 1) female early-life fitness, 2) male early-life fitness, and 3) the focal phenotypic trait, all with a local false sign rate < 0.05 (as calculated by `mashr`). The SNPs have been further classified into four possible types:
 
@@ -280,7 +283,11 @@ make_plot(guilds[10])
 <!-- make_plot(guilds[3]) -->
 <!-- ``` -->
 
-## Plots showing the estimated proportions of different SNPs {.tabset}
+## 2. Plots showing the estimated proportions of different SNPs {.tabset}
+
+The following plots show the inferred ratios of different types of SNPs, namely the same 4 categories as before plus `Null`, which indicates SNPs inferred to have no effect on female fitness, male fitness, and the focal phenotypic trait. These estimates reflect the mixture proportions from `mashr`, which can be retrieved from a `mash` object using `get_estimated_pi()`; we classified the different covariance matrices corresponding to each mixture proportion based on the signs of their covariance terms (e.g. `SC, +ve selection` is the covariance matrix with all positive terms). 
+
+Note that `mashr` uses a prior that the `Null` category is 10$\times$ more common than the other mixture components, while the others are all equally common. Thus, traits for which `Null` SNPs are inferred to make up <90% of the total are likely to have significant heritability. Also, the observation that SNPs with no phenotypic effect are so rare does not contradict the established wisdom that most genetic polymorphisms are (nearly) neutral. This is because loci that are inferred to have a non-zero effect on fitness and the focal trait might simply be in linkage disequilibrium with loci which do have a causal effect. 
 
 ```{r}
 mixtures <- map(all_mashr_results, ~ enframe(.x$mixture_proportions))
