@@ -13,7 +13,7 @@
 
 <title>Home</title>
 
-<script src="site_libs/header-attrs-2.13/header-attrs.js"></script>
+<script src="site_libs/header-attrs-2.19/header-attrs.js"></script>
 <script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link href="site_libs/bootstrap-3.3.5/css/readable.min.css" rel="stylesheet" />
@@ -154,11 +154,15 @@ $(document).ready(function () {
     href = "index.html";
   var menuAnchor = $('a[href="' + href + '"]');
 
-  // mark it active
-  menuAnchor.tab('show');
-
-  // if it's got a parent navbar menu mark it active as well
-  menuAnchor.closest('li.dropdown').addClass('active');
+  // mark the anchor link active (and if it's in a dropdown, also mark that active)
+  var dropdown = menuAnchor.closest('li.dropdown');
+  if (window.bootstrap) { // Bootstrap 4+
+    menuAnchor.addClass('active');
+    dropdown.find('> .dropdown-toggle').addClass('active');
+  } else { // Bootstrap 3
+    menuAnchor.parent().addClass('active');
+    dropdown.addClass('active');
+  }
 
   // Navbar adjustments
   var navHeight = $(".navbar").first().height() + 15;
@@ -187,8 +191,8 @@ $(document).ready(function () {
   border-radius: 4px;
 }
 
-.tabset-dropdown > .nav-tabs > li.active:before {
-  content: "";
+.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "\e259";
   font-family: 'Glyphicons Halflings';
   display: inline-block;
   padding: 10px;
@@ -196,16 +200,9 @@ $(document).ready(function () {
 }
 
 .tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
-  content: "&#xe258;";
-  border: none;
-}
-
-.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
-  content: "";
+  content: "\e258";
   font-family: 'Glyphicons Halflings';
-  display: inline-block;
-  padding: 10px;
-  border-right: 1px solid #ddd;
+  border: none;
 }
 
 .tabset-dropdown > .nav-tabs > li.active {
@@ -257,12 +254,15 @@ $(document).ready(function () {
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="navbar-brand" href="index.html">Selection, sexual conflict and sex-specific parameters in the DGRP</a>
+      <a class="navbar-brand" href="index.html">The response to selection, sexual antagonism and sexual concordance in the DGRP</a>
     </div>
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
         <li>
   <a href="index.html">Home</a>
+</li>
+<li>
+  <a href="Main_analysis.html">Analysis</a>
 </li>
 <li>
   <a href="license.html">License</a>
@@ -300,7 +300,9 @@ $(document).ready(function () {
 
 <p>
 <button type="button" class="btn btn-default btn-workflowr btn-workflowr-report" data-toggle="collapse" data-target="#workflowr-report">
-<span class="glyphicon glyphicon-list" aria-hidden="true"></span> workflowr <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span>
+<span class="glyphicon glyphicon-list" aria-hidden="true"></span>
+workflowr <span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span>
 </button>
 </p>
 <div id="workflowr-report" class="collapse">
@@ -309,7 +311,9 @@ $(document).ready(function () {
 <a data-toggle="tab" href="#summary">Summary</a>
 </li>
 <li>
-<a data-toggle="tab" href="#checks"> Checks <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> </a>
+<a data-toggle="tab" href="#checks"> Checks <span
+class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span>
+</a>
 </li>
 <li>
 <a data-toggle="tab" href="#versions">Past versions</a>
@@ -318,17 +322,27 @@ $(document).ready(function () {
 <div class="tab-content">
 <div id="summary" class="tab-pane fade in active">
 <p>
-<strong>Last updated:</strong> 2022-05-16
+<strong>Last updated:</strong> 2023-03-08
 </p>
 <p>
-<strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 2 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 0
+<strong>Checks:</strong> <span
+class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 2
+<span class="glyphicon glyphicon-exclamation-sign text-danger"
+aria-hidden="true"></span> 0
 </p>
 <p>
-<strong>Knit directory:</strong> <code>DGRP_sexual_conflict/</code> <span class="glyphicon glyphicon-question-sign" aria-hidden="true" title="This is the local directory in which the code in this file was executed."> </span>
+<strong>Knit directory:</strong> <code>DGRP_sexual_conflict/</code>
+<span class="glyphicon glyphicon-question-sign" aria-hidden="true"
+title="This is the local directory in which the code in this file was executed.">
+</span>
 </p>
 <p>
-This reproducible <a href="https://rmarkdown.rstudio.com">R Markdown</a> analysis was created with <a
-  href="https://github.com/workflowr/workflowr">workflowr</a> (version 1.7.0). The <em>Checks</em> tab describes the reproducibility checks that were applied when the results were created. The <em>Past versions</em> tab lists the development history.
+This reproducible <a href="https://rmarkdown.rstudio.com">R Markdown</a>
+analysis was created with <a
+  href="https://github.com/workflowr/workflowr">workflowr</a> (version
+1.7.0). The <em>Checks</em> tab describes the reproducibility checks
+that were applied when the results were created. The <em>Past
+versions</em> tab lists the development history.
 </p>
 <hr>
 </div>
@@ -337,67 +351,83 @@ This reproducible <a href="https://rmarkdown.rstudio.com">R Markdown</a> analysi
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguptodate"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>R Markdown file:</strong> up-to-date </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguptodate">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>R Markdown file:</strong> up-to-date
+</a>
 </p>
 </div>
-<div id="strongRMarkdownfilestronguptodate" class="panel-collapse collapse">
+<div id="strongRMarkdownfilestronguptodate"
+class="panel-collapse collapse">
 <div class="panel-body">
-<p>Great! Since the R Markdown file has been committed to the Git repository, you know the exact version of the code that produced these results.</p>
+<p>Great! Since the R Markdown file has been committed to the Git
+repository, you know the exact version of the code that produced these
+results.</p>
 </div>
 </div>
 </div>
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomtomkeaneyDGRPsexualconflicttree1c86981014c956e141ab746a22e6838bebc494e7targetblank1c86981a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/tomkeaney/DGRP_sexual_conflict/tree/1c86981014c956e141ab746a22e6838bebc494e7" target="_blank">1c86981</a> </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomtomkeaneyDGRPsexualconflicttree78ece4f2dc8517669aedfed885c6aeb3ca33f5dftargetblank78ece4fa">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Repository version:</strong>
+<a href="https://github.com/tomkeaney/DGRP_sexual_conflict/tree/78ece4f2dc8517669aedfed885c6aeb3ca33f5df" target="_blank">78ece4f</a>
+</a>
 </p>
 </div>
-<div id="strongRepositoryversionstrongahrefhttpsgithubcomtomkeaneyDGRPsexualconflicttree1c86981014c956e141ab746a22e6838bebc494e7targetblank1c86981a" class="panel-collapse collapse">
+<div
+id="strongRepositoryversionstrongahrefhttpsgithubcomtomkeaneyDGRPsexualconflicttree78ece4f2dc8517669aedfed885c6aeb3ca33f5dftargetblank78ece4fa"
+class="panel-collapse collapse">
 <div class="panel-body">
 <p>
-Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility.
+Great! You are using Git for version control. Tracking code development
+and connecting the code version to the results is critical for
+reproducibility.
 </p>
 <p>
-The results in this page were generated with repository version <a href="https://github.com/tomkeaney/DGRP_sexual_conflict/tree/1c86981014c956e141ab746a22e6838bebc494e7" target="_blank">1c86981</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
+The results in this page were generated with repository version
+<a href="https://github.com/tomkeaney/DGRP_sexual_conflict/tree/78ece4f2dc8517669aedfed885c6aeb3ca33f5df" target="_blank">78ece4f</a>.
+See the <em>Past versions</em> tab to see a history of the changes made
+to the R Markdown and HTML files.
 </p>
 <p>
-Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
+Note that you need to be careful to ensure that all relevant files for
+the analysis have been committed to Git prior to generating the results
+(you can use <code>wflow_publish</code> or
+<code>wflow_git_commit</code>). workflowr only checks the R Markdown
+file, but you know if there are other scripts or data files that it
+depends on. Below is the status of the Git repository when the results
+were generated:
 </p>
 <pre><code>
 Ignored files:
     Ignored:    .DS_Store
+    Ignored:    .Rapp.history
     Ignored:    .Rhistory
     Ignored:    .Rproj.user/
-    Ignored:    code/.DS_Store
-    Ignored:    gwas_data/
+    Ignored:    analysis/.DS_Store
 
 Untracked files:
+    Untracked:  %
     Untracked:  -Toms-laptop.Rhistory
+    Untracked:  Figure_1.pdf
+    Untracked:  Figure_1.png
     Untracked:  Manuscript/
+    Untracked:  PRIMSA.png
+    Untracked:  PRISMA.png
+    Untracked:  PRISMA.pptx
+    Untracked:  Picture1.pdf
     Untracked:  Reported_heritability.xlsx
-    Untracked:  Rplot.pdf
-    Untracked:  S_plots.pdf
-    Untracked:  Selection_differential_plot.pdf
-    Untracked:  Selection_differentials.pdf
-    Untracked:  Selection_differentials_f.pdf
-    Untracked:  Selection_differentials_m.pdf
-    Untracked:  analysis/Random_plots.R
-    Untracked:  code/LICENSE
-    Untracked:  code/gcta64
-    Untracked:  code/prettify
-    Untracked:  code/toy.map
-    Untracked:  code/toy.ped
-    Untracked:  data/SNP_heritability.csv
-    Untracked:  data/SNP_heritability_cleaned.csv
-    Untracked:  data/SNP_selection.csv
-    Untracked:  data/S_female.csv
-    Untracked:  data/all_SNP_data.csv
-    Untracked:  data/rfm_dimorphism_model.rds
-    Untracked:  dimorphism_subset.pdf
-    Untracked:  fitness_variation.pdf
+    Untracked:  Useful_cuts.Rmd
+    Untracked:  data/RFF.csv
+    Untracked:  data/RFM.csv
+    Untracked:  data/RMF.csv
+    Untracked:  data/RMM.csv
+    Untracked:  data/all.dgrp.phenos_scaled.csv
+    Untracked:  data/meta_data_for_all_traits.csv
+    Untracked:  data/trait_names.rds
     Untracked:  fits/
-    Untracked:  lifetime_fecundity_S.pdf
-    Untracked:  mating_latency_S.pdf
 
 Unstaged changes:
     Modified:   .Rprofile
@@ -405,24 +435,15 @@ Unstaged changes:
     Modified:   .gitignore
     Modified:   DGRP_sexual_conflict.Rproj
     Modified:   README.md
-    Modified:   _workflowr.yml
-    Modified:   analysis/SNP_correlations.Rmd
-    Modified:   analysis/_site.yml
-    Modified:   analysis/license.Rmd
-    Modified:   analysis/process_mashr.Rmd
-    Modified:   analysis/run_GWAS.Rmd
-    Modified:   analysis/run_mashr.Rmd
-    Modified:   code/README.md
-    Modified:   code/run_mashr.R
     Modified:   data/README.md
-    Modified:   data/S_male.csv
     Modified:   data/all.dgrp.phenos_unscaled.csv
-    Modified:   data/rfm.complete.csv
     Modified:   output/README.md
 
 </code></pre>
 <p>
-Note that any generated files, e.g. HTML, png, CSS, etc., are not included in this status report because it is ok for generated content to have uncommitted changes.
+Note that any generated files, e.g. HTML, png, CSS, etc., are not
+included in this status report because it is ok for generated content to
+have uncommitted changes.
 </p>
 </div>
 </div>
@@ -433,7 +454,11 @@ Note that any generated files, e.g. HTML, png, CSS, etc., are not included in t
 <div id="versions" class="tab-pane fade">
 
 <p>
-These are the previous versions of the repository in which changes were made to the R Markdown (<code>analysis/index.Rmd</code>) and HTML (<code>docs/index.html</code>) files. If you’ve configured a remote Git repository (see <code>?wflow_git_remote</code>), click on the hyperlinks in the table below to view the files as they were in that past version.
+These are the previous versions of the repository in which changes were
+made to the R Markdown (<code>analysis/index.Rmd</code>) and HTML
+(<code>docs/index.html</code>) files. If you’ve configured a remote Git
+repository (see <code>?wflow_git_remote</code>), click on the hyperlinks
+in the table below to view the files as they were in that past version.
 </p>
 <div class="table-responsive">
 <table class="table table-condensed table-hover">
@@ -457,6 +482,40 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/tomkeaney/DGRP_sexual_conflict/blob/78ece4f2dc8517669aedfed885c6aeb3ca33f5df/analysis/index.Rmd" target="_blank">78ece4f</a>
+</td>
+<td>
+ausevo
+</td>
+<td>
+2023-03-08
+</td>
+<td>
+Change to Tom’s analysis
+</td>
+</tr>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/tomkeaney/DGRP_sexual_conflict/55867df25da20bdccbcbd4649acba6149d7eb6d0/docs/index.html" target="_blank">55867df</a>
+</td>
+<td>
+ausevo
+</td>
+<td>
+2022-05-16
+</td>
+<td>
+Build site.
+</td>
+</tr>
 <tr>
 <td>
 Rmd
@@ -804,39 +863,24 @@ Start workflowr project.
 </div>
 </div>
 </div>
-<p>This website presents an analysis of selection acting on the DGRP. We particularly focus upon sexually antagonistic selection and test some well known hypotheses that relate to this concept.</p>
-<div id="ideas" class="section level2">
-<h2>Ideas</h2>
-<p><a href="Ideas.html">Here</a> I document research questions that we can potentially test with this data-set</p>
-</div>
-<div id="analysis-of-phenotypic-line-means" class="section level2">
-<h2>Analysis of phenotypic line means</h2>
-<p>We present analyses of heritability and correlations between line means <a href="Main_analysis.html">here</a></p>
-</div>
-<div id="genome-wide-association-tests-using-plink" class="section level2">
-<h2>Genome-wide association tests using PLINK</h2>
-<p>The code used to run GWA tests can be viewed <a href="run_GWAS.html">here</a></p>
-</div>
-<div id="estimating-genetic-correlations-from-variants-effect-sizes" class="section level2">
-<h2>Estimating genetic correlations from variants’ effect sizes</h2>
-<p>Graphs and tables relating to genetic correlations between traits can be viewed <a href="SNP_correlations.html">here</a></p>
-</div>
-<div id="multivariate-adaptive-shrinkage-using-mashr" class="section level2">
-<h2>Multivariate adaptive shrinkage using <code>mashr</code></h2>
-<p>The code used to run <code>mashr</code> can be viewed <a href="run_mashr.html">here</a></p>
-</div>
-<div id="results-of-the-mashr-analyses" class="section level2">
-<h2>Results of the <code>mashr</code> analyses</h2>
-<p>Graphs and tables relating to the output of <code>mashr</code> <a href="process_mashr.html">here</a></p>
-</div>
-<div id="snp-heritabilities-and-the-robertson-price-identity-using-gcta" class="section level2">
-<h2>SNP-heritabilities and the Robertson-Price Identity using <code>GCTA</code></h2>
-<p>The code used to run GREML models to estimate SNP heritability and selection differentials <a href="SNP_heritabilities.html">here</a></p>
-</div>
-<div id="results-of-the-gcta-analyses" class="section level2">
-<h2>Results of the <code>GCTA</code> analyses</h2>
-<p>Graphs and tables relating to the output of <code>GCTA</code> <a href="GCTA_results.html">here</a></p>
-</div>
+<p>This website presents an analysis of the evolutionary response to
+selection in the DGRP. We are particularly interested in how the
+presence of separate sexes affects trait evolution. In the analysis
+we:</p>
+<ol style="list-style-type: decimal">
+<li><p>identify the traits with the strongest predicted evolutionary
+responses in females and males.</p></li>
+<li><p>find the traits with the strongest overall responses to
+selection.</p></li>
+<li><p>test whether the average absolute response to selection is
+stronger in males than it is in females.</p></li>
+<li><p>find traits with different seelction responses</p></li>
+<li><p>Use an index of the concordance of selection responses to assess
+whether seleciton tends to be sexually concordant or sexually
+antagonistic.</p></li>
+</ol>
+<p>We welcome any queries or comments concerning our analysis; please
+email <code>tomkeaney16@gmail.com</code></p>
 
 
 <!-- Adjust MathJax settings so that all math formulae are shown using
