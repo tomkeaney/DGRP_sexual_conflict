@@ -167,7 +167,7 @@ my_data_table(
     filter(str_detect(Reference, "Holman"),
            str_detect(Trait, "early")) %>% 
     mutate(trait_value = round(trait_value, 3)) %>% 
-    select(Trait, line, Sex, trait_value)
+    select(Trait, line, Sex, trait_value, Reference)
 )
 ```
 
