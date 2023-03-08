@@ -15,18 +15,17 @@ First load the packages
 ```{r load packages}
 
 library(tidyverse) # for tidy coding
-library(RColorBrewer) # for custom colours
-library(rcartocolor) # cool colours
+library(MetBrewer) # for many nice colour palettes
+library(rcartocolor) # more cool colours
 library(kableExtra) # for scrolling tables
-library(patchwork) # for cool plots
+library(DT) # for interactive tables
+library(patchwork) # to join mulitple plots nicely
 library(brms) # for bayesian models
 library(tidybayes) # for more bayesian things
-library(DT) # for interactive tables
 library(broom) # convert results of functions into tables
 library(ggtext) # for markdown features in ggplot
-library(MetBrewer)
-library(ggrepel)
-library(ggnewscale)
+library(ggrepel) # for plot labels in ggplot
+library(ggnewscale) # to reset scales in ggplot 
 
 DGRP_data <- 
   left_join(
@@ -38,7 +37,48 @@ DGRP_data <-
              Pooled = if_else(Sex == "Pooled", "Yes", "No"))) %>% 
   left_join(read_rds("data/trait_names.rds"))
 
+
+# Create a function to build HTML searchable tables
+
+my_data_table <- function(df){
+  datatable(
+    df, rownames=FALSE,
+    autoHideNavigation = TRUE,
+    extensions = c("Scroller",  "Buttons"),
+    options = list(
+      autoWidth = TRUE,
+      dom = 'Bfrtip',
+      deferRender=TRUE,
+      scrollX=TRUE, scrollY=1000,
+      scrollCollapse=TRUE,
+      buttons =
+        list('pageLength', 'colvis', 'csv', list(
+          extend = 'pdf',
+          pageSize = 'A4',
+          orientation = 'landscape',
+          filename = 'Trait_data')),
+      pageLength = 2115
+    )
+  )
+}
 ```
+
+$~$
+
+# Fitness in the DGRP
+
+```{r}
+
+my_data_table(
+DGRP_data %>% 
+  filter(str_detect(Reference, "Holman")) %>% 
+  mutate(trait_value = round(trait_value, 3)) %>% 
+  select(-c(Pooled, Trait_ID, Trait_nice, study_ID)) %>% 
+    select(Trait, line, Sex, trait_value, everything())
+)
+```
+
+$~$
 
 # Selecting data appropriate for analysis
 
@@ -57,7 +97,8 @@ trait_data <-
                         `# lines measured` >= 80 &
                           Pooled != "Yes" & 
                           Reference != "Jin et al (2020) PLOS Genetics" & 
-                          Reference != "Everett et al (2020) Genome Research") %>% 
+                          Reference != "Everett et al (2020) Genome Research" &
+                          !str_detect(Trait, "dopamine.response.to.paraquat.2021.m")) %>% # data for this trait was entered into the database incorrectly  
   
   left_join(
     DGRP_data %>%
@@ -99,28 +140,6 @@ table_data <- left_join(
   arrange(desc(Included))
 
 # Create a function to build HTML searchable tables
-
-my_data_table <- function(df){
-  datatable(
-    df, rownames=FALSE,
-    autoHideNavigation = TRUE,
-    extensions = c("Scroller",  "Buttons"),
-    options = list(
-      autoWidth = TRUE,
-      dom = 'Bfrtip',
-      deferRender=TRUE,
-      scrollX=TRUE, scrollY=1000,
-      scrollCollapse=TRUE,
-      buttons =
-        list('pageLength', 'colvis', 'csv', list(
-          extend = 'pdf',
-          pageSize = 'A4',
-          orientation = 'landscape',
-          filename = 'Trait_table')),
-      pageLength = 2115
-    )
-  )
-}
 
 my_data_table(table_data)
 ```

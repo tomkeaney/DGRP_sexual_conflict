@@ -8,29 +8,16 @@ editor_options:
   chunk_output_type: console
 ---
 
-This website presents an analysis of selection acting on the DGRP. We particularly focus upon sexually antagonistic selection and test some well known hypotheses that relate to this concept.
+This website presents an analysis of the evolutionary response to selection in the DGRP. We are particularly interested in how the presence of separate sexes affects trait evolution. In the analysis we:
 
-## Ideas
-[Here](Ideas.html) I document research questions that we can potentially test with this data-set
+1. identify the traits with the strongest predicted evolutionary responses in females and males.
 
-## Analysis of phenotypic line means
-We present analyses of heritability and correlations between line means [here](Main_analysis.html)
+2. find the traits with the strongest overall responses to selection.
 
-## Genome-wide association tests using PLINK
-The code used to run GWA tests can be viewed [here](run_GWAS.html)
+3. test whether the average absolute response to selection is stronger in males than it is in females.
 
-## Estimating genetic correlations from variants' effect sizes
-Graphs and tables relating to genetic correlations between traits can be viewed [here](SNP_correlations.html)
+4. find traits with different seelction responses
 
-## Multivariate adaptive shrinkage using `mashr`
-The code used to run `mashr` can be viewed [here](run_mashr.html)
+5. Use an index of the concordance of selection responses to assess whether seleciton tends to be sexually concordant or sexually antagonistic.
 
-## Results of the `mashr` analyses
-Graphs and tables relating to the output of `mashr` [here](process_mashr.html)
-
-## SNP-heritabilities and the Robertson-Price Identity using `GCTA`
-
-The code used to run GREML models to estimate SNP heritability and selection differentials [here](SNP_heritabilities.html)
-
-## Results of the `GCTA` analyses
-Graphs and tables relating to the output of `GCTA` [here](GCTA_results.html)
+We welcome any queries or comments concerning our analysis; please email `tomkeaney16@gmail.com` 

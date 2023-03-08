@@ -3,6 +3,8 @@ output_dir: ../docs
 navbar:
   title: The response to selection, sexual antagonism and sexual concordance in the DGRP
   left:
+  - text: Home
+    href: index.html
   - text: Analysis
     href: Main_analysis.html
   - text: License
