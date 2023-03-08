@@ -82,11 +82,11 @@ $~$
 
 # Selecting data appropriate for analysis
 
-We use data compiled in the _DGRP database_ (Belonte, Keaney, _et al_. 2023).
+We use data compiled in the _DGRP database_ (Belonte, Keaney, _et al_. in prep). These data already do not include any traits that were measured on heterozygous combinations of the DGRP lines.
 
-First, we wrangle the data so that for each trait we have standardised line mean values for females and males, as well as fitness values for that line in females and males. We also include some helpful metadata for downstream analysis. 
+First, we wrangle the data so that for each trait we have standardised line mean values for females and males (mean = 0 and sd = 1), as well as fitness values for that line in females and males. We also include some helpful metadata for downstream analysis. 
 
-We then pruned the dataset to only include traits (with standardised values, where the mean = 0 and sd = 1) that have been measured in single-sex cohorts, in 80 or more lines. We also remove 'intermediate' traits between genotype and phenotype from three mass datasets on the microbiome and metabolome (Everett _et al_. 2020, Jin _et al_. 2020 and Zhou _et al_. 2020). 
+We then pruned the dataset to only include traits that have been measured in single-sex cohorts, in 80 or more lines. We also remove 'intermediate' traits between genotype and phenotype from three mass datasets on the microbiome and metabolome (Everett _et al_. 2020 and Jin _et al_. 2020). 
 
 ```{r}
 
@@ -98,7 +98,7 @@ trait_data <-
                           Pooled != "Yes" & 
                           Reference != "Jin et al (2020) PLOS Genetics" & 
                           Reference != "Everett et al (2020) Genome Research" &
-                          !str_detect(Trait, "dopamine.response.to.paraquat.2021.m")) %>% # data for this trait was entered into the database incorrectly  
+                          !str_detect(Trait, "dopamine.response.to.paraquat.2021.m")) %>% # data for this trait was entered into the database incorrectly, it was only measured in 10 lines so should not be included in our analysis 
   
   left_join(
     DGRP_data %>%
