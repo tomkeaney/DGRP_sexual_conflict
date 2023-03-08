@@ -65,21 +65,6 @@ my_data_table <- function(df){
 
 $~$
 
-# Fitness in the DGRP
-
-```{r}
-
-my_data_table(
-DGRP_data %>% 
-  filter(str_detect(Reference, "Holman")) %>% 
-  mutate(trait_value = round(trait_value, 3)) %>% 
-  select(-c(Pooled, Trait_ID, Trait_nice, study_ID)) %>% 
-    select(Trait, line, Sex, trait_value, everything())
-)
-```
-
-$~$
-
 # Selecting data appropriate for analysis
 
 We use data compiled in the _DGRP database_ (Belonte, Keaney, _et al_. in prep). These data already do not include any traits that were measured on heterozygous combinations of the DGRP lines.
@@ -167,6 +152,24 @@ num_unique_studies_m <- table_data %>% filter(Included == "Yes" & `Measured in` 
 ```
 
 After this selection process, `r num_unique_traits` remain, that were measured across `r num_unique_studies` studies. There are `r num_unique_traits_f` measured in females and `r num_unique_traits_m` in males across `r num_unique_studies_f` and `r num_unique_studies_m` respectively.  
+
+$~$
+
+# Fitness in the DGRP
+
+Wong and Holman (in prep) measured fitness by allowing DGRP females or males to interact with same-sex competitors and mates for 3 days, beginning when the DGRP flies were 2-3 days old. After this interaction period, fitness was measured in the DGRP flies by counting either the production of first-instar larvae by females, or the proportion of offspring sired by males. Measuring fitness in this way captures many of the processes, interactions and behaviours that determine fitness in semi natural contexts (e.g. intraspecific competition for mates and food resources, mate choice in both sexes, female fecundity and the manipulation of by males, oviposition site selection and survival over the three day period), during the _D. melanogaster_ reproductive peak.
+
+**Table S2**. We use line mean estimates of early life fitness as breeding values for fitness in this analysis. The data are shown below.
+
+```{r}
+my_data_table(
+  DGRP_data %>% 
+    filter(str_detect(Reference, "Holman"),
+           str_detect(Trait, "early")) %>% 
+    mutate(trait_value = round(trait_value, 3)) %>% 
+    select(Trait, line, Sex, trait_value)
+)
+```
 
 $~$
 

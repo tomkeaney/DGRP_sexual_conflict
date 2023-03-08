@@ -8,16 +8,20 @@ editor_options:
   chunk_output_type: console
 ---
 
-This website presents an analysis of the evolutionary response to selection in the DGRP. We are particularly interested in how the presence of separate sexes affects trait evolution. In the analysis we:
+This website presents an analysis of the evolutionary response to selection in the DGRP. We are particularly interested in how the presence of separate sexes affects trait evolution. 
 
-1. identify the traits with the strongest predicted evolutionary responses in females and males.
+In the analysis we:
 
-2. find the traits with the strongest overall responses to selection.
+1. Identify the traits with the strongest predicted evolutionary responses in females and males.
 
-3. test whether the average absolute response to selection is stronger in males than it is in females.
+2. Find the traits with the strongest overall responses to selection.
 
-4. find traits with different seelction responses
+3. Test whether the average absolute response to selection is stronger in males than it is in females.
 
-5. Use an index of the concordance of selection responses to assess whether seleciton tends to be sexually concordant or sexually antagonistic.
+4. Find traits with different selection responses
+
+5. Use an index of the concordance of selection responses to assess whether selection tends to be sexually concordant or sexually antagonistic.
+
+$~$
 
 We welcome any queries or comments concerning our analysis; please email `tomkeaney16@gmail.com` 
