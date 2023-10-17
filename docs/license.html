@@ -13,7 +13,7 @@
 
 <title>Licensed under CC-BY-4.0</title>
 
-<script src="site_libs/header-attrs-2.19/header-attrs.js"></script>
+<script src="site_libs/header-attrs-2.25/header-attrs.js"></script>
 <script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link href="site_libs/bootstrap-3.3.5/css/readable.min.css" rel="stylesheet" />
@@ -33,8 +33,8 @@
 <script src="site_libs/navigation-1.1/codefolding.js"></script>
 <link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
-<link href="site_libs/font-awesome-5.1.0/css/all.css" rel="stylesheet" />
-<link href="site_libs/font-awesome-5.1.0/css/v4-shims.css" rel="stylesheet" />
+<link href="site_libs/font-awesome-6.4.2/css/all.min.css" rel="stylesheet" />
+<link href="site_libs/font-awesome-6.4.2/css/v4-shims.min.css" rel="stylesheet" />
 
 <link rel="icon" href="https://github.com/workflowr/workflowr-assets/raw/main/img/reproducible.png">
 <!-- Add a small amount of space between sections. -->
@@ -262,7 +262,10 @@ $(document).ready(function () {
   <a href="index.html">Home</a>
 </li>
 <li>
-  <a href="Main_analysis.html">Analysis</a>
+  <a href="Main_analysis.html">Phenome Analysis</a>
+</li>
+<li>
+  <a href="Transcriptome_analysis.html">Transcriptome Analysis</a>
 </li>
 <li>
   <a href="license.html">License</a>
@@ -322,7 +325,7 @@ class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span>
 <div class="tab-content">
 <div id="summary" class="tab-pane fade in active">
 <p>
-<strong>Last updated:</strong> 2023-03-08
+<strong>Last updated:</strong> 2023-10-17
 </p>
 <p>
 <strong>Checks:</strong> <span
@@ -340,7 +343,7 @@ title="This is the local directory in which the code in this file was executed."
 This reproducible <a href="https://rmarkdown.rstudio.com">R Markdown</a>
 analysis was created with <a
   href="https://github.com/workflowr/workflowr">workflowr</a> (version
-1.7.0). The <em>Checks</em> tab describes the reproducibility checks
+1.7.1). The <em>Checks</em> tab describes the reproducibility checks
 that were applied when the results were created. The <em>Past
 versions</em> tab lists the development history.
 </p>
@@ -369,15 +372,15 @@ results.</p>
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomtomkeaneyDGRPsexualconflicttree250194869ce43d151819853a6fbabd0771860260targetblank2501948a">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomtomkeaneyDGRPsexualconflicttree48c7e9f2ebf56a798c432436bb9708bd9ee04dcetargetblank48c7e9fa">
 <span class="glyphicon glyphicon-ok text-success"
 aria-hidden="true"></span> <strong>Repository version:</strong>
-<a href="https://github.com/tomkeaney/DGRP_sexual_conflict/tree/250194869ce43d151819853a6fbabd0771860260" target="_blank">2501948</a>
+<a href="https://github.com/tomkeaney/DGRP_sexual_conflict/tree/48c7e9f2ebf56a798c432436bb9708bd9ee04dce" target="_blank">48c7e9f</a>
 </a>
 </p>
 </div>
 <div
-id="strongRepositoryversionstrongahrefhttpsgithubcomtomkeaneyDGRPsexualconflicttree250194869ce43d151819853a6fbabd0771860260targetblank2501948a"
+id="strongRepositoryversionstrongahrefhttpsgithubcomtomkeaneyDGRPsexualconflicttree48c7e9f2ebf56a798c432436bb9708bd9ee04dcetargetblank48c7e9fa"
 class="panel-collapse collapse">
 <div class="panel-body">
 <p>
@@ -387,7 +390,7 @@ reproducibility.
 </p>
 <p>
 The results in this page were generated with repository version
-<a href="https://github.com/tomkeaney/DGRP_sexual_conflict/tree/250194869ce43d151819853a6fbabd0771860260" target="_blank">2501948</a>.
+<a href="https://github.com/tomkeaney/DGRP_sexual_conflict/tree/48c7e9f2ebf56a798c432436bb9708bd9ee04dce" target="_blank">48c7e9f</a>.
 See the <em>Past versions</em> tab to see a history of the changes made
 to the R Markdown and HTML files.
 </p>
@@ -402,41 +405,57 @@ were generated:
 </p>
 <pre><code>
 Ignored files:
-    Ignored:    .DS_Store
     Ignored:    .Rapp.history
     Ignored:    .Rhistory
     Ignored:    .Rproj.user/
-    Ignored:    analysis/.DS_Store
 
 Untracked files:
     Untracked:  %
+    Untracked:  -Toms-laptop-2.Rhistory
+    Untracked:  -Toms-laptop-3.Rhistory
     Untracked:  -Toms-laptop.Rhistory
+    Untracked:  Chapter_2_Figure_S1.pdf
+    Untracked:  Chapter_2_Figure_S2.pdf
+    Untracked:  Conflict_plot_females.pdf
+    Untracked:  Conflict_plot_male.pdf
     Untracked:  Figure_1.pdf
     Untracked:  Figure_1.png
+    Untracked:  Figure_2.pdf
+    Untracked:  Figure_3.pdf
+    Untracked:  Figures.Rmd
     Untracked:  Manuscript/
     Untracked:  PRISMA.pptx
     Untracked:  Picture1.pdf
+    Untracked:  R_transcriptome_medians.csv
     Untracked:  Reported_heritability.xlsx
     Untracked:  Useful_cuts.Rmd
+    Untracked:  add_later.Rmd
+    Untracked:  code/get_gene_annotations.R
+    Untracked:  concordance_plot_sem.pdf
+    Untracked:  conflict_plot.pdf
     Untracked:  data/RFF.csv
     Untracked:  data/RFM.csv
     Untracked:  data/RMF.csv
     Untracked:  data/RMM.csv
+    Untracked:  data/R_summarised_transcriptome.csv
     Untracked:  data/all.dgrp.phenos_scaled.csv
+    Untracked:  data/gene_anntotations.csv
+    Untracked:  data/huang_transcriptome/
     Untracked:  data/meta_data_for_all_traits.csv
     Untracked:  data/trait_names.rds
+    Untracked:  data/transcriptome_chunks/
+    Untracked:  data/transcriptome_output/
+    Untracked:  evidence_ratios.R
     Untracked:  fits/
-    Untracked:  ~$PRISMA.pptx
+    Untracked:  height_example.pdf
+    Untracked:  mag_R_sem.pdf
+    Untracked:  sem_figures.R
 
 Unstaged changes:
-    Modified:   .Rprofile
-    Modified:   .gitattributes
-    Modified:   .gitignore
     Modified:   DGRP_sexual_conflict.Rproj
-    Modified:   README.md
-    Modified:   data/README.md
+    Modified:   _workflowr.yml
+    Deleted:    code/export_gwas_results_for_shiny_app.R
     Modified:   data/all.dgrp.phenos_unscaled.csv
-    Modified:   output/README.md
 
 </code></pre>
 <p>
@@ -482,6 +501,40 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/tomkeaney/DGRP_sexual_conflict/blob/48c7e9f2ebf56a798c432436bb9708bd9ee04dce/analysis/license.Rmd" target="_blank">48c7e9f</a>
+</td>
+<td>
+tomkeaney
+</td>
+<td>
+2023-10-17
+</td>
+<td>
+Restarting the project
+</td>
+</tr>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/tomkeaney/DGRP_sexual_conflict/414b2171adbc17c49363957d161af555932493b2/docs/license.html" target="_blank">414b217</a>
+</td>
+<td>
+ausevo
+</td>
+<td>
+2023-03-08
+</td>
+<td>
+Build site.
+</td>
+</tr>
 <tr>
 <td>
 html

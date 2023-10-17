@@ -1,0 +1,2298 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="Thomas Keaney and Luke Holman" />
+
+
+<title>Transcriptome analysis</title>
+
+<script src="site_libs/header-attrs-2.25/header-attrs.js"></script>
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/readable.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/jqueryui-1.13.2/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<script src="site_libs/navigation-1.1/codefolding.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<link href="site_libs/font-awesome-6.4.2/css/all.min.css" rel="stylesheet" />
+<link href="site_libs/font-awesome-6.4.2/css/v4-shims.min.css" rel="stylesheet" />
+
+<link rel="icon" href="https://github.com/workflowr/workflowr-assets/raw/main/img/reproducible.png">
+<!-- Add a small amount of space between sections. -->
+<style type="text/css">
+div.section {
+  padding-top: 12px;
+}
+</style>
+
+
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark the anchor link active (and if it's in a dropdown, also mark that active)
+  var dropdown = menuAnchor.closest('li.dropdown');
+  if (window.bootstrap) { // Bootstrap 4+
+    menuAnchor.addClass('active');
+    dropdown.find('> .dropdown-toggle').addClass('active');
+  } else { // Bootstrap 3
+    menuAnchor.parent().addClass('active');
+    dropdown.addClass('active');
+  }
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "\e259";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "\e258";
+  font-family: 'Glyphicons Halflings';
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+<style type="text/css">
+.code-folding-btn { margin-bottom: 4px; }
+</style>
+
+
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbar" data-bs-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">The response to selection, sexual antagonism and sexual concordance in the DGRP</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li>
+  <a href="Main_analysis.html">Phenome Analysis</a>
+</li>
+<li>
+  <a href="Transcriptome_analysis.html">Transcriptome Analysis</a>
+</li>
+<li>
+  <a href="license.html">License</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="https://github.com/tomkeaney/DGRP_sexual_conflict">
+    <span class="fab fa-github"></span>
+     
+    Source code
+  </a>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+<div class="btn-group pull-right float-right">
+<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<ul class="dropdown-menu dropdown-menu-right" style="min-width: 50px;">
+<li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
+<li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
+</ul>
+</div>
+
+
+
+<h1 class="title toc-ignore">Transcriptome analysis</h1>
+<h4 class="author">Thomas Keaney and Luke Holman</h4>
+
+</div>
+
+
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-report" data-toggle="collapse" data-target="#workflowr-report">
+<span class="glyphicon glyphicon-list" aria-hidden="true"></span>
+workflowr <span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span>
+</button>
+</p>
+<div id="workflowr-report" class="collapse">
+<ul class="nav nav-tabs">
+<li class="active">
+<a data-toggle="tab" href="#summary">Summary</a>
+</li>
+<li>
+<a data-toggle="tab" href="#checks"> Checks <span
+class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span>
+</a>
+</li>
+<li>
+<a data-toggle="tab" href="#versions">Past versions</a>
+</li>
+</ul>
+<div class="tab-content">
+<div id="summary" class="tab-pane fade in active">
+<p>
+<strong>Last updated:</strong> 2023-10-17
+</p>
+<p>
+<strong>Checks:</strong> <span
+class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 7
+<span class="glyphicon glyphicon-exclamation-sign text-danger"
+aria-hidden="true"></span> 0
+</p>
+<p>
+<strong>Knit directory:</strong> <code>DGRP_sexual_conflict/</code>
+<span class="glyphicon glyphicon-question-sign" aria-hidden="true"
+title="This is the local directory in which the code in this file was executed.">
+</span>
+</p>
+<p>
+This reproducible <a href="https://rmarkdown.rstudio.com">R Markdown</a>
+analysis was created with <a
+  href="https://github.com/workflowr/workflowr">workflowr</a> (version
+1.7.1). The <em>Checks</em> tab describes the reproducibility checks
+that were applied when the results were created. The <em>Past
+versions</em> tab lists the development history.
+</p>
+<hr>
+</div>
+<div id="checks" class="tab-pane fade">
+<div id="workflowr-checks" class="panel-group">
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguptodate">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>R Markdown file:</strong> up-to-date
+</a>
+</p>
+</div>
+<div id="strongRMarkdownfilestronguptodate"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great! Since the R Markdown file has been committed to the Git
+repository, you know the exact version of the code that produced these
+results.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongEnvironmentstrongempty">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Environment:</strong> empty </a>
+</p>
+</div>
+<div id="strongEnvironmentstrongempty" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! The global environment was empty. Objects defined in the
+global environment can affect the analysis in your R Markdown file in
+unknown ways. For reproduciblity it’s best to always run the code in an
+empty environment.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSeedstrongcodesetseed20210706code">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Seed:</strong>
+<code>set.seed(20210706)</code> </a>
+</p>
+</div>
+<div id="strongSeedstrongcodesetseed20210706code"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>The command <code>set.seed(20210706)</code> was run prior to running
+the code in the R Markdown file. Setting a seed ensures that any results
+that rely on randomness, e.g. subsampling or permutations, are
+reproducible.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSessioninformationstrongrecorded">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Session information:</strong>
+recorded </a>
+</p>
+</div>
+<div id="strongSessioninformationstrongrecorded"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Recording the operating system, R version, and package
+versions is critical for reproducibility.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongCachestrongnone">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Cache:</strong> none </a>
+</p>
+</div>
+<div id="strongCachestrongnone" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Nice! There were no cached chunks for this analysis, so you can be
+confident that you successfully produced the results during this
+run.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongFilepathsstrongrelative">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>File paths:</strong> relative </a>
+</p>
+</div>
+<div id="strongFilepathsstrongrelative" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Using relative paths to the files within your workflowr
+project makes it easier to run your code on other machines.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomtomkeaneyDGRPsexualconflicttree48c7e9f2ebf56a798c432436bb9708bd9ee04dcetargetblank48c7e9fa">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Repository version:</strong>
+<a href="https://github.com/tomkeaney/DGRP_sexual_conflict/tree/48c7e9f2ebf56a798c432436bb9708bd9ee04dce" target="_blank">48c7e9f</a>
+</a>
+</p>
+</div>
+<div
+id="strongRepositoryversionstrongahrefhttpsgithubcomtomkeaneyDGRPsexualconflicttree48c7e9f2ebf56a798c432436bb9708bd9ee04dcetargetblank48c7e9fa"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>
+Great! You are using Git for version control. Tracking code development
+and connecting the code version to the results is critical for
+reproducibility.
+</p>
+<p>
+The results in this page were generated with repository version
+<a href="https://github.com/tomkeaney/DGRP_sexual_conflict/tree/48c7e9f2ebf56a798c432436bb9708bd9ee04dce" target="_blank">48c7e9f</a>.
+See the <em>Past versions</em> tab to see a history of the changes made
+to the R Markdown and HTML files.
+</p>
+<p>
+Note that you need to be careful to ensure that all relevant files for
+the analysis have been committed to Git prior to generating the results
+(you can use <code>wflow_publish</code> or
+<code>wflow_git_commit</code>). workflowr only checks the R Markdown
+file, but you know if there are other scripts or data files that it
+depends on. Below is the status of the Git repository when the results
+were generated:
+</p>
+<pre><code>
+Ignored files:
+    Ignored:    .Rapp.history
+    Ignored:    .Rhistory
+    Ignored:    .Rproj.user/
+
+Untracked files:
+    Untracked:  %
+    Untracked:  -Toms-laptop-2.Rhistory
+    Untracked:  -Toms-laptop-3.Rhistory
+    Untracked:  -Toms-laptop.Rhistory
+    Untracked:  Chapter_2_Figure_S1.pdf
+    Untracked:  Chapter_2_Figure_S2.pdf
+    Untracked:  Conflict_plot_females.pdf
+    Untracked:  Conflict_plot_male.pdf
+    Untracked:  Figure_1.pdf
+    Untracked:  Figure_1.png
+    Untracked:  Figure_2.pdf
+    Untracked:  Figure_3.pdf
+    Untracked:  Figures.Rmd
+    Untracked:  Manuscript/
+    Untracked:  PRISMA.pptx
+    Untracked:  Picture1.pdf
+    Untracked:  R_transcriptome_medians.csv
+    Untracked:  Reported_heritability.xlsx
+    Untracked:  Useful_cuts.Rmd
+    Untracked:  add_later.Rmd
+    Untracked:  code/get_gene_annotations.R
+    Untracked:  concordance_plot_sem.pdf
+    Untracked:  conflict_plot.pdf
+    Untracked:  data/RFF.csv
+    Untracked:  data/RFM.csv
+    Untracked:  data/RMF.csv
+    Untracked:  data/RMM.csv
+    Untracked:  data/R_summarised_transcriptome.csv
+    Untracked:  data/all.dgrp.phenos_scaled.csv
+    Untracked:  data/gene_anntotations.csv
+    Untracked:  data/huang_transcriptome/
+    Untracked:  data/meta_data_for_all_traits.csv
+    Untracked:  data/trait_names.rds
+    Untracked:  data/transcriptome_chunks/
+    Untracked:  data/transcriptome_output/
+    Untracked:  evidence_ratios.R
+    Untracked:  fits/
+    Untracked:  height_example.pdf
+    Untracked:  mag_R_sem.pdf
+    Untracked:  sem_figures.R
+
+Unstaged changes:
+    Modified:   DGRP_sexual_conflict.Rproj
+    Modified:   _workflowr.yml
+    Deleted:    code/export_gwas_results_for_shiny_app.R
+    Modified:   data/all.dgrp.phenos_unscaled.csv
+
+</code></pre>
+<p>
+Note that any generated files, e.g. HTML, png, CSS, etc., are not
+included in this status report because it is ok for generated content to
+have uncommitted changes.
+</p>
+</div>
+</div>
+</div>
+</div>
+<hr>
+</div>
+<div id="versions" class="tab-pane fade">
+
+<p>
+These are the previous versions of the repository in which changes were
+made to the R Markdown
+(<code>analysis/Transcriptome_analysis.Rmd</code>) and HTML
+(<code>docs/Transcriptome_analysis.html</code>) files. If you’ve
+configured a remote Git repository (see <code>?wflow_git_remote</code>),
+click on the hyperlinks in the table below to view the files as they
+were in that past version.
+</p>
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+File
+</th>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+<th>
+Message
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/tomkeaney/DGRP_sexual_conflict/blob/48c7e9f2ebf56a798c432436bb9708bd9ee04dce/analysis/Transcriptome_analysis.Rmd" target="_blank">48c7e9f</a>
+</td>
+<td>
+tomkeaney
+</td>
+<td>
+2023-10-17
+</td>
+<td>
+Restarting the project
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+</div>
+</div>
+</div>
+<div id="load-packages-and-the-data" class="section level1">
+<h1>Load packages and the data</h1>
+<p><span class="math inline">\(~\)</span></p>
+<p>First load the packages</p>
+<pre class="r"><code>library(tidyverse) # for tidy coding
+library(MetBrewer) # for many nice colour palettes
+library(rcartocolor) # more cool colours
+library(kableExtra) # for scrolling tables
+library(DT) # for interactive tables
+library(patchwork) # to join mulitple plots nicely
+library(brms) # for bayesian models
+library(tidybayes) # for more bayesian things
+library(bayestestR) # for the pd metric 
+library(broom) # convert results of functions into tables
+library(ggtext) # for markdown features in ggplot
+library(ggrepel) # for plot labels in ggplot
+library(ggnewscale) # to reset scales in ggplot </code></pre>
+<p><span class="math inline">\(~\)</span></p>
+<p>We use the data archived on the dgrp2 <a
+href="http://dgrp2.gnets.ncsu.edu/data.html">website</a>, which was
+provided by <a href="https://pubmed.ncbi.nlm.nih.gov/26483487/">Huang et
+al. (2015)</a>. These data are levels of expression of genes measured
+across 185 DGRP lines. Huang et al’s data contains Y-linked genes that
+have higher/equal expression in <em>females</em> in all lines,
+presumably microarray issues/errors. To be conservative, we restrict our
+analyses to genes that are known to be on chromosomes that are present
+in both sexes. After data cleaning, we retain 14,268 genes in our
+analysis.</p>
+<p>We also load gene annotation data using the <code>org.Dm.eg.db</code>
+R package provided by <code>BiocManager</code>. The code used to produce
+annotations is provided in the <code>code</code> subdirectory, in the
+<code>get_gene_annotations.R</code> file.</p>
+<p>Huang et al. 2015 replicated each gene expression measurement twice.
+To find line means, we simply take the average value for each line. We
+then standardise the expression of each gene to have <span
+class="math inline">\(\mu = 0\)</span> and <span
+class="math inline">\(\sigma = 1\)</span> (as with the ‘phenotypic’
+traits.</p>
+<pre class="r"><code># load in the data, note that traits have already been standardised
+
+DGRP_data &lt;- 
+  left_join(
+    read_csv(&quot;data/all.dgrp.phenos_scaled.csv&quot;) %&gt;% 
+      mutate(line = as.factor(line)),
+    read_csv(&quot;data/meta_data_for_all_traits.csv&quot;) %&gt;%
+      group_by(Reference) %&gt;% 
+      mutate(study_ID = as.factor(cur_group_id()),
+             Pooled = if_else(Sex == &quot;Pooled&quot;, &quot;Yes&quot;, &quot;No&quot;))) %&gt;% 
+  left_join(read_rds(&quot;data/trait_names.rds&quot;)) %&gt;% 
+  filter(str_detect(Trait, &quot;fitness.early.life&quot;)) %&gt;% 
+  select(line, Trait, trait_value) %&gt;% 
+  pivot_wider(names_from = Trait, values_from = trait_value) %&gt;% 
+  rename(female_fitness = fitness.early.life.f, male_fitness = fitness.early.life.m)
+
+
+gene_annotations &lt;- read_csv(&quot;data/gene_anntotations.csv&quot;)
+
+
+# Helper to load all the Huang et al. expression data into tidy format
+load_expression_data &lt;- function(gene_annotations){
+  
+  # Note: Huang et al&#39;s data contains Y-linked genes that have
+  # higher/equal expression in *females* in all lines, presumably microarray issues/errors.
+  # To be conservative, we restrict our analyses to genes that are known to be on a
+  # chromosomes that is present in both sexes
+  genes_allowed &lt;- gene_annotations %&gt;%
+    filter(chromosome %in% c(&quot;2L&quot;, &quot;2R&quot;, &quot;3L&quot;, &quot;3R&quot;, &quot;4&quot;, &quot;X&quot;)) %&gt;%
+    pull(FBID) 
+  
+  females &lt;- read_delim(&quot;data/huang_transcriptome/dgrp.array.exp.female.txt&quot;, delim = &quot; &quot;) %&gt;%
+    filter(gene %in% genes_allowed) %&gt;% 
+    gather(sample, expression, -gene) %&gt;% 
+    mutate(line = map_chr(str_extract_all(sample, &quot;line_[:digit:]*&quot;), ~ .x[1]),
+           replicate = map_chr(str_split(sample, &quot;:&quot;), ~ .x[2]),
+           sex = &quot;Female&quot;)
+  
+  males &lt;- read_delim(&quot;data/huang_transcriptome/dgrp.array.exp.male.txt&quot;, delim = &quot; &quot;) %&gt;%
+    filter(gene %in% genes_allowed) %&gt;% 
+    gather(sample, expression, -gene) %&gt;% 
+    mutate(line = map_chr(str_extract_all(sample, &quot;line_[:digit:]*&quot;), ~ .x[1]),
+           replicate = map_chr(str_split(sample, &quot;:&quot;), ~ .x[2]),
+           sex = &quot;Male&quot;)
+  
+  bind_rows(females, males) %&gt;% 
+    select(sample, line, sex, replicate, gene, expression)
+}
+
+expression_line_means &lt;- 
+  load_expression_data(gene_annotations) %&gt;% # use the custom function to load expression data
+  mutate(line = str_remove(line, &quot;line_&quot;),
+         line = as.factor(line)) %&gt;% 
+  group_by(line, sex, gene) %&gt;% 
+  mutate(trait_value = mean(expression)) %&gt;% # compute the average between replicates for each gene
+  ungroup() %&gt;% 
+  distinct(line, sex, gene, trait_value) %&gt;% 
+  group_by(sex, gene) %&gt;% # scale the traits, specific to gene and sex
+  mutate(trait_value = as.numeric(scale(trait_value))) %&gt;% 
+  ungroup() %&gt;% 
+  rename(Sex = sex) %&gt;% 
+# join the fitness data
+left_join(DGRP_data)
+
+# the transcriptome is large; memory is therefore a consistent problem with this analysis - it helps to clear often
+# 
+invisible(gc())</code></pre>
+<p><span class="math inline">\(~\)</span></p>
+</div>
+<div id="calculating-r-the-response-to-selection"
+class="section level1">
+<h1>Calculating <em>R</em>: the response to selection</h1>
+<p><span class="math inline">\(~\)</span></p>
+<p>The various <em>R</em> metrics are calculated identically to the <a
+href="Main_analysis.html">classic phenotype analysis</a>.</p>
+<p><span class="math inline">\(~\)</span></p>
+<div id="build-models-to-calculate-r_ff-r_mf" class="section level2">
+<h2>Build models to calculate <span
+class="math inline">\(R_{FF}\)</span> &amp; <span
+class="math inline">\(R_{MF}\)</span></h2>
+<p>To estimate the covariance between <span
+class="math inline">\(A_w\)</span> and <span
+class="math inline">\(A_z\)</span> (which in this case is a transcript),
+we fitted bivariate Bayesian linear models using the <code>brms</code>
+package (Bürkner, 2017) for <code>R version 4.2.2</code>. For each
+combination of trait/transcript and sex, we used line means for the
+focal trait/transcript and the fitness of the focal sex as the two
+response variables and fitted an intercept-only Gaussian model. Each
+model returned a posterior distribution of the residual correlation
+between trait/transcript and fitness, which for data expressed in
+standard units is equivalent to the covariance.</p>
+<p>Build functions to run the models</p>
+<pre class="r"><code># RFF estimates
+
+female_transcripts &lt;- expression_line_means %&gt;% filter(Sex == &quot;Female&quot;)
+
+transcript_list_female &lt;- unique(female_transcripts$gene) # an input to the map_dfr() function that we&#39;ll need in a few chunks time
+
+# code the model structure we will use for all traits/transcripts using one example - `FBgn0000014`. We can then use the update() function to run this model many times, once for each trait/transcript measured in females. update() makes this process many times faster, because the model can immediately start sampling, without the need to recompile. 
+
+RFF_transcriptome_model &lt;-
+  brm(data = female_transcripts %&gt;% filter(gene == &quot;FBgn0000014&quot;),
+      family = gaussian,
+      bf(mvbind(female_fitness, trait_value) ~ 1) + set_rescor(TRUE),
+      prior = c(prior(normal(0, 0.1), class = Intercept, resp = femalefitness),
+                prior(normal(0, 0.1), class = Intercept, resp = traitvalue),
+                prior(normal(1, 0.1), class = sigma, resp = femalefitness),
+                prior(normal(1, 0.1), class = sigma, resp = traitvalue),
+                prior(lkj(2), class = rescor)),
+      chains = 4, cores = 4, iter = 4000, warmup = 2000,
+      seed = 1, file = &quot;fits/RFF_transcriptome_model&quot;,
+      backend = &quot;cmdstanr&quot;, refresh = 400)  
+
+
+# make a function to update the model and the posterior sample output with the &#39;selected trait&#39;
+
+RFF_transcriptome_calculator &lt;- function(selected_gene){
+  
+  data &lt;- female_transcripts %&gt;% filter(gene == selected_gene)
+  
+  model &lt;- update(
+    RFF_transcriptome_model, newdata = data,
+      chains = 4, cores = 4, iter = 4000, warmup = 2000,
+      seed = 1, backend = &quot;cmdstanr&quot;, refresh = 400)
+  
+  posterior &lt;- 
+    as_draws_df(model) %&gt;% 
+    rename(Response_to_selection_female = rescor__femalefitness__traitvalue) %&gt;% 
+    mutate(Trait = selected_gene) %&gt;% 
+    select(Trait, Response_to_selection_female) %&gt;% 
+    as_tibble()
+  
+  posterior
+}
+
+# RMF estimates
+
+RMF_transcriptome_model &lt;-
+  brm(data = female_transcripts %&gt;% filter(gene == &quot;FBgn0000014&quot;),
+      family = gaussian,
+      bf(mvbind(male_fitness, trait_value) ~ 1) + set_rescor(TRUE),
+      prior = c(prior(normal(0, 0.1), class = Intercept, resp = malefitness),
+                prior(normal(0, 0.1), class = Intercept, resp = traitvalue),
+                prior(normal(1, 0.1), class = sigma, resp = malefitness),
+                prior(normal(1, 0.1), class = sigma, resp = traitvalue),
+                prior(lkj(2), class = rescor)),
+      chains = 4, cores = 4, iter = 4000, warmup = 2000,
+      seed = 1, file = &quot;fits/RMF_transcriptome_model&quot;,
+      backend = &quot;cmdstanr&quot;, refresh = 400) 
+
+# make a function to update the model and the posterior sample output with your desired trait
+
+RMF_transcriptome_calculator &lt;- function(selected_gene){
+  
+  data &lt;- female_transcripts %&gt;% filter(gene == selected_gene)
+  
+  model &lt;- update(
+    RMF_transcriptome_model, newdata = data,
+      chains = 4, cores = 4, iter = 4000, warmup = 2000,
+      seed = 1, backend = &quot;cmdstanr&quot;, refresh = 400)
+  
+  posterior &lt;- 
+    as_draws_df(model) %&gt;% 
+    rename(Response_to_selection_male = rescor__malefitness__traitvalue) %&gt;% 
+    mutate(Trait = selected_gene) %&gt;% 
+    select(Trait, Response_to_selection_male) %&gt;% 
+    as_tibble()
+  
+  posterior
+}</code></pre>
+<p><span class="math inline">\(~\)</span></p>
+</div>
+<div id="build-models-to-calculate-r_fm-r_mf" class="section level2">
+<h2>Build models to calculate <span
+class="math inline">\(R_{FM}\)</span> &amp; <span
+class="math inline">\(R_{MF}\)</span></h2>
+<p><span class="math inline">\(~\)</span></p>
+<pre class="r"><code># RMM estimates
+
+male_transcripts &lt;- expression_line_means %&gt;% filter(Sex == &quot;Male&quot;)
+
+transcript_list_male &lt;- unique(male_transcripts$gene)
+
+RMM_transcriptome_model &lt;-
+  brm(data = male_transcripts %&gt;% filter(gene == &quot;FBgn0000014&quot;),
+      family = gaussian,
+      bf(mvbind(male_fitness, trait_value) ~ 1) + set_rescor(TRUE),
+      prior = c(prior(normal(0, 0.1), class = Intercept, resp = malefitness),
+                prior(normal(0, 0.1), class = Intercept, resp = traitvalue),
+                prior(normal(1, 0.1), class = sigma, resp = malefitness),
+                prior(normal(1, 0.1), class = sigma, resp = traitvalue),
+                prior(lkj(2), class = rescor)),
+      chains = 4, cores = 4, iter = 4000, warmup = 2000,
+      seed = 1, file = &quot;fits/RMM_transcriptome_model&quot;,
+      backend = &quot;cmdstanr&quot;, refresh = 400)    
+
+# make a function to update the model and the posterior sample output with your desired trait
+
+RMM_transcriptome_calculator &lt;- function(selected_gene){
+  
+  data &lt;- male_transcripts %&gt;% filter(gene == selected_gene)
+  
+  model &lt;- update(
+    RMM_transcriptome_model, newdata = data,
+    chains = 4, cores = 4, iter = 4000, warmup = 2000,
+    seed = 1)
+  
+  posterior &lt;- 
+    as_draws_df(model) %&gt;% 
+    rename(Response_to_selection_male = rescor__malefitness__traitvalue) %&gt;%
+    mutate(Trait = selected_gene) %&gt;% 
+    select(Trait, Response_to_selection_male) %&gt;% 
+    as_tibble()
+  
+  posterior
+}
+
+# RFM estimates
+
+RFM_transcriptome_model &lt;-
+  brm(data = male_transcripts %&gt;% filter(gene == &quot;FBgn0000014&quot;),
+      family = gaussian,
+      bf(mvbind(female_fitness, trait_value) ~ 1) + set_rescor(TRUE),
+      prior = c(prior(normal(0, 0.1), class = Intercept, resp = femalefitness),
+                prior(normal(0, 0.1), class = Intercept, resp = traitvalue),
+                prior(normal(1, 0.1), class = sigma, resp = femalefitness),
+                prior(normal(1, 0.1), class = sigma, resp = traitvalue),
+                prior(lkj(2), class = rescor)),
+      chains = 4, cores = 4, iter = 4000, warmup = 2000,
+      seed = 1, file = &quot;fits/RFM_transcriptome_model&quot;,
+      backend = &quot;cmdstanr&quot;, refresh = 400)    
+
+# make a function to update the model and the posterior sample output with your desired trait
+
+RFM_transcriptome_calculator &lt;- function(selected_trait){
+  
+  data &lt;- male_transcripts %&gt;% filter(gene == selected_trait)
+  
+  model &lt;- update(
+    RFM_transcriptome_model, newdata = data,
+      chains = 4, cores = 4, iter = 4000, warmup = 2000,
+      seed = 1)
+  
+  posterior &lt;- 
+    as_draws_df(model) %&gt;% 
+    rename(Response_to_selection_female = rescor__femalefitness__traitvalue) %&gt;% 
+    mutate(Trait = selected_gene) %&gt;% 
+    select(Trait, Response_to_selection_female) %&gt;% 
+    as_tibble()
+  
+  posterior
+}</code></pre>
+<p><span class="math inline">\(~\)</span></p>
+</div>
+<div id="run-the-models-for-all-the-traits" class="section level2">
+<h2>Run the models for all the traits</h2>
+<p>Run the models using <code>RFF_transcriptome_calculator</code>,
+<code>RMF_transcriptome_calculator</code>,
+<code>RMM_transcriptome_calculator</code> and
+<code>RFM_transcriptome_calculator</code>.</p>
+<p>This takes a fair bit of memory, so it might be necessary to run the
+models in chunks rather than all in one go. To do this, you can break
+the <code>transcript_list_female</code> list into parts and feed it into
+the <code>map_dfr</code> function. The completed subset can then be
+saved to your hard disk, removed from R and cleared from your computers
+memory. This frees up memory to run another chunk without losing
+progress. Expand the code chunk below to see an example. All other
+chunks have been run and saved for later use.</p>
+<pre class="r"><code># run the RFF function
+
+transcript_list_female_1 &lt;- transcript_list_female[1:2000]
+
+if(!file.exists(&quot;data/transcriptome_chunks/RFF_transcript_1.csv&quot;)){
+  RFF_transcript_1 &lt;- map_dfr(transcript_list_female_1, RFF_transcriptome_calculator)
+  write_csv(RFF_transcript_1, 
+            file = &quot;data/transcriptome_chunks/RFF_transcript_1.csv&quot;)
+  rm(RFF_transcript_1)
+  invisible(gc())
+} else RFF_transcript_1 &lt;- read_csv(&quot;data/transcriptome_chunks/RFF_transcript_1.csv&quot;)</code></pre>
+<p>Load all the posterior draws, combine and summarise and save the
+result to the hard disk. This allows us to simply load the summarised
+results once everything has been run once.</p>
+<pre class="r"><code>if(!file.exists(&quot;data/R_summarised_transcriptome.csv&quot;)){
+RFF_transcriptome_complete &lt;- 
+  rbind(
+    read_csv(&quot;data/transcriptome_chunks/RFF_transcript_1.csv&quot;),
+    read_csv(&quot;data/transcriptome_chunks/RFF_transcript_2.csv&quot;),
+    read_csv(&quot;data/transcriptome_chunks/RFF_transcript_3.csv&quot;),
+    read_csv(&quot;data/transcriptome_chunks/RFF_transcript_4.csv&quot;),
+    read_csv(&quot;data/transcriptome_chunks/RFF_transcript_5.csv&quot;),
+    read_csv(&quot;data/transcriptome_chunks/RFF_transcript_6.csv&quot;),
+    read_csv(&quot;data/transcriptome_chunks/RFF_transcript_7.csv&quot;)
+  ) %&gt;% 
+  group_by(Trait) %&gt;% 
+  summarise_draws(&quot;median&quot;, &quot;sd&quot;, ~quantile(.x, probs = c(0.025, 0.975), na.rm = TRUE)) %&gt;%
+  ungroup() %&gt;% 
+  select(-variable) %&gt;% 
+  mutate(absolute_R = abs(median),
+         Fitness_Sex = &quot;Female&quot;,
+         Trait_Sex = &quot;Female&quot;)
+
+invisible(gc())
+
+RMF_transcriptome_complete &lt;- 
+  rbind(
+    read_csv(&quot;data/transcriptome_chunks/RMF_transcript_1.csv&quot;),
+    read_csv(&quot;data/transcriptome_chunks/RMF_transcript_2.csv&quot;),
+    read_csv(&quot;data/transcriptome_chunks/RMF_transcript_3.csv&quot;),
+    read_csv(&quot;data/transcriptome_chunks/RMF_transcript_4.csv&quot;),
+    read_csv(&quot;data/transcriptome_chunks/RMF_transcript_5.csv&quot;),
+    read_csv(&quot;data/transcriptome_chunks/RMF_transcript_6.csv&quot;),
+    read_csv(&quot;data/transcriptome_chunks/RMF_transcript_7.csv&quot;)
+  ) %&gt;% 
+  group_by(Trait) %&gt;% 
+  summarise_draws(&quot;median&quot;, &quot;sd&quot;, ~quantile(.x, probs = c(0.025, 0.975), na.rm = TRUE)) %&gt;%
+  ungroup() %&gt;% 
+  select(-variable) %&gt;% 
+  mutate(absolute_R = abs(median),
+         Fitness_Sex = &quot;Male&quot;,
+         Trait_Sex = &quot;Female&quot;)
+
+invisible(gc())
+
+RMM_transcriptome_complete &lt;- 
+  rbind(
+    read_csv(&quot;data/transcriptome_chunks/RMM_transcript_1.csv&quot;),
+    read_csv(&quot;data/transcriptome_chunks/RMM_transcript_2.csv&quot;),
+    read_csv(&quot;data/transcriptome_chunks/RMM_transcript_3.csv&quot;),
+    read_csv(&quot;data/transcriptome_chunks/RMM_transcript_4.csv&quot;),
+    read_csv(&quot;data/transcriptome_chunks/RMM_transcript_5.csv&quot;),
+    read_csv(&quot;data/transcriptome_chunks/RMM_transcript_6.csv&quot;),
+    read_csv(&quot;data/transcriptome_chunks/RMM_transcript_7.csv&quot;)
+  ) %&gt;% 
+  group_by(Trait) %&gt;% 
+  summarise_draws(&quot;median&quot;, &quot;sd&quot;, ~quantile(.x, probs = c(0.025, 0.975), na.rm = TRUE)) %&gt;%
+  ungroup() %&gt;% 
+  select(-variable) %&gt;% 
+  mutate(absolute_R = abs(median),
+         Fitness_Sex = &quot;Male&quot;,
+         Trait_Sex = &quot;Male&quot;)
+
+invisible(gc())
+
+RFM_transcriptome_complete &lt;- 
+  rbind(
+    read_csv(&quot;data/transcriptome_chunks/RFM_transcript_1.csv&quot;),
+    read_csv(&quot;data/transcriptome_chunks/RFM_transcript_2.csv&quot;),
+    read_csv(&quot;data/transcriptome_chunks/RFM_transcript_3.csv&quot;),
+    read_csv(&quot;data/transcriptome_chunks/RFM_transcript_4.csv&quot;),
+    read_csv(&quot;data/transcriptome_chunks/RFM_transcript_5.csv&quot;),
+    read_csv(&quot;data/transcriptome_chunks/RFM_transcript_6.csv&quot;),
+    read_csv(&quot;data/transcriptome_chunks/RFM_transcript_7.csv&quot;)
+  ) %&gt;% 
+  group_by(Trait) %&gt;% 
+  summarise_draws(&quot;median&quot;, &quot;sd&quot;, ~quantile(.x, probs = c(0.025, 0.975), na.rm = TRUE)) %&gt;%
+  ungroup() %&gt;% 
+  select(-variable) %&gt;% 
+  mutate(absolute_R = abs(median),
+         Fitness_Sex = &quot;Female&quot;,
+         Trait_Sex = &quot;Male&quot;)
+
+invisible(gc())
+
+R_summarised_transcriptome &lt;-
+  bind_rows(RFF_transcriptome_complete, RMF_transcriptome_complete,
+            RFM_transcriptome_complete, RMM_transcriptome_complete)
+
+write_csv(R_summarised_transcriptome, &quot;data/R_summarised_transcriptome.csv&quot;)
+
+} else R_summarised_transcriptome &lt;- read_csv(&quot;data/R_summarised_transcriptome.csv&quot;)</code></pre>
+<p><span class="math inline">\(~\)</span></p>
+</div>
+<div id="estimate-across-trait-grand-means-for-r-in-each-sex"
+class="section level2">
+<h2>Estimate across-trait grand means for <span
+class="math inline">\(|R|\)</span> in each sex</h2>
+<p><span class="math inline">\(~\)</span></p>
+<p>Fit the model to test whether <span
+class="math inline">\(|R|\)</span> depends on the sex fitness and trait
+values were measured in:</p>
+<pre class="r"><code># fit the model
+
+median_R_transcriptome_model &lt;- 
+  brm(absolute_R | weights(1/sd) ~ 1 + Fitness_Sex * Trait_Sex + (1|Trait),
+      family = brmsfamily(family = &quot;Gamma&quot;), # gamma is appropriate for the half-normal distribution created by taking the absolute
+      data = R_summarised_transcriptome,
+      prior = c(prior(normal(-2.2, 1), class = Intercept),
+                prior(exponential(1), class = sd),
+                prior(exponential(1), class = shape),
+                prior(normal(0, 0.25), class = b)),
+      warmup = 2000, iter = 6000,
+      seed = 1, cores = 4, chains = 4,
+      control = list(adapt_delta = 0.8, max_treedepth = 10),
+      file = &quot;fits/median_R_transcriptome_model&quot;)
+
+print(median_R_transcriptome_model)</code></pre>
+<pre><code> Family: gamma 
+  Links: mu = log; shape = identity 
+Formula: absolute_R | weights(1/sd) ~ 1 + Fitness_Sex * Trait_Sex + (1 | Trait) 
+   Data: R_summarised_transcriptome (Number of observations: 57072) 
+  Draws: 4 chains, each with iter = 6000; warmup = 2000; thin = 1;
+         total post-warmup draws = 16000
+
+Group-Level Effects: 
+~Trait (Number of levels: 14268) 
+              Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+sd(Intercept)     0.41      0.00     0.41     0.42 1.00     2388     5240
+
+Population-Level Effects: 
+                              Estimate Est.Error l-95% CI u-95% CI Rhat
+Intercept                        -2.72      0.00    -2.72    -2.71 1.00
+Fitness_SexMale                  -0.01      0.00    -0.01    -0.00 1.00
+Trait_SexMale                    -0.11      0.00    -0.11    -0.10 1.00
+Fitness_SexMale:Trait_SexMale     0.03      0.00     0.03     0.04 1.00
+                              Bulk_ESS Tail_ESS
+Intercept                         1945     4332
+Fitness_SexMale                  15332    12393
+Trait_SexMale                    15791    12963
+Fitness_SexMale:Trait_SexMale    15058    12576
+
+Family Specific Parameters: 
+      Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+shape     1.65      0.00     1.65     1.66 1.00    23558    11868
+
+Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS
+and Tail_ESS are effective sample size measures, and Rhat is the potential
+scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
+<pre class="r"><code>invisible(gc())</code></pre>
+<p><span class="math inline">\(~\)</span></p>
+<p>Get model predictions and plot. Once again, we only do this once and
+save for later convenience.</p>
+<pre class="r"><code>new_data &lt;- expand_grid(Fitness_Sex = c(&quot;Female&quot;, &quot;Male&quot;),
+                        Trait_Sex = c(&quot;Female&quot;, &quot;Male&quot;))
+
+if(!file.exists(&quot;data/transcriptome_output/R_transcriptome_fitted.csv&quot;)){
+R_transcriptome_fitted &lt;-
+  fitted(median_R_transcriptome_model, newdata = new_data, re_formula = NA, summary = F) %&gt;% 
+  as.data.frame() %&gt;% 
+  rename(FemaleFitness_FemaleTrait = V1, FemaleFitness_MaleTrait = V2, 
+         MaleFitness_FemaleTrait = V3, MaleFitness_MaleTrait = V4) %&gt;% 
+  as_tibble() %&gt;% 
+  mutate(percent_diff_female = 
+           ((MaleFitness_FemaleTrait - FemaleFitness_FemaleTrait) / FemaleFitness_FemaleTrait)*100,
+         percent_diff_male = 
+           ((MaleFitness_MaleTrait - FemaleFitness_MaleTrait)/ FemaleFitness_MaleTrait)*100) %&gt;% 
+  pivot_longer(cols = everything(), names_to = &quot;Parameter&quot;, values_to = &quot;R_mean&quot;) %&gt;% 
+  mutate(Fitness_Sex = case_when(str_detect(Parameter, &quot;FemaleFitness&quot;) ~ &quot;Female&quot;,
+                                 str_detect(Parameter, &quot;MaleFitness&quot;) ~ &quot;Male&quot;),
+         Trait_Sex = case_when(str_detect(Parameter, &quot;FemaleTrait&quot;) ~ &quot;Female&quot;,
+                               str_detect(Parameter, &quot;MaleTrait&quot;) ~ &quot;Male&quot;,
+                               str_detect(Parameter, &quot;percent_diff_female&quot;) ~ &quot;Female&quot;,
+                               str_detect(Parameter, &quot;percent_diff_male&quot;) ~ &quot;Male&quot;))
+
+write_csv(R_transcriptome_fitted, &quot;data/transcriptome_output/R_transcriptome_fitted.csv&quot;)
+} else R_transcriptome_fitted &lt;- read_csv(&quot;data/transcriptome_output/R_transcriptome_fitted.csv&quot;)
+
+R_t1 &lt;-
+  R_transcriptome_fitted %&gt;% 
+  filter(!str_detect(Parameter, &quot;percent&quot;)) %&gt;% 
+  ggplot(aes(x = R_mean, y = Trait_Sex, fill = Fitness_Sex)) + #+ y = Trait_Sex)) + #fill = Fitness_Sex)) +
+  stat_slab(alpha = 0.9, shape = 21) +#,
+  labs(x = expression(&quot;Across-transcript estimated magnitude for |&quot;* italic(R) * &quot;|&quot;),
+       y = &quot;Sex transcripts were measured in&quot;,
+       fill = &quot;Sex under selection&quot;) +
+  scale_fill_manual(values = c(carto_pal(7, &quot;Purp&quot;)[5], carto_pal(7, &quot;Peach&quot;)[5])) +
+  theme_minimal() + 
+  theme(panel.background = element_rect(fill=&#39;transparent&#39;),
+        #panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        plot.background = element_rect(fill=&#39;transparent&#39;, color=NA),
+        legend.position = &quot;bottom&quot;,
+        text = element_text(size=13))
+
+R_t2 &lt;-
+  R_transcriptome_fitted %&gt;% 
+  filter(str_detect(Parameter, &quot;percent&quot;)) %&gt;%
+  ggplot(aes(x = R_mean, y = Trait_Sex, fill = after_stat(x &lt; 0))) + #, #y = Trait_Sex, fill = Trait_Sex)) +
+  stat_halfeye(.width = c(0.66, 0.95), alpha = 0.9,
+               point_interval = &quot;median_qi&quot;, point_fill = &quot;white&quot;,
+               shape = 21, point_size = 4, stroke = 1.5) + # width indicates the uncertainty intervals: here we have 66% and 95% intervals + # width indicates the uncertainty intervals: here we have 66% and 95% intervals+
+  #scale_fill_manual(values = c(carto_pal(7, &quot;Peach&quot;)[5], carto_pal(7, &quot;Peach&quot;)[5], carto_pal(7, &quot;Purp&quot;)[5])) +
+  geom_vline(xintercept = 0, linetype = 2, linewidth = 1.2) +
+  coord_cartesian(xlim = c(-5, 5)) +
+  scale_fill_manual(values = c(carto_pal(7, &quot;Peach&quot;)[5], carto_pal(7, &quot;Purp&quot;)[5])) +
+  xlab(expression(&quot;% increase in |&quot;*italic(R)* &quot;| through males&quot;)) +
+  ylab(&quot;Sex transcripts were measured in&quot;) +
+  theme_minimal() + 
+  theme(panel.background = element_rect(fill=&#39;transparent&#39;),
+        #panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        plot.background = element_rect(fill=&#39;transparent&#39;, color=NA),
+        legend.position = &quot;none&quot;,
+        text = element_text(size=13))
+
+R_t1 + R_t2 +
+  plot_annotation(tag_levels = &#39;a&#39;)</code></pre>
+<p><img src="figure/Transcriptome_analysis.Rmd/unnamed-chunk-7-1.png" width="960" style="display: block; margin: auto;" /></p>
+<p><span class="math inline">\(~\)</span></p>
+<p><strong>Calculating stats for the results section</strong></p>
+<pre class="r"><code>R_transcriptome_fitted %&gt;% 
+  group_by(Parameter) %&gt;% 
+  median_qi(R_mean)</code></pre>
+<pre><code># A tibble: 6 × 7
+  Parameter                  R_mean  .lower  .upper .width .point .interval
+  &lt;chr&gt;                       &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;  &lt;chr&gt;    
+1 FemaleFitness_FemaleTrait  0.0661  0.0656  0.0666   0.95 median qi       
+2 FemaleFitness_MaleTrait    0.0593  0.0588  0.0597   0.95 median qi       
+3 MaleFitness_FemaleTrait    0.0655  0.0650  0.0660   0.95 median qi       
+4 MaleFitness_MaleTrait      0.0608  0.0603  0.0612   0.95 median qi       
+5 percent_diff_female       -0.890  -1.47   -0.316    0.95 median qi       
+6 percent_diff_male          2.55    1.96    3.13     0.95 median qi       </code></pre>
+</div>
+</div>
+<div
+id="identifying-traits-responding-to-sexually-antagonistic-selection"
+class="section level1">
+<h1>Identifying traits responding to sexually antagonistic
+selection</h1>
+<div id="innocenti-and-morrows-i-index" class="section level2">
+<h2>Innocenti and Morrow’s I index</h2>
+<p><span class="math inline">\(~\)</span></p>
+<p>Once again, we estimate the concordance of the response to selection
+between the sexes using the <span class="math inline">\(I\)</span>
+metric presented in <a
+href="https://doi.org/10.1111/j.1558-5646.2010.01021.x">Innocenti and
+Morrow (2011)</a>.</p>
+<p><span class="math display">\[I = \frac{\beta&#39;_M
+\beta&#39;_F}{\sqrt{\frac{(\beta&#39;_M)^2 +
+(\beta&#39;_F)^2}{2}}}\]</span></p>
+<p>Where <span class="math inline">\(\beta&#39;_F\)</span> and <span
+class="math inline">\(\beta&#39;_M\)</span> = are phenotypic selection
+gradients. Taking traits expressed in females as an example, we
+substitute <span class="math inline">\(R_FF\)</span> and <span
+class="math inline">\(R_MF\)</span> for <span
+class="math inline">\(\beta&#39;_F\)</span> and <span
+class="math inline">\(\beta&#39;_M\)</span>. This makes our test for
+sexually antagonistic traits more conservative, as non-zero <span
+class="math inline">\(R\)</span> requires both directional selection on
+the trait and the presence of additive genetic variance for the
+trait.</p>
+<p>To calculate <span class="math inline">\(I\)</span> for each draw of
+each trait without running into memory problems we do this calculation
+in chunks.</p>
+<p>Run once, then save for easy later loading.</p>
+<pre class="r"><code>if(!file.exists(&quot;data/transcriptome_output/I_transcript_summarised.csv&quot;)){
+  I_transcript_summarised &lt;-
+    bind_rows(
+      left_join(read_csv(&quot;data/transcriptome_chunks/RFF_transcript_1.csv&quot;) %&gt;% 
+                  group_by(Trait) %&gt;% 
+                  mutate(draw = row_number()) %&gt;% 
+                  ungroup(),
+                read_csv(&quot;data/transcriptome_chunks/RMF_transcript_1.csv&quot;) %&gt;% 
+                  group_by(Trait) %&gt;% 
+                  mutate(draw = row_number()) %&gt;% 
+                  ungroup(), by = c(&quot;Trait&quot;, &quot;draw&quot;)) %&gt;% 
+        mutate(I = Response_to_selection_female * Response_to_selection_male / 
+                 sqrt(((Response_to_selection_female)^2 + (Response_to_selection_male)^2)/2)) %&gt;%
+        select(Trait, I) %&gt;% 
+        group_by(Trait) %&gt;% 
+        summarise_draws(&quot;median&quot;, &quot;sd&quot;, ~quantile(.x, probs = c(0.025, 0.975), na.rm = TRUE)) %&gt;%
+        ungroup() %&gt;% 
+        rename(I = median) %&gt;% 
+        select(-variable) %&gt;% 
+        mutate(Trait_Sex = &quot;Female&quot;),
+      
+      
+      left_join(read_csv(&quot;data/transcriptome_chunks/RFF_transcript_2.csv&quot;) %&gt;% 
+                  group_by(Trait) %&gt;% 
+                  mutate(draw = row_number()) %&gt;% 
+                  ungroup(),
+                read_csv(&quot;data/transcriptome_chunks/RMF_transcript_2.csv&quot;) %&gt;% 
+                  group_by(Trait) %&gt;% 
+                  mutate(draw = row_number()) %&gt;% 
+                  ungroup(), by = c(&quot;Trait&quot;, &quot;draw&quot;)) %&gt;% 
+        mutate(I = Response_to_selection_female * Response_to_selection_male / 
+                 sqrt(((Response_to_selection_female)^2 + (Response_to_selection_male)^2)/2)) %&gt;%
+        select(Trait, I) %&gt;% 
+        group_by(Trait) %&gt;% 
+        summarise_draws(&quot;median&quot;, &quot;sd&quot;, ~quantile(.x, probs = c(0.025, 0.975), na.rm = TRUE)) %&gt;%
+        ungroup() %&gt;% 
+        rename(I = median) %&gt;% 
+        select(-variable) %&gt;% 
+        mutate(Trait_Sex = &quot;Female&quot;),
+      
+      
+      left_join(read_csv(&quot;data/transcriptome_chunks/RFF_transcript_3.csv&quot;) %&gt;% 
+                  group_by(Trait) %&gt;% 
+                  mutate(draw = row_number()) %&gt;% 
+                  ungroup(),
+                read_csv(&quot;data/transcriptome_chunks/RMF_transcript_3.csv&quot;) %&gt;% 
+                  group_by(Trait) %&gt;% 
+                  mutate(draw = row_number()) %&gt;% 
+                  ungroup(), by = c(&quot;Trait&quot;, &quot;draw&quot;)) %&gt;% 
+        mutate(I = Response_to_selection_female * Response_to_selection_male / 
+                 sqrt(((Response_to_selection_female)^2 + (Response_to_selection_male)^2)/2)) %&gt;%
+        select(Trait, I) %&gt;% 
+        group_by(Trait) %&gt;% 
+        summarise_draws(&quot;median&quot;, &quot;sd&quot;, ~quantile(.x, probs = c(0.025, 0.975), na.rm = TRUE)) %&gt;%
+        ungroup() %&gt;% 
+        rename(I = median) %&gt;% 
+        select(-variable) %&gt;% 
+        mutate(Trait_Sex = &quot;Female&quot;),
+      
+      
+      
+      left_join(read_csv(&quot;data/transcriptome_chunks/RFF_transcript_4.csv&quot;) %&gt;% 
+                  group_by(Trait) %&gt;% 
+                  mutate(draw = row_number()) %&gt;% 
+                  ungroup(),
+                read_csv(&quot;data/transcriptome_chunks/RMF_transcript_4.csv&quot;) %&gt;% 
+                  group_by(Trait) %&gt;% 
+                  mutate(draw = row_number()) %&gt;% 
+                  ungroup(), by = c(&quot;Trait&quot;, &quot;draw&quot;)) %&gt;% 
+        mutate(I = Response_to_selection_female * Response_to_selection_male / 
+                 sqrt(((Response_to_selection_female)^2 + (Response_to_selection_male)^2)/2)) %&gt;%
+        select(Trait, I) %&gt;% 
+        group_by(Trait) %&gt;% 
+        summarise_draws(&quot;median&quot;, &quot;sd&quot;, ~quantile(.x, probs = c(0.025, 0.975), na.rm = TRUE)) %&gt;%
+        ungroup() %&gt;% 
+        rename(I = median) %&gt;% 
+        select(-variable) %&gt;% 
+        mutate(Trait_Sex = &quot;Female&quot;),
+      
+      
+      
+      left_join(read_csv(&quot;data/transcriptome_chunks/RFF_transcript_5.csv&quot;) %&gt;% 
+                  group_by(Trait) %&gt;% 
+                  mutate(draw = row_number()) %&gt;% 
+                  ungroup(),
+                read_csv(&quot;data/transcriptome_chunks/RMF_transcript_5.csv&quot;) %&gt;% 
+                  group_by(Trait) %&gt;% 
+                  mutate(draw = row_number()) %&gt;% 
+                  ungroup(), by = c(&quot;Trait&quot;, &quot;draw&quot;)) %&gt;% 
+        mutate(I = Response_to_selection_female * Response_to_selection_male / 
+                 sqrt(((Response_to_selection_female)^2 + (Response_to_selection_male)^2)/2)) %&gt;%
+        select(Trait, I) %&gt;% 
+        group_by(Trait) %&gt;% 
+        summarise_draws(&quot;median&quot;, &quot;sd&quot;, ~quantile(.x, probs = c(0.025, 0.975), na.rm = TRUE)) %&gt;%
+        ungroup() %&gt;% 
+        rename(I = median) %&gt;% 
+        select(-variable) %&gt;% 
+        mutate(Trait_Sex = &quot;Female&quot;),
+      
+      
+      
+      left_join(read_csv(&quot;data/transcriptome_chunks/RFF_transcript_6.csv&quot;) %&gt;% 
+                  group_by(Trait) %&gt;% 
+                  mutate(draw = row_number()) %&gt;% 
+                  ungroup(),
+                read_csv(&quot;data/transcriptome_chunks/RMF_transcript_6.csv&quot;) %&gt;% 
+                  group_by(Trait) %&gt;% 
+                  mutate(draw = row_number()) %&gt;% 
+                  ungroup(), by = c(&quot;Trait&quot;, &quot;draw&quot;)) %&gt;% 
+        mutate(I = Response_to_selection_female * Response_to_selection_male / 
+                 sqrt(((Response_to_selection_female)^2 + (Response_to_selection_male)^2)/2)) %&gt;%
+        select(Trait, I) %&gt;% 
+        group_by(Trait) %&gt;% 
+        summarise_draws(&quot;median&quot;, &quot;sd&quot;, ~quantile(.x, probs = c(0.025, 0.975), na.rm = TRUE)) %&gt;%
+        ungroup() %&gt;% 
+        rename(I = median) %&gt;% 
+        select(-variable) %&gt;% 
+        mutate(Trait_Sex = &quot;Female&quot;),
+      
+      
+      
+      left_join(read_csv(&quot;data/transcriptome_chunks/RFF_transcript_7.csv&quot;) %&gt;% 
+                  group_by(Trait) %&gt;% 
+                  mutate(draw = row_number()) %&gt;% 
+                  ungroup(),
+                read_csv(&quot;data/transcriptome_chunks/RMF_transcript_7.csv&quot;) %&gt;% 
+                  group_by(Trait) %&gt;% 
+                  mutate(draw = row_number()) %&gt;% 
+                  ungroup(), by = c(&quot;Trait&quot;, &quot;draw&quot;)) %&gt;% 
+        mutate(I = Response_to_selection_female * Response_to_selection_male / 
+                 sqrt(((Response_to_selection_female)^2 + (Response_to_selection_male)^2)/2)) %&gt;%
+        select(Trait, I) %&gt;% 
+        group_by(Trait) %&gt;% 
+        summarise_draws(&quot;median&quot;, &quot;sd&quot;, ~quantile(.x, probs = c(0.025, 0.975), na.rm = TRUE)) %&gt;%
+        ungroup() %&gt;% 
+        rename(I = median) %&gt;% 
+        select(-variable) %&gt;% 
+        mutate(Trait_Sex = &quot;Female&quot;),
+      
+      # now the traits measured in males
+      
+      left_join(read_csv(&quot;data/transcriptome_chunks/RMM_transcript_1.csv&quot;) %&gt;% 
+                  group_by(Trait) %&gt;% 
+                  mutate(draw = row_number()) %&gt;% 
+                  ungroup(),
+                read_csv(&quot;data/transcriptome_chunks/RFM_transcript_1.csv&quot;) %&gt;% 
+                  group_by(Trait) %&gt;% 
+                  mutate(draw = row_number()) %&gt;% 
+                  ungroup(), by = c(&quot;Trait&quot;, &quot;draw&quot;)) %&gt;% 
+        mutate(I = Response_to_selection_female * Response_to_selection_male / 
+                 sqrt(((Response_to_selection_female)^2 + (Response_to_selection_male)^2)/2)) %&gt;%
+        select(Trait, I) %&gt;% 
+        group_by(Trait) %&gt;% 
+        summarise_draws(&quot;median&quot;, &quot;sd&quot;, ~quantile(.x, probs = c(0.025, 0.975), na.rm = TRUE)) %&gt;%
+        ungroup() %&gt;% 
+        rename(I = median) %&gt;% 
+        select(-variable) %&gt;% 
+        mutate(Trait_Sex = &quot;Male&quot;),
+      
+      
+      left_join(read_csv(&quot;data/transcriptome_chunks/RMM_transcript_2.csv&quot;) %&gt;% 
+                  group_by(Trait) %&gt;% 
+                  mutate(draw = row_number()) %&gt;% 
+                  ungroup(),
+                read_csv(&quot;data/transcriptome_chunks/RFM_transcript_2.csv&quot;) %&gt;% 
+                  group_by(Trait) %&gt;% 
+                  mutate(draw = row_number()) %&gt;% 
+                  ungroup(), by = c(&quot;Trait&quot;, &quot;draw&quot;)) %&gt;% 
+        mutate(I = Response_to_selection_female * Response_to_selection_male / 
+                 sqrt(((Response_to_selection_female)^2 + (Response_to_selection_male)^2)/2)) %&gt;%
+        select(Trait, I) %&gt;% 
+        group_by(Trait) %&gt;% 
+        summarise_draws(&quot;median&quot;, &quot;sd&quot;, ~quantile(.x, probs = c(0.025, 0.975), na.rm = TRUE)) %&gt;%
+        ungroup() %&gt;% 
+        rename(I = median) %&gt;% 
+        select(-variable) %&gt;% 
+        mutate(Trait_Sex = &quot;Male&quot;),
+      
+      
+      left_join(read_csv(&quot;data/transcriptome_chunks/RMM_transcript_3.csv&quot;) %&gt;% 
+                  group_by(Trait) %&gt;% 
+                  mutate(draw = row_number()) %&gt;% 
+                  ungroup(),
+                read_csv(&quot;data/transcriptome_chunks/RFM_transcript_3.csv&quot;) %&gt;% 
+                  group_by(Trait) %&gt;% 
+                  mutate(draw = row_number()) %&gt;% 
+                  ungroup(), by = c(&quot;Trait&quot;, &quot;draw&quot;)) %&gt;% 
+        mutate(I = Response_to_selection_female * Response_to_selection_male / 
+                 sqrt(((Response_to_selection_female)^2 + (Response_to_selection_male)^2)/2)) %&gt;%
+        select(Trait, I) %&gt;% 
+        group_by(Trait) %&gt;% 
+        summarise_draws(&quot;median&quot;, &quot;sd&quot;, ~quantile(.x, probs = c(0.025, 0.975), na.rm = TRUE)) %&gt;%
+        ungroup() %&gt;% 
+        rename(I = median) %&gt;% 
+        select(-variable) %&gt;% 
+        mutate(Trait_Sex = &quot;Male&quot;),
+      
+      
+      
+      left_join(read_csv(&quot;data/transcriptome_chunks/RMM_transcript_4.csv&quot;) %&gt;% 
+                  group_by(Trait) %&gt;% 
+                  mutate(draw = row_number()) %&gt;% 
+                  ungroup(),
+                read_csv(&quot;data/transcriptome_chunks/RFM_transcript_4.csv&quot;) %&gt;% 
+                  group_by(Trait) %&gt;% 
+                  mutate(draw = row_number()) %&gt;% 
+                  ungroup(), by = c(&quot;Trait&quot;, &quot;draw&quot;)) %&gt;% 
+        mutate(I = Response_to_selection_female * Response_to_selection_male / 
+                 sqrt(((Response_to_selection_female)^2 + (Response_to_selection_male)^2)/2)) %&gt;%
+        select(Trait, I) %&gt;% 
+        group_by(Trait) %&gt;% 
+        summarise_draws(&quot;median&quot;, &quot;sd&quot;, ~quantile(.x, probs = c(0.025, 0.975), na.rm = TRUE)) %&gt;%
+        ungroup() %&gt;% 
+        rename(I = median) %&gt;% 
+        select(-variable) %&gt;% 
+        mutate(Trait_Sex = &quot;Male&quot;),
+      
+      
+      
+      left_join(read_csv(&quot;data/transcriptome_chunks/RMM_transcript_5.csv&quot;) %&gt;% 
+                  group_by(Trait) %&gt;% 
+                  mutate(draw = row_number()) %&gt;% 
+                  ungroup(),
+                read_csv(&quot;data/transcriptome_chunks/RFM_transcript_5.csv&quot;) %&gt;% 
+                  group_by(Trait) %&gt;% 
+                  mutate(draw = row_number()) %&gt;% 
+                  ungroup(), by = c(&quot;Trait&quot;, &quot;draw&quot;)) %&gt;% 
+        mutate(I = Response_to_selection_female * Response_to_selection_male / 
+                 sqrt(((Response_to_selection_female)^2 + (Response_to_selection_male)^2)/2)) %&gt;%
+        select(Trait, I) %&gt;% 
+        group_by(Trait) %&gt;% 
+        summarise_draws(&quot;median&quot;, &quot;sd&quot;, ~quantile(.x, probs = c(0.025, 0.975), na.rm = TRUE)) %&gt;%
+        ungroup() %&gt;% 
+        rename(I = median) %&gt;% 
+        select(-variable) %&gt;% 
+        mutate(Trait_Sex = &quot;Male&quot;),
+      
+      
+      left_join(read_csv(&quot;data/transcriptome_chunks/RMM_transcript_6.csv&quot;) %&gt;% 
+                  group_by(Trait) %&gt;% 
+                  mutate(draw = row_number()) %&gt;% 
+                  ungroup(),
+                read_csv(&quot;data/transcriptome_chunks/RFM_transcript_6.csv&quot;) %&gt;% 
+                  group_by(Trait) %&gt;% 
+                  mutate(draw = row_number()) %&gt;% 
+                  ungroup(), by = c(&quot;Trait&quot;, &quot;draw&quot;)) %&gt;% 
+        mutate(I = Response_to_selection_female * Response_to_selection_male / 
+                 sqrt(((Response_to_selection_female)^2 + (Response_to_selection_male)^2)/2)) %&gt;%
+        select(Trait, I) %&gt;% 
+        group_by(Trait) %&gt;% 
+        summarise_draws(&quot;median&quot;, &quot;sd&quot;, ~quantile(.x, probs = c(0.025, 0.975), na.rm = TRUE)) %&gt;%
+        ungroup() %&gt;% 
+        rename(I = median) %&gt;% 
+        select(-variable) %&gt;% 
+        mutate(Trait_Sex = &quot;Male&quot;),
+      
+      
+      
+      left_join(read_csv(&quot;data/transcriptome_chunks/RMM_transcript_7.csv&quot;) %&gt;% 
+                  group_by(Trait) %&gt;% 
+                  mutate(draw = row_number()) %&gt;% 
+                  ungroup(),
+                read_csv(&quot;data/transcriptome_chunks/RFM_transcript_7.csv&quot;) %&gt;% 
+                  group_by(Trait) %&gt;% 
+                  mutate(draw = row_number()) %&gt;% 
+                  ungroup(), by = c(&quot;Trait&quot;, &quot;draw&quot;)) %&gt;% 
+        mutate(I = Response_to_selection_female * Response_to_selection_male / 
+                 sqrt(((Response_to_selection_female)^2 + (Response_to_selection_male)^2)/2)) %&gt;%
+        select(Trait, I) %&gt;% 
+        group_by(Trait) %&gt;% 
+        summarise_draws(&quot;median&quot;, &quot;sd&quot;, ~quantile(.x, probs = c(0.025, 0.975), na.rm = TRUE)) %&gt;%
+        ungroup() %&gt;% 
+        rename(I = median) %&gt;% 
+        select(-variable) %&gt;% 
+        mutate(Trait_Sex = &quot;Male&quot;)
+    )
+  
+  write_csv(I_transcript_summarised, &quot;data/transcriptome_output/I_transcript_summarised.csv&quot;)
+} else I_transcript_summarised &lt;- read_csv(&quot;data/transcriptome_output/I_transcript_summarised.csv&quot;)
+
+concordant_transcripts &lt;- I_transcript_summarised %&gt;% filter(`2.5%` &gt; 0 &amp; `97.5%` &gt; 0)
+antagonistic_transcripts &lt;- I_transcript_summarised %&gt;% filter(`2.5%` &lt; 0 &amp; `97.5%` &lt; 0)</code></pre>
+<p>Build panel a for Figure 5.</p>
+<pre class="r"><code>I_transcript_plotting_data &lt;-
+  R_summarised_transcriptome %&gt;% 
+  select(Trait, median, Fitness_Sex, Trait_Sex) %&gt;% 
+  pivot_wider(names_from = Fitness_Sex,
+              values_from = median) %&gt;% 
+  left_join(I_transcript_summarised) %&gt;% 
+  rename(R_F = Female, R_M = Male) %&gt;% 
+  mutate(I_abs = abs(I),
+         Trait_Sex = case_when(Trait_Sex == &quot;Female&quot; ~ &quot;Transcripts measured in females&quot;,
+                               Trait_Sex == &quot;Male&quot; ~ &quot;Transcripts measured in males&quot;))
+
+fig5_panel_a &lt;-
+  I_transcript_plotting_data %&gt;%
+  ggplot(aes(x = R_F, y = R_M)) +
+  geom_point(aes(fill = I),
+             size = 4, alpha = 0.75, shape = 21) +
+  geom_hline(yintercept = 0, linetype = 2) +
+  geom_vline(xintercept = 0, linetype = 2) +
+  scale_fill_gradientn(colours = met.brewer(name = &quot;Paquin&quot;, 7),
+                       limits = c(-0.3, 0.3)) +
+  guides(fill = guide_colourbar(barwidth = 8, barheight = 0.5)) +
+  #geom_density_2d(data = I_transcript_plotting_data, #%&gt;% filter(Trait_Sex == &quot;Female&quot;),
+  #               aes(x = R_F, y = R_M), colour = &quot;white&quot;, alpha = 1, size = 1) +
+  labs(x = &quot;Reponse to selection on females&quot;,
+       y = &quot;Reponse to selection on males&quot;,
+       fill = &quot;_I_ index&quot;) +
+  coord_cartesian(xlim = c(-0.4, 0.4), ylim = c(-0.4, 0.4)) +
+  facet_wrap(~Trait_Sex) +
+  theme_bw() +
+  theme(legend.position = &quot;bottom&quot;,
+        strip.background = element_rect(fill = &quot;aliceblue&quot;),
+        legend.title = element_markdown(),
+        text = element_text(size = 11))</code></pre>
+<p>Fit the across-trait <span class="math inline">\(I\)</span> model. We
+do not include <code>trait</code> as a random effect even though there
+are two measurements for each trait: one for gene expression in females
+and one for gene expression in males. While this omission causes a mild
+form of pseudo-replication, preliminary analysis shows that it does not
+tangibly affect the posterior distribution; that is, the model
+predictions are near-identical. We also choose to fit the simpler model
+because it reduces the size of the output from 3.7gb to 3.7mb.</p>
+<pre class="r"><code> # fit the model
+
+I_transcriptome_model &lt;- 
+  brm(data = I_transcript_summarised, 
+      I | weights(sd) ~ 1 + Trait_Sex,
+      family = gaussian,
+      prior = c(prior(normal(0, 0.25), class = Intercept),
+                #prior(exponential(1), class = sd),
+                prior(exponential(5), class = sigma),
+                prior(normal(0, 0.25), class = b)), 
+      warmup = 4000, iter = 8000,
+      seed = 1, cores = 4, chains = 4,
+      control = list(adapt_delta = 0.8, max_treedepth = 10),
+      file = &quot;fits/I_transcriptome_model_quick&quot;)
+
+print(I_transcriptome_model)</code></pre>
+<pre><code> Family: gaussian 
+  Links: mu = identity; sigma = identity 
+Formula: I | weights(sd) ~ 1 + Trait_Sex 
+   Data: I_transcript_summarised (Number of observations: 28536) 
+  Draws: 4 chains, each with iter = 8000; warmup = 4000; thin = 1;
+         total post-warmup draws = 16000
+
+Population-Level Effects: 
+              Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+Intercept         0.01      0.00     0.00     0.01 1.00    15522    13152
+Trait_SexMale     0.00      0.00    -0.00     0.01 1.00    12123    11311
+
+Family Specific Parameters: 
+      Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+sigma     0.04      0.00     0.04     0.04 1.00     9273     9558
+
+Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS
+and Tail_ESS are effective sample size measures, and Rhat is the potential
+scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
+<p>Get model predictions and plot</p>
+<pre class="r"><code>new_data &lt;- tibble(Trait_Sex = c(&quot;Female&quot;, &quot;Male&quot;))
+
+I_transcriptome_fitted &lt;-
+  fitted(I_transcriptome_model, newdata = new_data, re_formula = NA, summary = F) %&gt;% 
+  as.data.frame() %&gt;% 
+  rename(Females = V1, Males = V2) %&gt;% 
+  as_tibble() %&gt;% 
+  pivot_longer(cols = everything(), names_to = &quot;Trait_Sex&quot;, values_to = &quot;I&quot;)</code></pre>
+<p>Build Figure 5 panel b</p>
+<pre class="r"><code>fig5_panel_b &lt;-
+  I_transcriptome_fitted %&gt;% 
+  ggplot(aes(x = I, y = Trait_Sex)) +
+  stat_halfeye(aes(fill = after_stat(x &gt; 0)),
+               .width = c(0.66, 0.95), alpha = 0.9, 
+               point_interval = &quot;median_qi&quot;, point_fill = &quot;white&quot;,
+               shape = 21, point_size = 4, stroke = 1.5) + 
+  scale_fill_manual(values = c(met.brewer(name = &quot;Tsimshian&quot;, n = 7)[3]), 
+                    met.brewer(name = &quot;Tam&quot;, n = 8)[4]) +
+  geom_vline(xintercept = 0, linetype = 2, linewidth = 0.75) +
+  ylab(&quot;Sex transcripts were measured in&quot;) +
+  xlab(expression(italic(I)* &quot; across-transcript mean (posterior)&quot;)) +
+  scale_x_continuous(limits = c(-0.001, 0.02)) +
+  theme_minimal() + 
+  theme(panel.background = element_rect(fill=&#39;transparent&#39;),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        plot.background = element_rect(fill=&#39;transparent&#39;, color=NA),
+        legend.position = &quot;none&quot;,
+        text = element_text(size=13))</code></pre>
+<p><span class="math inline">\(~\)</span></p>
+<p><strong>Calculating stats for the results section</strong></p>
+<pre class="r"><code>I_transcriptome_fitted %&gt;% 
+  group_by(Trait_Sex) %&gt;% 
+  median_qi(I)</code></pre>
+<pre><code># A tibble: 2 × 7
+  Trait_Sex       I  .lower  .upper .width .point .interval
+  &lt;chr&gt;       &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;  &lt;chr&gt;    
+1 Females   0.00696 0.00438 0.00949   0.95 median qi       
+2 Males     0.00929 0.00677 0.0118    0.95 median qi       </code></pre>
+</div>
+<div
+id="using-evidence-ratios-to-detect-sexually-antagonistic-transcripts"
+class="section level2">
+<h2>Using evidence ratios to detect sexually antagonistic
+transcripts</h2>
+<p>We calculate evidence ratios a for sexually concordant responses to
+selection by:</p>
+<ol style="list-style-type: decimal">
+<li><p>Using the <code>p_direction</code> function from the
+<code>bayestestR</code> package to find the proportion of the posterior
+distribution that is of the median’s sign for each trait in each sex. We
+use this as the local false sign rate (LFSR).</p></li>
+<li><p>Using the <code>p_direction</code> results we found the
+probability that a trait has positive <span
+class="math inline">\(R\)</span>, <span
+class="math inline">\(P(pos)\)</span> or negative <span
+class="math inline">\(R\)</span>, <span class="math inline">\(P(neg) = 1
+- P(pos)\)</span>.</p></li>
+<li><p>Finding <span class="math inline">\(P(concord) = P(pos)_f *
+P(pos)_m + P(neg)_f * P(neg)_m\)</span></p></li>
+<li><p>Finding <span class="math inline">\(P(antag) = P(pos)_f *
+P(neg)_m + P(neg)_f * P(pos)_m\)</span></p></li>
+<li><p>Taking the ratio of <span
+class="math inline">\(P(concord)\)</span> and <span
+class="math inline">\(P(antag)\)</span></p></li>
+</ol>
+<p>Build a function to find the evidence ratios</p>
+<pre class="r"><code>get_evidence_ratios &lt;- function(data, trait_list, Measured_in){
+
+pd_function &lt;-function(Trait_name, data){
+  data %&gt;% filter(Trait == Trait_name) %&gt;%
+    select(Trait, Response_to_selection_female, Response_to_selection_male) %&gt;%
+    p_direction(Response_to_selection_female, method = &quot;direct&quot;, null = 0) %&gt;%
+    as_tibble() %&gt;%
+    pivot_wider(names_from = Parameter, values_from = pd) %&gt;%
+    mutate(Trait = Trait_name) %&gt;%
+    rename(pd_female = Response_to_selection_female,
+           pd_male = Response_to_selection_male)
+}
+
+pd_data &lt;- map_dfr(trait_list, pd_function, data)
+
+Trait_medians &lt;-
+  data %&gt;%
+  select(-draw) %&gt;% 
+  group_by(Trait) %&gt;%
+  summarise(median_female = median(Response_to_selection_female),
+            median_male = median(Response_to_selection_male)) %&gt;%
+  ungroup()
+
+evidence_ratios &lt;-
+  left_join(pd_data, Trait_medians) %&gt;%
+  mutate(prob_pos_female = if_else(median_female &gt; 0, pd_female, 1 - pd_female),
+         prob_pos_male = if_else(median_male &gt; 0, pd_male, 1 - pd_male)) %&gt;%
+  select(Trait, prob_pos_female, prob_pos_male) %&gt;%
+
+    # Calculate the probabilities that beta_i and beta_j have the same/opposite signs
+    mutate(p_sex_concord = prob_pos_female  * prob_pos_male +
+             (1 - prob_pos_female) * (1 - prob_pos_male),
+           p_sex_antag = prob_pos_female * (1 - prob_pos_male) +
+             (1 - prob_pos_female) * prob_pos_male) %&gt;%
+    # Find the ratios of these two probabilities (i.e. the &quot;evidence ratios&quot;)
+    mutate(evidence_ratio_concord = p_sex_concord / p_sex_antag) %&gt;%
+              mutate(Trait_Sex = Measured_in)
+
+evidence_ratios
+}</code></pre>
+<p>Run the function in chunks and save them to hard-disk. If already
+done, just load.</p>
+<pre class="r"><code>if(!file.exists(&quot;data/transcriptome_output/evidence_ratio_data.csv&quot;)){
+
+female_transcripts_1 &lt;-
+  left_join(read_csv(&quot;data/transcriptome_chunks/RFF_transcript_1.csv&quot;) %&gt;% 
+              group_by(Trait) %&gt;% 
+              mutate(draw = row_number()) %&gt;% 
+              ungroup(),
+            read_csv(&quot;data/transcriptome_chunks/RMF_transcript_1.csv&quot;) %&gt;% 
+              group_by(Trait) %&gt;% 
+              mutate(draw = row_number()) %&gt;% 
+              ungroup(), by = c(&quot;Trait&quot;, &quot;draw&quot;))
+
+trait_list_1 &lt;- unique(female_transcripts_1$Trait)
+
+f1 &lt;- get_evidence_ratios(female_transcripts_1, trait_list_1, &quot;Female&quot;)
+
+rm(female_transcripts_1)
+invisible(gc())
+
+female_transcripts_2 &lt;-
+  left_join(read_csv(&quot;data/transcriptome_chunks/RFF_transcript_2.csv&quot;) %&gt;% 
+              group_by(Trait) %&gt;% 
+              mutate(draw = row_number()) %&gt;% 
+              ungroup(),
+            read_csv(&quot;data/transcriptome_chunks/RMF_transcript_2.csv&quot;) %&gt;% 
+              group_by(Trait) %&gt;% 
+              mutate(draw = row_number()) %&gt;% 
+              ungroup(), by = c(&quot;Trait&quot;, &quot;draw&quot;))
+
+trait_list_2 &lt;- unique(female_transcripts_2$Trait)
+
+f2 &lt;- get_evidence_ratios(female_transcripts_2, trait_list_2, &quot;Female&quot;)
+
+rm(female_transcripts_2)
+invisible(gc())
+
+female_transcripts_3 &lt;-
+  left_join(read_csv(&quot;data/transcriptome_chunks/RFF_transcript_3.csv&quot;) %&gt;% 
+              group_by(Trait) %&gt;% 
+              mutate(draw = row_number()) %&gt;% 
+              ungroup(),
+            read_csv(&quot;data/transcriptome_chunks/RMF_transcript_3.csv&quot;) %&gt;% 
+              group_by(Trait) %&gt;% 
+              mutate(draw = row_number()) %&gt;% 
+              ungroup(), by = c(&quot;Trait&quot;, &quot;draw&quot;))
+
+trait_list_3 &lt;- unique(female_transcripts_3$Trait)
+
+f3 &lt;- get_evidence_ratios(female_transcripts_3, trait_list_3, &quot;Female&quot;)
+
+rm(female_transcripts_3)
+invisible(gc())
+
+female_transcripts_4 &lt;-
+  left_join(read_csv(&quot;data/transcriptome_chunks/RFF_transcript_4.csv&quot;) %&gt;% 
+              group_by(Trait) %&gt;% 
+              mutate(draw = row_number()) %&gt;% 
+              ungroup(),
+            read_csv(&quot;data/transcriptome_chunks/RMF_transcript_4.csv&quot;) %&gt;% 
+              group_by(Trait) %&gt;% 
+              mutate(draw = row_number()) %&gt;% 
+              ungroup(), by = c(&quot;Trait&quot;, &quot;draw&quot;))
+
+trait_list_4 &lt;- unique(female_transcripts_4$Trait)
+
+f4 &lt;- get_evidence_ratios(female_transcripts_4, trait_list_4, &quot;Female&quot;)
+
+rm(female_transcripts_4)
+invisible(gc())
+
+female_transcripts_5 &lt;-
+  left_join(read_csv(&quot;data/transcriptome_chunks/RFF_transcript_5.csv&quot;) %&gt;% 
+              group_by(Trait) %&gt;% 
+              mutate(draw = row_number()) %&gt;% 
+              ungroup(),
+            read_csv(&quot;data/transcriptome_chunks/RMF_transcript_5.csv&quot;) %&gt;% 
+              group_by(Trait) %&gt;% 
+              mutate(draw = row_number()) %&gt;% 
+              ungroup(), by = c(&quot;Trait&quot;, &quot;draw&quot;))
+
+trait_list_5 &lt;- unique(female_transcripts_5$Trait)
+
+f5 &lt;- get_evidence_ratios(female_transcripts_5, trait_list_5, &quot;Female&quot;)
+
+rm(female_transcripts_5)
+invisible(gc())
+
+female_transcripts_6 &lt;-
+  left_join(read_csv(&quot;data/transcriptome_chunks/RFF_transcript_6.csv&quot;) %&gt;% 
+              group_by(Trait) %&gt;% 
+              mutate(draw = row_number()) %&gt;% 
+              ungroup(),
+            read_csv(&quot;data/transcriptome_chunks/RMF_transcript_6.csv&quot;) %&gt;% 
+              group_by(Trait) %&gt;% 
+              mutate(draw = row_number()) %&gt;% 
+              ungroup(), by = c(&quot;Trait&quot;, &quot;draw&quot;))
+
+trait_list_6 &lt;- unique(female_transcripts_6$Trait)
+
+f6 &lt;- get_evidence_ratios(female_transcripts_6, trait_list_6, &quot;Female&quot;)
+
+rm(female_transcripts_6)
+invisible(gc())
+
+female_transcripts_7 &lt;-
+  left_join(read_csv(&quot;data/transcriptome_chunks/RFF_transcript_7.csv&quot;) %&gt;% 
+              group_by(Trait) %&gt;% 
+              mutate(draw = row_number()) %&gt;% 
+              ungroup(),
+            read_csv(&quot;data/transcriptome_chunks/RMF_transcript_7.csv&quot;) %&gt;% 
+              group_by(Trait) %&gt;% 
+              mutate(draw = row_number()) %&gt;% 
+              ungroup(), by = c(&quot;Trait&quot;, &quot;draw&quot;))
+
+trait_list_7 &lt;- unique(female_transcripts_7$Trait)
+
+f7 &lt;- get_evidence_ratios(female_transcripts_7, trait_list_7, &quot;Female&quot;)
+
+rm(female_transcripts_7)
+invisible(gc())
+
+# now the transcripts measured in males
+
+male_transcripts_1 &lt;-
+  left_join(read_csv(&quot;data/transcriptome_chunks/RMM_transcript_1.csv&quot;) %&gt;% 
+              group_by(Trait) %&gt;% 
+              mutate(draw = row_number()) %&gt;% 
+              ungroup(),
+            read_csv(&quot;data/transcriptome_chunks/RFM_transcript_1.csv&quot;) %&gt;% 
+              group_by(Trait) %&gt;% 
+              mutate(draw = row_number()) %&gt;% 
+              ungroup(), by = c(&quot;Trait&quot;, &quot;draw&quot;))
+
+m_trait_list_1 &lt;- unique(male_transcripts_1$Trait)
+
+m1 &lt;- get_evidence_ratios(male_transcripts_1, m_trait_list_1, &quot;Male&quot;)
+
+rm(male_transcripts_1)
+invisible(gc())
+
+male_transcripts_2 &lt;-
+  left_join(read_csv(&quot;data/transcriptome_chunks/RMM_transcript_2.csv&quot;) %&gt;% 
+              group_by(Trait) %&gt;% 
+              mutate(draw = row_number()) %&gt;% 
+              ungroup(),
+            read_csv(&quot;data/transcriptome_chunks/RFM_transcript_2.csv&quot;) %&gt;% 
+              group_by(Trait) %&gt;% 
+              mutate(draw = row_number()) %&gt;% 
+              ungroup(), by = c(&quot;Trait&quot;, &quot;draw&quot;))
+
+m_trait_list_2 &lt;- unique(male_transcripts_2$Trait)
+
+m2 &lt;- get_evidence_ratios(male_transcripts_2, m_trait_list_2, &quot;Male&quot;)
+
+rm(male_transcripts_2)
+invisible(gc())
+
+male_transcripts_3 &lt;-
+  left_join(read_csv(&quot;data/transcriptome_chunks/RMM_transcript_3.csv&quot;) %&gt;% 
+              group_by(Trait) %&gt;% 
+              mutate(draw = row_number()) %&gt;% 
+              ungroup(),
+            read_csv(&quot;data/transcriptome_chunks/RFM_transcript_3.csv&quot;) %&gt;% 
+              group_by(Trait) %&gt;% 
+              mutate(draw = row_number()) %&gt;% 
+              ungroup(), by = c(&quot;Trait&quot;, &quot;draw&quot;))
+
+m_trait_list_3 &lt;- unique(male_transcripts_3$Trait)
+
+m3 &lt;- get_evidence_ratios(male_transcripts_3, m_trait_list_3, &quot;Male&quot;)
+
+rm(male_transcripts_3)
+invisible(gc())
+
+male_transcripts_4 &lt;-
+  left_join(read_csv(&quot;data/transcriptome_chunks/RMM_transcript_4.csv&quot;) %&gt;% 
+              group_by(Trait) %&gt;% 
+              mutate(draw = row_number()) %&gt;% 
+              ungroup(),
+            read_csv(&quot;data/transcriptome_chunks/RFM_transcript_4.csv&quot;) %&gt;% 
+              group_by(Trait) %&gt;% 
+              mutate(draw = row_number()) %&gt;% 
+              ungroup(), by = c(&quot;Trait&quot;, &quot;draw&quot;))
+
+m_trait_list_4 &lt;- unique(male_transcripts_4$Trait)
+
+m4 &lt;- get_evidence_ratios(male_transcripts_4, m_trait_list_4, &quot;Male&quot;)
+
+rm(male_transcripts_4)
+invisible(gc())
+
+male_transcripts_5 &lt;-
+  left_join(read_csv(&quot;data/transcriptome_chunks/RMM_transcript_5.csv&quot;) %&gt;% 
+              group_by(Trait) %&gt;% 
+              mutate(draw = row_number()) %&gt;% 
+              ungroup(),
+            read_csv(&quot;data/transcriptome_chunks/RFM_transcript_5.csv&quot;) %&gt;% 
+              group_by(Trait) %&gt;% 
+              mutate(draw = row_number()) %&gt;% 
+              ungroup(), by = c(&quot;Trait&quot;, &quot;draw&quot;))
+
+m_trait_list_5 &lt;- unique(male_transcripts_5$Trait)
+
+m5 &lt;- get_evidence_ratios(male_transcripts_5, m_trait_list_5, &quot;Male&quot;)
+
+rm(male_transcripts_5)
+invisible(gc())
+
+male_transcripts_6 &lt;-
+  left_join(read_csv(&quot;data/transcriptome_chunks/RMM_transcript_6.csv&quot;) %&gt;% 
+              group_by(Trait) %&gt;% 
+              mutate(draw = row_number()) %&gt;% 
+              ungroup(),
+            read_csv(&quot;data/transcriptome_chunks/RFM_transcript_6.csv&quot;) %&gt;% 
+              group_by(Trait) %&gt;% 
+              mutate(draw = row_number()) %&gt;% 
+              ungroup(), by = c(&quot;Trait&quot;, &quot;draw&quot;))
+
+m_trait_list_6 &lt;- unique(male_transcripts_6$Trait)
+
+m6 &lt;- get_evidence_ratios(male_transcripts_6, m_trait_list_6, &quot;Male&quot;)
+
+rm(male_transcripts_6)
+invisible(gc())
+
+male_transcripts_7 &lt;-
+  left_join(read_csv(&quot;data/transcriptome_chunks/RMM_transcript_7.csv&quot;) %&gt;% 
+              group_by(Trait) %&gt;% 
+              mutate(draw = row_number()) %&gt;% 
+              ungroup(),
+            read_csv(&quot;data/transcriptome_chunks/RFM_transcript_7.csv&quot;) %&gt;% 
+              group_by(Trait) %&gt;% 
+              mutate(draw = row_number()) %&gt;% 
+              ungroup(), by = c(&quot;Trait&quot;, &quot;draw&quot;))
+
+m_trait_list_7 &lt;- unique(male_transcripts_7$Trait)
+
+m7 &lt;- get_evidence_ratios(male_transcripts_7, m_trait_list_7, &quot;Male&quot;)
+
+rm(male_transcripts_7)
+invisible(gc())
+
+evidence_ratio_data &lt;- 
+  bind_rows(f1, f2, f3, f4, f5, f6, f7, m1, m2, m3, m4, m5, m6, m7)
+
+write_csv(evidence_ratio_data, &quot;data/transcriptome_output/evidence_ratio_data.csv&quot;)
+
+} else evidence_ratio_data &lt;- read_csv(&quot;data/transcriptome_output/evidence_ratio_data.csv&quot;)</code></pre>
+<p>Build panel c for figure 5 and update panel a</p>
+<pre class="r"><code>fig5_panel_c &lt;-
+  evidence_ratio_data %&gt;%
+  mutate(Trait_Sex = case_when(Trait_Sex == &quot;Female&quot; ~ &quot;Transcripts measured in females&quot;,
+                               Trait_Sex == &quot;Male&quot; ~ &quot;Transcripts measured in males&quot;)) %&gt;% 
+  ggplot(aes(log2(evidence_ratio_concord), fill = after_stat(x &gt;= 0))) +
+  geom_histogram(bins = 500) +
+  scale_fill_manual(values = c(&quot;#de4f33&quot;, &quot;#82c45f&quot;)) +
+  coord_cartesian(xlim = c(-8, 8), ylim = c(0, 200)) +
+  geom_vline(xintercept = log2(19), linetype = 2) +
+  geom_vline(xintercept = log2(1/19), linetype = 2) +
+  scale_x_continuous(breaks = c(-8, -6, -4, -2, 0, 2, 4, 6, 8),
+                     labels = c(paste(&quot;1/&quot;,2 ^ c(8, 6, 4, 2), sep = &quot;&quot;), 2 ^ c(0, 2, 4, 6, 8))) +
+  scale_y_continuous(expand = expansion(mult = c(0.01, 0.01))) +
+  facet_wrap(~ Trait_Sex) +
+  xlab(&quot;Evidence ratio (log~2~ scale)&quot;) + ylab(&quot;Number of transcripts&quot;) +
+  theme_bw() +
+  theme(panel.border = element_rect(size = 0.8),
+        text = element_text(size = 13),
+        axis.text.x = element_text(angle = 45, vjust = 1, hjust=1),
+        legend.position = &quot;none&quot;, 
+        strip.background =  element_rect(fill = &quot;aliceblue&quot;),
+        axis.title.x = element_markdown())
+
+plotting_data_er &lt;-
+  evidence_ratio_data %&gt;% select(Trait, Trait_Sex, evidence_ratio_concord) %&gt;% 
+   mutate(Trait_Sex = if_else(Trait_Sex == &quot;Female&quot;, &quot;Transcripts measured in females&quot;, 
+                              &quot;Transcripts measured in males&quot;)) %&gt;% 
+  left_join(I_transcript_plotting_data, by = c(&quot;Trait&quot;, &quot;Trait_Sex&quot;)) %&gt;% 
+  mutate(er_abs = abs(log2(evidence_ratio_concord)))
+
+# add labels to fig3 panel a, using the &#39;significant&#39; er values
+
+fig5_panel_a &lt;-
+  fig5_panel_a +
+  geom_label_repel(data = plotting_data_er %&gt;% filter(er_abs &gt; 4.24),  
+                   aes(label = Trait), 
+                   fill = met.brewer(name = &quot;Paquin&quot;, 7)[5],
+                   size = 2, alpha = 0.9,
+                   min.segment.length = 0, seed = 1,
+                   box.padding = 0.5, point.padding = 0.5,
+                   max.overlaps = 30) </code></pre>
+<p>Fit the across-trait evidence ratio model</p>
+<pre class="r"><code> # fit the model
+
+er_transcriptome_model &lt;- 
+  brm(data = evidence_ratio_data, 
+      log2(evidence_ratio_concord) ~ 1 + Trait_Sex,
+      family = gaussian,
+      prior = c(prior(normal(0, 0.5), class = Intercept),
+                #prior(exponential(1), class = sd),
+                prior(exponential(5), class = sigma),
+                prior(normal(0, 0.25), class = b)), 
+      warmup = 4000, iter = 8000,
+      seed = 1, cores = 4, chains = 4,
+      control = list(adapt_delta = 0.8, max_treedepth = 10),
+      file = &quot;fits/er_transcriptome_model&quot;)
+
+print(er_transcriptome_model)</code></pre>
+<pre><code> Family: gaussian 
+  Links: mu = identity; sigma = identity 
+Formula: log2(evidence_ratio_concord) ~ 1 + Trait_Sex 
+   Data: evidence_ratio_data (Number of observations: 28536) 
+  Draws: 4 chains, each with iter = 8000; warmup = 4000; thin = 1;
+         total post-warmup draws = 16000
+
+Population-Level Effects: 
+              Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+Intercept         0.16      0.01     0.14     0.18 1.00    15829    11373
+Trait_SexMale     0.05      0.01     0.03     0.07 1.00    15775    11634
+
+Family Specific Parameters: 
+      Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+sigma     1.06      0.00     1.05     1.07 1.00    16035    12252
+
+Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS
+and Tail_ESS are effective sample size measures, and Rhat is the potential
+scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
+<p>Get model predictions and plot</p>
+<pre class="r"><code>new_data &lt;- tibble(Trait_Sex = c(&quot;Female&quot;, &quot;Male&quot;))
+
+er_transcriptome_fitted &lt;-
+  fitted(er_transcriptome_model, newdata = new_data, re_formula = NA, summary = F) %&gt;% 
+  as.data.frame() %&gt;% 
+  rename(Females = V1, Males = V2) %&gt;% 
+  as_tibble() %&gt;% 
+  pivot_longer(cols = everything(), names_to = &quot;Trait_Sex&quot;, values_to = &quot;evidence_ratio_mean&quot;) %&gt;% 
+  mutate(evidence_ratio_mean = exp(evidence_ratio_mean))</code></pre>
+<pre class="r"><code>fig5_panel_d &lt;-
+  er_transcriptome_fitted %&gt;% 
+  ggplot(aes(x = evidence_ratio_mean, y = Trait_Sex)) +
+  stat_halfeye(aes(fill = after_stat(x &gt; 0)),
+               .width = c(0.66, 0.95), alpha = 0.9, 
+               point_interval = &quot;median_qi&quot;, point_fill = &quot;white&quot;,
+               shape = 21, point_size = 4, stroke = 1.5) + 
+  scale_fill_manual(values = c(met.brewer(name = &quot;Tsimshian&quot;, n = 7)[3]), 
+                    met.brewer(name = &quot;Tam&quot;, n = 8)[4]) +
+  geom_vline(xintercept = 1, linetype = 2, linewidth = 0.75) +
+  ylab(&quot;Sex transcripts were measured in&quot;) +
+  xlab(&quot;Evidence ratio\nacross-transcript mean (posterior)&quot;) +
+  scale_x_continuous(limits = c(0.999, 1.3)) +
+  theme_minimal() + 
+  theme(panel.background = element_rect(fill=&#39;transparent&#39;),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        plot.background = element_rect(fill=&#39;transparent&#39;, color=NA),
+        legend.position = &quot;none&quot;,
+        text = element_text(size=13))</code></pre>
+</div>
+<div id="figure-5" class="section level2">
+<h2>Figure 5</h2>
+<pre class="r"><code>(fig5_panel_a | plot_spacer() | fig5_panel_b) / 
+  (fig5_panel_c | plot_spacer() | fig5_panel_d) &amp;
+  plot_layout(widths = c(3, -0.5, 1)) &amp;  
+  plot_annotation(tag_levels = &#39;a&#39;)</code></pre>
+<p><img src="figure/Transcriptome_analysis.Rmd/unnamed-chunk-21-1.png" width="1536" style="display: block; margin: auto;" /></p>
+<p><strong>Figure 5</strong>. <strong>a</strong> Concordance and
+conflict in the <em>Drosophila melanogaster</em> transcriptome
+<strong>a</strong> shows traits coloured by Innocenti and Morrow’s
+<em>I</em> index. Extreme positive values indicate a trait is predicted
+to have a sexually concordant response to selection, while negative
+values indicate a trait is expected to have a sexually antagonistic
+response to selection. Traits with evidence ratios &gt; 19 are labelled.
+<strong>b</strong> the mean <em>I</em> value estimated across all
+traits, split by the sex traits were measured in. <strong>c</strong>
+evidence ratios for sexually concordant responses to selection. Dashed
+lines indicate an evidence ratio of 19, which is equivalent to a
+frequentist <em>p</em>-value = 0.05. <strong>d</strong> the mean
+evidence ratio estimated across all traits, split by the sex traits were
+measured in. Points indicate the mean point estimate, with associated 67
+and 95% credible intervals.</p>
+<br>
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-sessioninfo" data-toggle="collapse" data-target="#workflowr-sessioninfo" style="display: block;">
+<span class="glyphicon glyphicon-wrench" aria-hidden="true"></span>
+Session information
+</button>
+</p>
+<div id="workflowr-sessioninfo" class="collapse">
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>R version 4.3.1 (2023-06-16 ucrt)
+Platform: x86_64-w64-mingw32/x64 (64-bit)
+Running under: Windows 11 x64 (build 22621)
+
+Matrix products: default
+
+
+locale:
+[1] LC_COLLATE=English_Australia.utf8  LC_CTYPE=English_Australia.utf8   
+[3] LC_MONETARY=English_Australia.utf8 LC_NUMERIC=C                      
+[5] LC_TIME=English_Australia.utf8    
+
+time zone: Europe/Berlin
+tzcode source: internal
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+ [1] ggnewscale_0.4.9  ggrepel_0.9.4     ggtext_0.1.2      broom_1.0.5      
+ [5] bayestestR_0.13.1 tidybayes_3.0.6   brms_2.20.4       Rcpp_1.0.11      
+ [9] patchwork_1.1.3   DT_0.30           kableExtra_1.3.4  rcartocolor_2.1.1
+[13] MetBrewer_0.2.0   lubridate_1.9.3   forcats_1.0.0     stringr_1.5.0    
+[17] dplyr_1.1.3       purrr_1.0.2       readr_2.1.4       tidyr_1.3.0      
+[21] tibble_3.2.1      ggplot2_3.4.4     tidyverse_2.0.0   workflowr_1.7.1  
+
+loaded via a namespace (and not attached):
+  [1] tensorA_0.36.2       rstudioapi_0.15.0    jsonlite_1.8.7      
+  [4] magrittr_2.0.3       farver_2.1.1         rmarkdown_2.25      
+  [7] fs_1.6.3             vctrs_0.6.4          base64enc_0.1-3     
+ [10] webshot_0.5.5        htmltools_0.5.6.1    distributional_0.3.2
+ [13] curl_5.1.0           sass_0.4.7           StanHeaders_2.26.28 
+ [16] bslib_0.5.1          htmlwidgets_1.6.2    plyr_1.8.9          
+ [19] zoo_1.8-12           cachem_1.0.8         commonmark_1.9.0    
+ [22] whisker_0.4.1        igraph_1.5.1         mime_0.12           
+ [25] lifecycle_1.0.3      pkgconfig_2.0.3      colourpicker_1.3.0  
+ [28] Matrix_1.6-1.1       R6_2.5.1             fastmap_1.1.1       
+ [31] shiny_1.7.5.1        digest_0.6.33        colorspace_2.1-0    
+ [34] ps_1.7.5             rprojroot_2.0.3      crosstalk_1.2.0     
+ [37] labeling_0.4.3       fansi_1.0.5          timechange_0.2.0    
+ [40] httr_1.4.7           abind_1.4-5          compiler_4.3.1      
+ [43] bit64_4.0.5          withr_2.5.1          backports_1.4.1     
+ [46] inline_0.3.19        shinystan_2.6.0      QuickJSR_1.0.7      
+ [49] pkgbuild_1.4.2       gtools_3.9.4         loo_2.6.0           
+ [52] tools_4.3.1          httpuv_1.6.11        threejs_0.3.3       
+ [55] glue_1.6.2           callr_3.7.3          nlme_3.1-162        
+ [58] promises_1.2.1       cmdstanr_0.6.0       gridtext_0.1.5      
+ [61] grid_4.3.1           checkmate_2.2.0      getPass_0.2-2       
+ [64] reshape2_1.4.4       generics_0.1.3       gtable_0.3.4        
+ [67] tzdb_0.4.0           hms_1.1.3            xml2_1.3.5          
+ [70] utf8_1.2.3           pillar_1.9.0         ggdist_3.3.0        
+ [73] markdown_1.10        vroom_1.6.4          posterior_1.4.1     
+ [76] later_1.3.1          lattice_0.21-8       bit_4.0.5           
+ [79] tidyselect_1.2.0     miniUI_0.1.1.1       knitr_1.44          
+ [82] git2r_0.32.0         arrayhelpers_1.1-0   gridExtra_2.3       
+ [85] V8_4.4.0             svglite_2.1.2        stats4_4.3.1        
+ [88] xfun_0.40            bridgesampling_1.1-2 matrixStats_1.0.0   
+ [91] rstan_2.32.3         stringi_1.7.12       yaml_2.3.7          
+ [94] evaluate_0.22        codetools_0.2-19     cli_3.6.1           
+ [97] RcppParallel_5.1.7   shinythemes_1.2.0    xtable_1.8-4        
+[100] systemfonts_1.0.5    munsell_0.5.0        processx_3.8.2      
+[103] jquerylib_0.1.4      coda_0.19-4          svUnit_1.0.6        
+[106] parallel_4.3.1       rstantools_2.3.1.1   ellipsis_0.3.2      
+[109] prettyunits_1.2.0    dygraphs_1.1.1.6     bayesplot_1.10.0    
+[112] Brobdingnag_1.2-9    viridisLite_0.4.2    mvtnorm_1.2-3       
+[115] scales_1.2.1         xts_0.13.1           insight_0.19.6      
+[118] crayon_1.5.2         rlang_1.1.1          rvest_1.0.3         
+[121] shinyjs_2.1.0       </code></pre>
+</div>
+</div>
+</div>
+
+
+<!-- Adjust MathJax settings so that all math formulae are shown using
+TeX fonts only; see
+https://docs.mathjax.org/en/latest/web/configuration.html. This will make
+the presentation more consistent at the cost of the webpage sometimes
+taking slightly longer to load. Note that this only works because the
+footer is added to webpages before the MathJax javascript. -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    "HTML-CSS": { availableFonts: ["TeX"] }
+  });
+</script>
+
+
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+<script>
+$(document).ready(function () {
+  window.initializeCodeFolding("hide" === "show");
+});
+</script>
+
+<script>
+$(document).ready(function ()  {
+
+    // temporarily add toc-ignore selector to headers for the consistency with Pandoc
+    $('.unlisted.unnumbered').addClass('toc-ignore')
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
