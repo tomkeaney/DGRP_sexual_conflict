@@ -5,8 +5,10 @@ navbar:
   left:
   - text: Home
     href: index.html
-  - text: Analysis
+  - text: Phenome Analysis
     href: Main_analysis.html
+  - text: Transcriptome Analysis
+    href: Transcriptome_analysis.html
   - text: License
     href: license.html
   right:
