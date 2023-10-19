@@ -884,7 +884,9 @@ kbl(R_diff_summary) %>%
 
 $~$
 
-## Build Figure 2
+## Build Figure 3
+
+Yep, this is out of order but it makes more sense in the text to order it as such.
 
 ```{r, fig.height=8}
 female_R_diff_plot <-
@@ -960,12 +962,12 @@ male_R_diff_plot <-
         axis.text.y = element_text(size = 9),
         plot.subtitle=element_text(hjust=0.5))
 
-fig2 <- female_R_diff_plot / male_R_diff_plot
+fig3 <- female_R_diff_plot / male_R_diff_plot
 
-fig2
+fig3
 ```
 
-**Figure 2**. Candidate traits predicted to have strong sex-specific responses to selection. The traits shown are those where the 95% credible interval of the difference between $R_f$ and $R_m$ does not overlap zero. Traits are likely to have sex-specific genetic architectures, therefore we consider traits measured in females as distinct from traits measured in males, and _vice versa_, even if they are putatively the same e.g. mean lifespan. Hence, mating latency is measured in males (panel b), but $R$ can be estimated for both sexes, because we simply need the genetic covariance between trait and fitness. Detailed definitions of each trait are given in Table S1.  
+**Figure 3**. Candidate traits predicted to have strong sex-specific responses to selection. The traits shown are those where the 95% credible interval of the difference between $R_f$ and $R_m$ does not overlap zero. Traits are likely to have sex-specific genetic architectures, therefore we consider traits measured in females as distinct from traits measured in males, and _vice versa_, even if they are putatively the same e.g. mean lifespan. Hence, mating latency is measured in males (panel b), but $R$ can be estimated for both sexes, because we simply need the genetic covariance between trait and fitness. Detailed definitions of each trait are given in Table S1.  
 
 $~$
 
@@ -985,6 +987,7 @@ R_overall_medians <-
   mutate(absolute_R_overall = abs(median),
          Trait_Sex = as.factor(Trait_Sex),
          Trait = as.factor(Trait)) 
+
 
 R_intercept_model <- 
   brm(absolute_R_overall | weights(1/sd) ~ 1 + Trait_Sex + (1|study_ID),
@@ -1055,7 +1058,7 @@ print(median_R_model)
 
 $~$
 
-## Build Figure 3
+## Build Panels a and b for Figure 2
 
 Get model predictions and plot
 
@@ -1123,7 +1126,7 @@ R_p1 + R_p2 +
   
 ```
 
-**Figure 3**. **a** The posterior distribution for across-trait |$R$|, the mean expected
+**Figure 2**. **a** The posterior distribution for across-trait |$R$|, the mean expected
 response to selection (absolute value) in females and males and split by the sex the
 trait was measured in. For each trait $R = \sigma(A_w, A_z)$, where Aw is the breeding
 value for fitness and $A_z$ is the trait breeding value. |$R$| is expressed in trait standard
@@ -1507,14 +1510,14 @@ fig4_panel_c <-
   evidence_ratios %>%
     ggplot(aes(log2(evidence_ratio_concord))) +
     geom_histogram(data=subset(evidence_ratios, evidence_ratio_concord < 1),
-                   bins = 80, fill = met.brewer(name = "Tam", 8)[4]) +
+                   bins = 50, fill = met.brewer(name = "Tam", 8)[4]) +
     geom_histogram(data=subset(evidence_ratios, evidence_ratio_concord >= 1),
-                   bins = 80, fill = met.brewer(name = "Tsimshian", 7)[3]) +
+                   bins = 50, fill = met.brewer(name = "Tsimshian", 7)[3]) +
     coord_cartesian(xlim = c(-8, 8), ylim = c(0, 20)) +
   geom_vline(xintercept = log2(19), linetype = 2) +
   geom_vline(xintercept = log2(1/19), linetype = 2) +
-    scale_x_continuous(breaks = c(-8,  -6, -4, -2,   2, 4, 6,  8),
-                       labels = c(paste("1/",2 ^ c(8,  6, 4, 2), sep = ""), 2 ^ c(2,4,6,8))) +
+    scale_x_continuous(breaks = c(-8,  -6, -4, -2, 0, 2, 4, 6,  8),
+                       labels = c(paste("1/",2 ^ c(8, 6, 4, 2), sep = ""), 2 ^ c(0, 2,4,6,8))) +
     scale_y_continuous(expand = expansion(mult = c(0.01, 0.01))) +
 
     facet_wrap(~ Trait_Sex) +
@@ -1620,4 +1623,4 @@ fig4_panel_d <-
 
 ```
 
-**Figure 4**. **a** Concordance and conflict in the _Drosophila melanogaster_ phenome. **a** shows traits coloured by Innocenti and Morrow's I index. Extreme positive values indicate a trait is predicted to have a sexually concordant response to selection, while negative values indicate a trait is expected to have a sexually antagonistic response to selection. Traits with evidence ratios > 19 are labelled. **b** the mean _I_ value estimated across all traits, split by the sex traits were measured in. **c** evidence ratios for sexually concordant responses to selection. Dashed lines indicate an evidence ratio of 19, which is equivalent to a frequentist _p_-value = 0.05. **d** the mean evidence ratio estimated across all traits, split by the sex traits were measured in. Points indicate the mean point estimate, with associated 67 and 95% credible intervals.
+**Figure 4**. Concordance and conflict in the _Drosophila melanogaster_ phenome. **a** shows traits coloured by Innocenti and Morrow's I index. Extreme positive values indicate a trait is predicted to have a sexually concordant response to selection, while negative values indicate a trait is expected to have a sexually antagonistic response to selection. Traits with evidence ratios > 19 are labelled. **b** the mean _I_ value estimated across all traits, split by the sex traits were measured in. **c** evidence ratios for sexually concordant responses to selection. Dashed lines indicate an evidence ratio of 19, which is equivalent to a frequentist _p_-value = 0.05. **d** the mean evidence ratio estimated across all traits, split by the sex traits were measured in. Points indicate the mean point estimate, with associated 67 and 95% credible intervals.
