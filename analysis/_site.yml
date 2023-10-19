@@ -1,7 +1,8 @@
 name: DGRP_sexual_conflict
 output_dir: ../docs
 navbar:
-  title: The response to selection, sexual antagonism and sexual concordance in the DGRP
+  title: The response to selection, sexual antagonism and sexual concordance in the
+    DGRP
   left:
   - text: Home
     href: index.html
