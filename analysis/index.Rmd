@@ -14,18 +14,12 @@ In the analysis we:
 
 1. Identify the traits with the strongest predicted evolutionary responses in females and males.
 
-2. Find the traits with the strongest overall responses to selection.
+2. Test whether the average absolute response to selection is stronger in males than it is in females.
 
-3. Test whether the average absolute response to selection is stronger in males than it is in females.
-
-4. Use several measures to assess whether selection tends to be sexually concordant or sexually antagonistic.
+3. Assess whether the response to selection tends to be sexually concordant or sexually antagonistic.
 
 $~$
 
-The analysis is split in two parts. The first considers the response to selection for classic downstream phenotypes e.g. body size, lifespan. The second uses data on expression levels of ~14,000 known genes i.e. an analysis of how the transcriptome responds to selection in each sex.
-
-[Classic phenotype analysis](Main_analysis.html)
-
-[Gene expression phenotype analysis](Transcriptome_analysis.html)
+The analysis is split in two parts. The first considers the response to selection for organsimal-level phenotypes e.g. body size, lifespan. The second uses data on expression levels of ~14,000 known genes i.e. an analysis of how the transcriptome responds to selection in each sex.
 
 We welcome any queries or comments concerning our analysis; please email `tkeaney@uni-mainz.de` 

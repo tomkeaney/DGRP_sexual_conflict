@@ -6,10 +6,8 @@ navbar:
   left:
   - text: Home
     href: index.html
-  - text: Phenome Analysis
+  - text: Analysis
     href: Main_analysis.html
-  - text: Transcriptome Analysis
-    href: Transcriptome_analysis.html
   - text: License
     href: license.html
   right:
@@ -20,6 +18,6 @@ output:
   workflowr::wflow_html:
     toc: yes
     toc_float: yes
-    theme: readable
+    theme: united
     highlight: textmate
     code_folding: hide
