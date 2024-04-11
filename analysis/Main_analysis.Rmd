@@ -934,7 +934,7 @@ my_data_table(all_ol_traits_summary)
               
 $~$
 
-## Estimate $$\overline{|R|}$$ in each sex
+## Estimate $\overline{|R|}$ in each sex
 
 ### The model
 
@@ -1972,7 +1972,7 @@ find_evidence_ratios_transcriptome <- function(Trait_name, specify_hypothesis){
 
 ```
 
-This pc has 16gb memory; not enough to load in all the transcript posterior draws at once. Having previously saved these to the hard disk we load the draws for all female measured traits and calculate the evidence ratio that $R_FF > 0$, $R_MF > 0$, $R_F > 0$ and $\Delta R > 0$. The draws for the female measured traits were then removed from the computers memory using the `rm()` and `gc()` functions and the process was repeated for the male measured traits.
+This pc has 16gb memory; not enough to load in all the transcript posterior draws at once. Having previously saved these to the hard disk we load the draws for all female measured traits and calculate the evidence ratio that $R_{FF} > 0$, $R_{MF} > 0$, $R_F > 0$ and $\Delta R > 0$. The draws for the female measured traits were then removed from the computers memory using the `rm()` and `gc()` functions and the process was repeated for the male measured traits.
 
 ```{r}
 
