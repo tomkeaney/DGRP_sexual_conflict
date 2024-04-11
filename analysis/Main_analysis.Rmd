@@ -890,7 +890,7 @@ plot_e <-
 
 ## Table S2
 
-**Table S2** / **Supplementary dataset S1**: $R$ partitions and associated evidence ratios for the organismal level trait dataset. Data can be downloaded as a `.csv` file from the [github repository](https://github.com/tomkeaney/DGRP_sexual_conflict) associated with this project.
+**Table S2** / **Supplementary dataset S1**: $R$ partitions and associated evidence ratios for the organismal level trait dataset. Trait descriptions are provided in Table S1. Data can be downloaded as a `.csv` file from the [github repository](https://github.com/tomkeaney/DGRP_sexual_conflict) associated with this project.
 ```{r}
 all_ol_traits_summary <-
   R_all_traits %>% 
@@ -919,9 +919,7 @@ all_ol_traits_summary <-
   select(Trait, Trait_nice, `Sex trait was measured in`, R, `R 2.5% CI`, `R 97.5% CI`, `R ER`, 
          `R female`, `R female 2.5% CI`, `R female 97.5% CI`, `R female ER`,
          `R male`, `R male 2.5% CI`, `R male 97.5% CI`, `R male ER`,
-         `Delta R`, `Delta R 2.5% CI`, `Delta R 97.5% CI`, `Delta R ER`, `Sexual concordance ER`,
-         `Trait description`, Reference 
-  ) %>%
+         `Delta R`, `Delta R 2.5% CI`, `Delta R 97.5% CI`, `Delta R ER`, `Sexual concordance ER`) %>%
   ungroup() %>% 
   mutate(across(c(4,5,6,8,9,10,12,13,14,16,17,18), ~round(.x, 3)),
          across(ends_with("ER"), ~ round(.x, 4)))
