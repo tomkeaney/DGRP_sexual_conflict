@@ -65,6 +65,8 @@ $~$
 
 We conducted a near-exhaustive search of the literature until January 2022, to obtain line mean estimates and associated meta-data for quantitative traits that have been measured in the DGRP. We did not include data collected for traits that had been measured in heterozygous combinations of multiple DGRP lines. In total, we identified 125 studies that reported line means or raw data for 2115 phenotypic traits. To ready the data for analysis, we grouped trait values by trait and sex and standardised the data to have mean = 0 and sd = 1. Sex-specific standardised line means for each trait were then combined with their standardised fitness estimates, obtained from [Wong and Holman (2023)](). We also include some helpful metadata for downstream analysis. We then pruned the dataset to only include traits that have been measured in single-sex cohorts, in 80 or more lines. We also removed traits included in two large datasets on the microbiome and metabolome (Everett _et al_. 2020 and Jin _et al_. 2020).
 
+Supplementary dataset 1 provides the complete, unpruned data, while Supplementary dataset 2 contains the meta-data associated with each trait.
+
 ```{r}
 
 # load in the data, note that traits have already been standardised
@@ -901,7 +903,7 @@ plot_e <-
 
 ## Table S2
 
-**Table S2** / **Supplementary dataset S1**: $R$ partitions and associated evidence ratios for the organismal level trait dataset. Trait descriptions are provided in Table S1. Data can be downloaded as a `.csv` file from the [github repository](https://github.com/tomkeaney/DGRP_sexual_conflict) associated with this project.
+**Table S2** / **Supplementary dataset S3**: $R$ partitions and associated evidence ratios for the organismal level trait dataset. Trait descriptions are provided in Table S1. Data can be downloaded as a `.csv` file from the [github repository](https://github.com/tomkeaney/DGRP_sexual_conflict) associated with this project.
 ```{r}
 all_ol_traits_summary <-
   R_all_traits %>% 
@@ -935,7 +937,7 @@ all_ol_traits_summary <-
   mutate(across(c(4,5,6,8,9,10,12,13,14,16,17,18), ~round(.x, 3)),
          across(ends_with("ER"), ~ round(.x, 4)))
 
-write_csv(all_ol_traits_summary, "data/organismal_level_output/Supplementary_dataset_1.csv")
+write_csv(all_ol_traits_summary, "data/organismal_level_output/Supplementary_dataset_3.csv")
 
 my_data_table(all_ol_traits_summary)
   
@@ -2501,7 +2503,7 @@ plot_transcriptome_a <-
 plot_transcriptome_b <- 
   evidence_ratios_transcriptome %>% 
   ggplot(aes(x = position, y = log2(Male_Evid_Ratio))) +
-   geom_point(aes(colour = chromosome),
+  geom_point(aes(colour = chromosome),
              size = 2.5, alpha = 0.8, shape = 17) +
   geom_hline(yintercept = log2(1), linetype = 2, linewidth = 1) +
   geom_hline(yintercept = log2(39), linetype = 3, linewidth = 0.9) +
@@ -2551,7 +2553,7 @@ plot_transcriptome_c <-
        #y = "R~F~ log2(ER)",
        y = "_R_  log~2~(ER)") +
   geom_label_repel(data = evidence_ratios_transcriptome %>% 
-                     filter(Overall_Evid_Ratio > 1000 | Overall_Evid_Ratio < 1/1000 ),  
+                     filter(Overall_Evid_Ratio > 1000 | Overall_Evid_Ratio < 1/1000),  
                    aes(label = gene_symbol),
                    fill = "white",
                    size = 3, alpha = 0.9,
@@ -2629,7 +2631,7 @@ plot_transcriptome_e <-
   scale_y_continuous(expand = c(0.01, 0), breaks = c(-12, -10, -8, -6, -4, -2, 0, 2, 4, 6, 8, 10, 12), 
                      labels = c(paste("1/",2 ^ c(12, 10, 8, 6, 4, 2), sep = ""), 2 ^ c(0, 2,4,6,8,10,12)), limits = c(-12, 12)) +
   labs(x = "Chromosome arm",
-       y = "Sexual concrdoance  log~2~(ER)") +
+       y = "Sexual concordance log~2~(ER)") +
   geom_label_repel(data = evidence_ratios_transcriptome %>% 
                      filter(Concord_Evid_Ratio > 39 | Concord_Evid_Ratio < 1/39), 
                    aes(label = gene_symbol),
@@ -2661,7 +2663,7 @@ $~$
 
 ## Table S3
 
-**Table S3** / **Supplementary dataset S2**: $R$ partitions and associated evidence ratios for the gene expression trait dataset. Data can be downloaded as a `.csv` file from the [github repository](https://github.com/tomkeaney/DGRP_sexual_conflict) associated with this project.
+**Table S3** / **Supplementary dataset S4**: $R$ partitions and associated evidence ratios for the gene expression trait dataset. Data can be downloaded as a `.csv` file from the [github repository](https://github.com/tomkeaney/DGRP_sexual_conflict) associated with this project.
 ```{r}
 
 all_transcriptome_summary <-
@@ -2705,7 +2707,7 @@ all_transcriptome_summary <-
   mutate(across(c(5,6,7,9,10,11,13,14,15,17,18,19), ~round(.x, 3)),
          across(ends_with("ER"), ~ round(.x, 4))) 
 
-write_csv(all_transcriptome_summary, "data/transcriptome_output/Supplementary_dataset_2.csv")
+write_csv(all_transcriptome_summary, "data/transcriptome_output/Supplementary_dataset_4.csv")
 
 my_data_table(all_transcriptome_summary)
   
