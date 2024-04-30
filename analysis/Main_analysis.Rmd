@@ -1,6 +1,5 @@
 ---
 title: "The response to selection, sexual antagonism and sexual concordance in the DGRP"
-author: "Thomas Keaney and Luke Holman"
 output: html_document
 ---
 
@@ -2480,7 +2479,7 @@ plot_transcriptome_a <-
   labs(x = NULL,
        y = "_R_ on females log~2~(ER)") +
   geom_label_repel(data = evidence_ratios_transcriptome %>% 
-                     filter(Female_Evid_Ratio > 1000 | Female_Evid_Ratio < 1/1000 ), 
+                     filter(Female_Evid_Ratio > 39 | Female_Evid_Ratio < 1/39 ), 
                    aes(label = gene_symbol),
                    fill = "white",
                    size = 3, alpha = 0.9,
