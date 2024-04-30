@@ -6,6 +6,10 @@ navbar:
   left:
   - text: Home
     href: index.html
+  - text: Data collation
+    href: Data_collation.html
+  - text: Finding line means
+    href: get_line_means_from_raw_data.html
   - text: Analysis
     href: Main_analysis.html
   - text: License

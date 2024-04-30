@@ -63,9 +63,7 @@ $~$
 
 ## Selecting data appropriate for analysis
 
-We conducted a near-exhaustive search of the literature until January 2022, to obtain line mean estimates and associated meta-data for quantitative traits that have been measured in the DGRP. We did not include data collected for traits that had been measured in heterozygous combinations of multiple DGRP lines. In total, we identified 125 studies that reported line means or raw data for 2115 phenotypic traits. To ready the data for analysis, we grouped trait values by trait and sex and standardised the data to have mean = 0 and sd = 1. Sex-specific standardised line means for each trait were then combined with their standardised fitness estimates, obtained from [Wong and Holman (2023)](). We also include some helpful metadata for downstream analysis. We then pruned the dataset to only include traits that have been measured in single-sex cohorts, in 80 or more lines. We also removed traits included in two large datasets on the microbiome and metabolome (Everett _et al_. 2020 and Jin _et al_. 2020).
-
-Supplementary dataset 1 provides the complete, unpruned data, while Supplementary dataset 2 contains the meta-data associated with each trait.
+We conducted a near-exhaustive search of the literature until January 2022, to obtain line mean estimates and associated meta-data for quantitative traits that have been measured in the DGRP. We did not include data collected for traits that had been measured in heterozygous combinations of multiple DGRP lines. In total, we identified 125 studies that reported line means or raw data for 2115 phenotypic traits. To ready the data for analysis, we grouped trait values by trait and sex and standardised the data to have mean = 0 and sd = 1. Sex-specific standardised line means for each trait were then combined with their standardised fitness estimates, obtained from [Wong and Holman (2023)](https://academic.oup.com/evolut/article/77/12/2642/7279223). We also include some helpful metadata for downstream analysis. We then pruned the dataset to only include traits that have been measured in single-sex cohorts, in 80 or more lines. We also removed traits included in two large datasets on the microbiome and metabolome (Everett _et al_. 2020 and Jin _et al_. 2020).
 
 ```{r}
 
@@ -73,13 +71,13 @@ Supplementary dataset 1 provides the complete, unpruned data, while Supplementar
 
 DGRP_data <- 
   left_join(
-    read_csv("data/input/all.dgrp.phenos_scaled.csv") %>% 
+    read_csv("data/data_collation/output/all.dgrp.phenos_scaled.csv") %>% 
       mutate(line = as.factor(line)),
-    read_csv("data/input/meta_data_for_all_traits.csv") %>%
+    read_csv("data/data_collation/output/meta_data_for_all_traits.csv") %>%
       group_by(Reference) %>% 
       mutate(study_ID = as.factor(cur_group_id()),
              Pooled = if_else(Sex == "Pooled", "Yes", "No"))) %>% 
-  left_join(read_rds("data/input/trait_names.rds"))
+  left_join(read_rds("data/trait_names.rds"))
   
   
 # Apply the selection criteria with the filter() function, then add a column each for female and male fitness
@@ -90,18 +88,14 @@ trait_data <-
          `# lines measured` >= 80 &
            Pooled != "Yes" & 
            Reference != "Jin et al (2020) PLOS Genetics" & 
-           Reference != "Everett et al (2020) Genome Research" &
-           !str_detect(Trait, "dopamine.response.to.paraquat.2021.m")) %>% # data for this trait was entered into the database incorrectly, it was only measured in 10 lines so should not be included in our analysis 
-  
+           Reference != "Everett et al (2020) Genome Research") %>% 
   # join the early life fitness data from Wong and Holman
-  
   left_join(
     DGRP_data %>%
       filter(str_detect(Trait, "fitness.early.life")) %>% 
       select(line, Trait, trait_value) %>% 
       pivot_wider(names_from = Trait, values_from = trait_value) %>% 
       rename(female_fitness = fitness.early.life.f, male_fitness = fitness.early.life.m))
-
 
 clean_meta_data <-
   trait_data %>% 
@@ -114,7 +108,7 @@ clean_meta_data <-
 
 $~$
 
-**Table S1**. Traits included for analysis
+**Table S1**. Traits included for organismal-level analysis
 
 ```{r}
 # how many studies did we start with?
@@ -406,6 +400,18 @@ if(Run_function){
   write_csv(RFM, file = "data/organismal_level_output/RFM.csv")
 } else RFM <- read_csv("data/organismal_level_output/RFM.csv")
 
+R_female_traits <-
+  bind_cols(RFF, RMF) %>% 
+  rename(Trait = Trait...1) %>% 
+  mutate(Trait_Sex = "Female") %>% 
+  select(-(Trait...3))
+
+R_male_traits <-
+  bind_cols(RFM, RMM) %>% 
+  rename(Trait = Trait...1) %>%  
+  mutate(Trait_Sex = "Male") %>% 
+  select(-(Trait...3))
+
 ```
 
 $~$
@@ -413,11 +419,6 @@ $~$
 ### Plot the sex-specific responses to selection
 
 ```{r, fig.height=30, fig.width=12}
-R_female_traits <-
-  bind_cols(RFF, RMF) %>% 
-  rename(Trait = Trait...1) %>% 
-  mutate(Trait_Sex = "Female") %>% 
-  select(-(Trait...3))
 
 p1 <-
   R_female_traits %>% 
@@ -465,12 +466,6 @@ p1 + p2 +
 $~$
 
 ```{r, fig.height=30, fig.width=12}
-
-R_male_traits <-
-  bind_cols(RFM, RMM) %>% 
-  rename(Trait = Trait...1) %>%  
-  mutate(Trait_Sex = "Male") %>% 
-  select(-(Trait...3))
 
 p3 <-
   R_male_traits %>% 
@@ -555,7 +550,7 @@ $~$
 
 ## Calculating evidence ratios
 
-We use the `brms` `hypothesis()` function to compute evidence ratios, where our hypothesis is $R$ (and its various related metrics) != 0. When the hypothesis is one-sided, this is the posterior probability under the hypothesis against its alternative. That is, when the hypothesis is of the form R > 0, the evidence ratio is the ratio of the posterior probability of R > 0 and the posterior probability of R < 0. In this example, values greater than one indicate that the evidence in favour of R > 0 is larger than evidence in favour of R < 0. In contrast, values smaller than one indicate that there is greater evidence in favour of R < 0 than R > 0. More on the `hypothesis` function can be found [here](https://paul-buerkner.github.io/brms/reference/hypothesis.html). We consider evidence ratios > 39 or < 1/39 as biologically notable (without accounting for multiple testing), as our hypothesis is two-directional (negative and positive values of $R$ are of interest to us) and these values closely correspond to the familiar frequentist p-value = 0.05 [(Makowski et al, 2019)](https://www.frontiersin.org/journals/psychology/articles/10.3389/fpsyg.2019.02767/full).
+We use the `brms` `hypothesis()` function to compute evidence ratios, where our hypothesis is $R$ (and its various related metrics) != 0. When the hypothesis is one-sided, this is the posterior probability under the hypothesis against its alternative. That is, when the hypothesis is of the form R > 0, the evidence ratio is the ratio of the posterior probability of R > 0 and the posterior probability of R < 0. In this example, values greater than one indicate that the evidence in favour of R > 0 is larger than evidence in favour of R < 0. In contrast, values smaller than one indicate that there is greater evidence in favour of R < 0 than R > 0. More on the `hypothesis` function can be found [here](https://paul-buerkner.github.io/brms/reference/hypothesis.brmsfit.html). We consider evidence ratios > 39 or < 1/39 as biologically notable (without accounting for multiple testing), as our hypothesis is two-directional (negative and positive values of $R$ are of interest to us) and these values closely correspond to the familiar frequentist p-value = 0.05 [(Makowski et al, 2019)](https://www.frontiersin.org/journals/psychology/articles/10.3389/fpsyg.2019.02767/full).
 
 ```{r}
 
@@ -709,22 +704,20 @@ guild_pal <- c("#6e7cb9", "#7bbcd5", "#d0e2af", "#f5db99",
                "#d0e2af","#f5db99","#e89c81", "#d2848d", 
                "#6e7cb9", "#7bbcd5")
 
-    
 plot_a <- 
   organismal_level_evidence_ratios %>% 
   ggplot(aes(x = position, y = log2(Female_Evid_Ratio))) +
   geom_point(aes(colour = `Trait guild`),
-             size = 4.5, alpha = 1, shape = 17) +
+             size = 4.5, alpha = 1, shape = 16) +
   geom_hline(yintercept = log2(1), linetype = 2, linewidth = 1) +
   geom_hline(yintercept = log2(39), linetype = 3, linewidth = 0.9) +
   geom_hline(yintercept = log2(1/39), linetype = 3, linewidth = 0.9) +
-  #scale_shape_manual(values = c(25, 24)) +
   scale_colour_manual(values = guild_pal) +
   scale_x_continuous(breaks = x_labels$position, labels = x_labels$`Trait guild`) +
   scale_y_continuous(expand = c(0.01, 0), breaks = c(-12, -10, -8, -6, -4, -2, 0, 2, 4, 6, 8, 10, 12), 
-                  labels = c(paste("1/",2 ^ c(12, 10, 8, 6, 4, 2), sep = ""), 2 ^ c(0, 2,4,6,8,10,12)), limits = c(-14, 14)) +
+                  labels = c(paste("1/",2 ^ c(12, 10, 8, 6, 4, 2), sep = ""), 2 ^ c(0, 2,4,6,8,10,12)), 
+                  limits = c(-14, 14)) +
   labs(x = NULL,
-       #y = "R~F~ log2(ER)",
        y = "_R_ on females log~2~(ER)") +
   geom_label_repel(data = organismal_level_evidence_ratios %>% 
                      filter(Female_Evid_Ratio > 64 | Female_Evid_Ratio < 1/64),  
@@ -744,21 +737,22 @@ plot_a <-
         axis.ticks.x=element_blank(),
         axis.title.x = element_text(size = 15),
         axis.title.y = element_markdown(size = 15),
-        strip.text = element_text(size = 15))
+        strip.text = element_text(size = 15),
+        plot.margin = unit(c(0,0,0,0), "mm"))
 
 plot_b <- 
   organismal_level_evidence_ratios %>% 
   ggplot(aes(x = position, y = log2(Male_Evid_Ratio))) +
   geom_point(aes(colour = `Trait guild`),
-             size = 4.5, alpha = 1, shape = 17) +
+             size = 4.5, alpha = 1, shape = 16) +
   geom_hline(yintercept = log2(1), linetype = 2, linewidth = 1) +
   geom_hline(yintercept = log2(39), linetype = 3, linewidth = 0.9) +
   geom_hline(yintercept = log2(1/39), linetype = 3, linewidth = 0.9) +
-  #scale_shape_manual(values = c(25, 24)) +
   scale_colour_manual(values = guild_pal) +
   scale_x_continuous(breaks = x_labels$position, labels = x_labels$`Trait guild`) +
   scale_y_continuous(expand = c(0.01, 0), breaks = c(-12, -10, -8, -6, -4, -2, 0, 2, 4, 6, 8, 10, 12), 
-                  labels = c(paste("1/",2 ^ c(12, 10, 8, 6, 4, 2), sep = ""), 2 ^ c(0, 2,4,6,8,10,12)), limits = c(-14, 14)) +
+                  labels = c(paste("1/",2 ^ c(12, 10, 8, 6, 4, 2), sep = ""), 2 ^ c(0, 2,4,6,8,10,12)), 
+                  limits = c(-14, 14)) +
   labs(x = NULL,
        y = "_R_ on males log~2~(ER)") +
   geom_label_repel(data = organismal_level_evidence_ratios %>% 
@@ -779,23 +773,23 @@ plot_b <-
         axis.ticks.x=element_blank(),
         axis.title.x = element_text(size = 15),
         axis.title.y = element_markdown(size = 15),
-        strip.text = element_text(size = 15))
+        strip.text = element_text(size = 15),
+        plot.margin = unit(c(0,0,0,0), "mm"))
 
 plot_c <- 
   organismal_level_evidence_ratios %>% 
   ggplot(aes(x = position, y = log2(Overall_Evid_Ratio))) +
   geom_point(aes(colour = `Trait guild`),
-             size = 4.5, alpha = 1, shape = 17) +
+             size = 4.5, alpha = 1, shape = 16) +
   geom_hline(yintercept = log2(1), linetype = 2, linewidth = 1) +
   geom_hline(yintercept = log2(39), linetype = 3, linewidth = 0.9) +
   geom_hline(yintercept = log2(1/39), linetype = 3, linewidth = 0.9) +
-  #scale_shape_manual(values = c(25, 24)) +
   scale_colour_manual(values = guild_pal) +
   scale_x_continuous(breaks = x_labels$position, labels = x_labels$`Trait guild`) +
   scale_y_continuous(expand = c(0.01, 0), breaks = c(-12, -10, -8, -6, -4, -2, 0, 2, 4, 6, 8, 10, 12), 
-                  labels = c(paste("1/",2 ^ c(12, 10, 8, 6, 4, 2), sep = ""), 2 ^ c(0, 2,4,6,8,10,12)), limits = c(-14, 14)) +
+                  labels = c(paste("1/",2 ^ c(12, 10, 8, 6, 4, 2), sep = ""), 2 ^ c(0, 2,4,6,8,10,12)), 
+                  limits = c(-14, 14)) +
   labs(x = "Traits",
-       #y = "R~F~ log2(ER)",
        y = "_R_  log~2~(ER)") +
   geom_label_repel(data = organismal_level_evidence_ratios %>% 
                      filter(Overall_Evid_Ratio > 64 | Overall_Evid_Ratio < 1/64),  
@@ -812,11 +806,14 @@ plot_c <-
         panel.grid.minor.x = element_blank(),
         panel.grid.minor.y = element_blank(),
         axis.text.x=element_text(angle = 90, 
-                                 vjust = 0.5,
-                                 size = 10),
+                                 vjust = 0,
+                                 hjust = 1,
+                                 size = 10,
+                                 margin=margin(r=0)),
         axis.title.x = element_text(size = 15),
         axis.title.y = element_markdown(size = 15),
-        strip.text = element_text(size = 15))
+        strip.text = element_text(size = 15),
+        plot.margin = unit(c(0,0,0,0), "mm"))
 
 (Figure_S3 <- plot_a / plot_b / plot_c +
   plot_annotation(tag_levels = 'a'))
@@ -830,7 +827,7 @@ plot_d <-
   organismal_level_evidence_ratios %>% 
   ggplot(aes(x = position, y = log2(Diff_Evid_Ratio))) +
   geom_point(aes(colour = `Trait guild`),
-             size = 4.5, alpha = 1, shape = 17) +
+             size = 4.5, alpha = 1, shape = 16) +
   geom_hline(yintercept = log2(1), linetype = 2, linewidth = 1) +
   geom_hline(yintercept = log2(39), linetype = 3, linewidth = 0.9) +
   geom_hline(yintercept = log2(1/39), linetype = 3, linewidth = 0.9) +
@@ -859,13 +856,14 @@ plot_d <-
         axis.ticks.x=element_blank(),
         axis.title.x = element_text(size = 15),
         axis.title.y = element_markdown(size = 15),
-        strip.text = element_text(size = 15))
+        strip.text = element_text(size = 15),
+        plot.margin = unit(c(0,0,0,0), "mm"))
 
 plot_e <- 
   organismal_level_evidence_ratios %>% 
   ggplot(aes(x = position, y = log2(Concord_Evid_Ratio))) +
   geom_point(aes(colour = `Trait guild`),
-             size = 4.5, alpha = 1, shape = 17) +
+             size = 4.5, alpha = 1, shape = 16) +
   geom_hline(yintercept = log2(1), linetype = 2, linewidth = 1) +
   geom_hline(yintercept = log2(39), linetype = 3, linewidth = 0.9) +
   geom_hline(yintercept = log2(1/39), linetype = 3, linewidth = 0.9) +
@@ -890,11 +888,14 @@ plot_e <-
         panel.grid.minor.x = element_blank(),
         panel.grid.minor.y = element_blank(),
         axis.text.x=element_text(angle = 90, 
-                                 vjust = 0.5,
-                                 size = 10),
+                                 vjust = 0,
+                                 hjust = 1,
+                                 size = 10,
+                                 margin=margin(r=0)),
         axis.title.x = element_text(size = 15),
         axis.title.y = element_markdown(size = 15),
-        strip.text = element_text(size = 15))
+        strip.text = element_text(size = 15),
+        plot.margin = unit(c(0,0,0,0), "mm"))
 
 (Figure_3 <- plot_d/ plot_e + plot_annotation(tag_levels = "a"))
 ```
@@ -1021,7 +1022,7 @@ R_p1 <-
   filter(!str_detect(Parameter, "percent")) %>% 
   ggplot(aes(x = R_mean, y = Trait_Sex, fill = Fitness_Sex)) + #fill = Fitness_Sex)) +
   stat_slab(alpha = 0.9, shape = 21) +#,
-  labs(x = expression("Mean |"* italic(R) * "| for organismal level traits"),
+  labs(x = expression("Mean |"* italic(R) * "| for organismal-level traits"),
        y = "Phenotyped sex") +
   scale_fill_manual(values = c(carto_pal(7, "Purp")[5], carto_pal(7, "Peach")[5])) +
   coord_cartesian(xlim = c(0.045, 0.10)) +
@@ -1085,10 +1086,10 @@ Huang et al. 2015 replicated each gene expression measurement twice. To find lin
 
 # load in the gene names, we'll use these for plots and tables
 
-Dmel_gene_names <- read_csv("data/input/all_dmel_genes.csv")
+Dmel_gene_names <- read_csv("data/all_dmel_genes.csv")
 
 
-gene_annotations <- read_csv("data/input/gene_anntotations.csv")
+gene_annotations <- read_csv("data/gene_anntotations.csv")
 
 
 # Helper to load all the Huang et al. expression data into tidy format
@@ -1102,14 +1103,14 @@ load_expression_data <- function(gene_annotations){
     filter(chromosome %in% c("2L", "2R", "3L", "3R", "4", "X")) %>%
     pull(FBID) 
   
-  females <- read_delim("data/input/huang_transcriptome/dgrp.array.exp.female.txt", delim = " ") %>%
+  females <- read_delim("data/huang_transcriptome/dgrp.array.exp.female.txt", delim = " ") %>%
     filter(gene %in% genes_allowed) %>% 
     gather(sample, expression, -gene) %>% 
     mutate(line = map_chr(str_extract_all(sample, "line_[:digit:]*"), ~ .x[1]),
            replicate = map_chr(str_split(sample, ":"), ~ .x[2]),
            sex = "Female")
   
-  males <- read_delim("data/input/huang_transcriptome/dgrp.array.exp.male.txt", delim = " ") %>%
+  males <- read_delim("data/huang_transcriptome/dgrp.array.exp.male.txt", delim = " ") %>%
     filter(gene %in% genes_allowed) %>% 
     gather(sample, expression, -gene) %>% 
     mutate(line = map_chr(str_extract_all(sample, "line_[:digit:]*"), ~ .x[1]),
@@ -1136,7 +1137,6 @@ expression_line_means <-
 left_join(trait_data %>% distinct(line, female_fitness, male_fitness))
 
 # the transcriptome is large; memory is therefore a consistent problem with this analysis - it helps to clear often
-# 
 invisible(gc())
 
 ```
@@ -2131,7 +2131,8 @@ evidence_ratios_transcriptome_male <-
 
 write_csv(evidence_ratios_transcriptome_male, "data/transcriptome_output/evidence_ratios_transcriptome_male.csv")
 
-} else evidence_ratios_transcriptome_male <- read_csv("data/transcriptome_output/evidence_ratios_transcriptome_male.csv")
+} else 
+  evidence_ratios_transcriptome_male <- read_csv("data/transcriptome_output/evidence_ratios_transcriptome_male.csv")
 
 ```
 
@@ -2467,18 +2468,16 @@ plot_transcriptome_a <-
   evidence_ratios_transcriptome %>% 
   ggplot(aes(x = position, y = log2(Female_Evid_Ratio))) +
   geom_point(aes(colour = chromosome),
-             size = 2.5, alpha = 0.8, shape = 17) +
+             size = 2.5, alpha = 0.8, shape = 16) +
   geom_hline(yintercept = log2(1), linetype = 2, linewidth = 1) +
   geom_hline(yintercept = log2(39), linetype = 3, linewidth = 0.9) +
   geom_hline(yintercept = log2(1/39), linetype = 3, linewidth = 0.9) +
-  #scale_shape_manual(values = c(25, 24)) +
   scale_colour_manual(values = guild_pal) +
   scale_x_continuous(breaks = x_labels$position, labels = x_labels$chromosome) +
   scale_y_continuous(expand = c(0.01, 0), breaks = c(-14, -12, -10, -8, -6, -4, -2, 0, 2, 4, 6, 8, 10, 12, 14), 
                      labels = c(paste("1/",2 ^ c(14, 12, 10, 8, 6, 4, 2), sep = ""), 2 ^ c(0, 2,4,6,8,10,12,14)), 
                      limits = c(-16, 16)) +
   labs(x = NULL,
-       #y = "R~F~ log2(ER)",
        y = "_R_ on females log~2~(ER)") +
   geom_label_repel(data = evidence_ratios_transcriptome %>% 
                      filter(Female_Evid_Ratio > 1000 | Female_Evid_Ratio < 1/1000 ), 
@@ -2498,23 +2497,23 @@ plot_transcriptome_a <-
         axis.ticks.x=element_blank(),
         axis.title.x = element_text(size = 15),
         axis.title.y = element_markdown(size = 10),
-        strip.text = element_text(size = 15))
+        strip.text = element_text(size = 15),
+        plot.margin = unit(c(0,0,0,0), "mm"))
 
 plot_transcriptome_b <- 
   evidence_ratios_transcriptome %>% 
   ggplot(aes(x = position, y = log2(Male_Evid_Ratio))) +
   geom_point(aes(colour = chromosome),
-             size = 2.5, alpha = 0.8, shape = 17) +
+             size = 2.5, alpha = 0.8, shape = 16) +
   geom_hline(yintercept = log2(1), linetype = 2, linewidth = 1) +
   geom_hline(yintercept = log2(39), linetype = 3, linewidth = 0.9) +
   geom_hline(yintercept = log2(1/39), linetype = 3, linewidth = 0.9) +
-  #scale_shape_manual(values = c(25, 24)) +
   scale_colour_manual(values = guild_pal) +
   scale_x_continuous(breaks = x_labels$position, labels = x_labels$chromosome) +
   scale_y_continuous(expand = c(0.01, 0), breaks = c(-14, -12, -10, -8, -6, -4, -2, 0, 2, 4, 6, 8, 10, 12, 14), 
-                     labels = c(paste("1/",2 ^ c(14, 12, 10, 8, 6, 4, 2), sep = ""), 2 ^ c(0, 2,4,6,8,10,12,14)), limits = c(-15, 15)) +
+                     labels = c(paste("1/",2 ^ c(14, 12, 10, 8, 6, 4, 2), sep = ""), 2 ^ c(0, 2,4,6,8,10,12,14)), 
+                     limits = c(-15, 15)) +
   labs(x = NULL,
-       #y = "R~F~ log2(ER)",
        y = "_R_ on males log~2~(ER)") +
   geom_label_repel(data = evidence_ratios_transcriptome %>% 
                      filter(Male_Evid_Ratio > 1000 | Male_Evid_Ratio < 1/1000 ),  
@@ -2534,23 +2533,23 @@ plot_transcriptome_b <-
         axis.ticks.x=element_blank(),
         axis.title.x = element_text(size = 15),
         axis.title.y = element_markdown(size = 10),
-        strip.text = element_text(size = 15))
+        strip.text = element_text(size = 15),
+        plot.margin = unit(c(0,0,0,0), "mm"))
 
 plot_transcriptome_c <- 
   evidence_ratios_transcriptome %>% 
   ggplot(aes(x = position, y = log2(Overall_Evid_Ratio))) +
   geom_point(aes(colour = chromosome),
-             size = 2.5, alpha = 0.8, shape = 17) +
+             size = 2.5, alpha = 0.8, shape = 16) +
   geom_hline(yintercept = log2(1), linetype = 2, linewidth = 1) +
   geom_hline(yintercept = log2(39), linetype = 3, linewidth = 0.9) +
   geom_hline(yintercept = log2(1/39), linetype = 3, linewidth = 0.9) +
-  #scale_shape_manual(values = c(25, 24)) +
   scale_colour_manual(values = guild_pal) +
   scale_x_continuous(breaks = x_labels$position, labels = x_labels$chromosome) +
   scale_y_continuous(expand = c(0.01, 0), breaks = c(-14, -12, -10, -8, -6, -4, -2, 0, 2, 4, 6, 8, 10, 12, 14), 
-                     labels = c(paste("1/",2 ^ c(14, 12, 10, 8, 6, 4, 2), sep = ""), 2 ^ c(0, 2,4,6,8,10,12,14)), limits = c(-18, 18)) +
+                     labels = c(paste("1/",2 ^ c(14, 12, 10, 8, 6, 4, 2), sep = ""), 2 ^ c(0, 2,4,6,8,10,12,14)), 
+                     limits = c(-18, 18)) +
   labs(x = "Chromosome arm",
-       #y = "R~F~ log2(ER)",
        y = "_R_  log~2~(ER)") +
   geom_label_repel(data = evidence_ratios_transcriptome %>% 
                      filter(Overall_Evid_Ratio > 1000 | Overall_Evid_Ratio < 1/1000),  
@@ -2567,10 +2566,10 @@ plot_transcriptome_c <-
         panel.grid.minor.x = element_blank(),
         panel.grid.minor.y = element_blank(),
         axis.text.x=element_text(size = 15),
-        #axis.ticks.x=element_blank(),
         axis.title.x = element_text(size = 15),
         axis.title.y = element_markdown(size = 10),
-        strip.text = element_text(size = 15))
+        strip.text = element_text(size = 15),
+        plot.margin = unit(c(0,0,0,0), "mm"))
 
 (Figure_S4 <- plot_transcriptome_a / plot_transcriptome_b / plot_transcriptome_c +
   plot_annotation(tag_levels = 'a')
@@ -2580,20 +2579,20 @@ plot_transcriptome_c <-
 
 **Figure S4**. Triangles show evidence ratios (ERs) for gene expression traits. **a** shows $R$ on females ($R_{FF}$ and $R_{MF}$), **b** $R$ on males ($R_{FM}$ and $R_{MM}$) and **c** overall $R$. The dashed lines indicate an evidence ratio of 1, where the probability that $R$ > 0 is equal to the probability that $R$ < 0. ER > 1 indicates a positive response is more likely, whereas ER < 1 indicates a negative response is more likely. The upper dotted line on each plot indicates an evidence ratio of 39, while the lower dotted line indicates an evidence ratio of 1/39; these correspond strongly with the frequentist $p$ = 0.05. Traits with the most extreme evidence ratios are labelled.
 
-```{r, fig.height=7, fig.width=11}
+```{r, fig.height=7, fig.width=13}
 plot_transcriptome_d <- 
   evidence_ratios_transcriptome %>% 
   ggplot(aes(x = position, y = log2(Diff_Evid_Ratio))) +
-   geom_point(aes(colour = chromosome),
-             size = 2.5, alpha = 0.8, shape = 17) +
+  geom_point(aes(colour = chromosome),
+             size = 2.5, alpha = 0.8, shape = 16) +
   geom_hline(yintercept = log2(1), linetype = 2, linewidth = 1) +
   geom_hline(yintercept = log2(39), linetype = 3, linewidth = 0.9) +
   geom_hline(yintercept = log2(1/39), linetype = 3, linewidth = 0.9) +
-  #scale_shape_manual(values = c(25, 24)) +
   scale_colour_manual(values = guild_pal) +
   scale_x_continuous(breaks = x_labels$position, labels = x_labels$chromosome) +
   scale_y_continuous(expand = c(0.01, 0), breaks = c(-12, -10, -8, -6, -4, -2, 0, 2, 4, 6, 8, 10, 12), 
-                     labels = c(paste("1/",2 ^ c(12, 10, 8, 6, 4, 2), sep = ""), 2 ^ c(0, 2,4,6,8,10,12)), limits = c(-13, 13)) +
+                     labels = c(paste("1/",2 ^ c(12, 10, 8, 6, 4, 2), sep = ""), 2 ^ c(0, 2,4,6,8,10,12)), 
+                     limits = c(-13, 13)) +
   labs(x = "Chromosome arm",
        #y = "R~F~ log2(ER)",
        y = "&Delta;_R_  log~2~(ER)") +
@@ -2615,17 +2614,17 @@ plot_transcriptome_d <-
         axis.ticks.x=element_blank(),
         axis.title.x = element_blank(),
         axis.title.y = element_markdown(size = 15),
-        strip.text = element_text(size = 15))
+        strip.text = element_text(size = 15),
+        plot.margin = unit(c(0,0,0,0), "mm"))
 
 plot_transcriptome_e <- 
   evidence_ratios_transcriptome %>% 
   ggplot(aes(x = position, y = log2(Concord_Evid_Ratio))) +
-   geom_point(aes(colour = chromosome),
-             size = 2.5, alpha = 0.8, shape = 17) +
+  geom_point(aes(colour = chromosome),
+             size = 2.5, alpha = 0.8, shape = 16) +
   geom_hline(yintercept = log2(1), linetype = 2, linewidth = 1) +
   geom_hline(yintercept = log2(39), linetype = 3, linewidth = 0.9) +
   geom_hline(yintercept = log2(1/39), linetype = 3, linewidth = 0.9) +
-  #scale_shape_manual(values = c(25, 24)) +
   scale_colour_manual(values = guild_pal) +
   scale_x_continuous(breaks = x_labels$position, labels = x_labels$chromosome) +
   scale_y_continuous(expand = c(0.01, 0), breaks = c(-12, -10, -8, -6, -4, -2, 0, 2, 4, 6, 8, 10, 12), 
@@ -2642,15 +2641,15 @@ plot_transcriptome_e <-
                    max.overlaps = 30) +
   facet_wrap(~Trait_Sex) +
   theme_minimal() +
-    theme(legend.position = "none",
+  theme(legend.position = "none",
         panel.grid.major.x = element_blank(),
         panel.grid.minor.x = element_blank(),
         panel.grid.minor.y = element_blank(),
         axis.text.x=element_text(size = 15),
-        #axis.ticks.x=element_blank(),
         axis.title.x = element_text(size = 15),
         axis.title.y = element_markdown(size = 15),
-        strip.text = element_text(size = 15))
+        strip.text = element_text(size = 15),
+        plot.margin = unit(c(0,0,0,0), "mm"))
 
 
 (Figure_4 <- plot_transcriptome_d/ plot_transcriptome_e + plot_annotation(tag_levels = "a")
@@ -2755,7 +2754,7 @@ $~$
 
 Get model predictions. Once again, we only do this once and save for later convenience.
 
-```{r, fig.width=10, fig.height=5}
+```{r}
 
 new_data <- expand_grid(Fitness_Sex = c("Female", "Male"),
                         Trait_Sex = c("Female", "Male"))
@@ -2794,8 +2793,8 @@ Create panels b and d
 R_t1 <-
   R_transcriptome_fitted %>% 
   filter(!str_detect(Parameter, "percent")) %>% 
-  ggplot(aes(x = R_mean, y = Trait_Sex, fill = Fitness_Sex)) + #+ y = Trait_Sex)) + #fill = Fitness_Sex)) +
-  stat_slab(alpha = 0.9, shape = 21) +#,
+  ggplot(aes(x = R_mean, y = Trait_Sex, fill = Fitness_Sex)) + 
+  stat_slab(alpha = 0.9, shape = 21) +
   labs(x = expression("Mean |"* italic(R) * "| for gene expression traits"),
        y = "Phenotyped sex",
        fill = "Sex under selection") +
@@ -2803,7 +2802,6 @@ R_t1 <-
   coord_cartesian(xlim = c(0.045, 0.10)) +
   theme_minimal() + 
   theme(panel.background = element_rect(fill='transparent'),
-        #panel.grid.major.y = element_blank(),
         panel.grid.minor.y = element_blank(),
         plot.background = element_rect(fill='transparent', color=NA),
         legend.position = "bottom",
@@ -2812,18 +2810,16 @@ R_t1 <-
 R_t2 <-
   R_transcriptome_fitted %>% 
   filter(str_detect(Parameter, "percent")) %>%
-  ggplot(aes(x = R_mean, y = Trait_Sex)) + #, #y = Trait_Sex, fill = Trait_Sex)) +
+  ggplot(aes(x = R_mean, y = Trait_Sex)) +
   stat_halfeye(.width = c(0.66, 0.95), alpha = 0.9, fill = carto_pal(7, "Emrld")[2],
                point_interval = "median_qi", point_fill = "white",
                shape = 21, point_size = 4, stroke = 1.2) + # width indicates the uncertainty intervals: here we have 66% and 95% intervals + # width indicates the uncertainty intervals: here we have 66% and 95% intervals+
-  #scale_fill_manual(values = c(carto_pal(7, "Peach")[5], carto_pal(7, "Peach")[5], carto_pal(7, "Purp")[5])) +
   geom_vline(xintercept = 0, linetype = 2, linewidth = 1.2) +
   coord_cartesian(xlim = c(-5, 45)) +
   xlab(expression("% sex difference in |"*italic(R)* "|")) +
   ylab("Phenotyped sex") +
   theme_minimal() + 
   theme(panel.background = element_rect(fill='transparent'),
-        #panel.grid.major.y = element_blank(),
         panel.grid.minor.y = element_blank(),
         plot.background = element_rect(fill='transparent', color=NA),
         legend.position = "none",

@@ -1,0 +1,264 @@
+---
+title: "Data collation"
+output: html_document
+site: workflowr::wflow_site
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, cache = FALSE)
+```
+
+# Load in necessary packages
+
+```{r load packages}
+library(tidyverse)
+library(DT) # for interactive tables
+```
+
+## Loading and combining the data from various sources 
+
+### Line mean phenotype data provided by original authors
+
+Most of the papers that report DGRP data provide estimates of the mean phenotype of multiple DGRP lines ("line mean data"). We conducted a non-exhaustive search of the literature for phenotypic trait measurements for DGRP lines, and collated all the line mean data in two csv files; `all.line.mean.phenos.csv` which contains line mean values for each trait and `all.line.mean.phenos_metadata.csv` which contains study meta-data. The R code below combines these files.
+
+```{r}
+all.line.mean.phenos <- read_csv("data/data_collation/input/all.line.mean.phenos.csv") %>% 
+  left_join(read_csv("data/data_collation/input/all.line.mean.phenos_metadata.csv"), by = "Trait")
+```
+
+### Loading the line mean data calculated by us from the raw data
+
+Some studies only provide the raw data they collected when measuring DGRP phenotypes (e.g. measurements of individual flies, with replicates within each DGRP line). We need line mean data to calculate genetic correlations between traits and run typical GWA analyses. To get line means, we estimated them from the raw data as described in the script `analysis/get_line_means_from_raw_data.Rmd`, which can be viewed [here](get_line_means_from_raw_data.html).
+
+```{r}
+line.mean.phenos.from.raw.data <- read_csv("data/data_collation/output/dgrp_phenos_calculated_from_raw_data.csv") %>% 
+  left_join(read_csv("data/data_collation/output/dgrp_phenos_calculated_from_raw_data_meta_data.csv"), by = "Trait") %>% 
+  filter(!is.na(trait_value))
+```
+
+Combine the data from these two sources:
+
+```{r}
+all.dgrp.phenos_combined <-
+  rbind(all.line.mean.phenos, 
+        line.mean.phenos.from.raw.data) %>% 
+  mutate(Sex = recode(Sex, Both = "Pooled"))
+
+num_unique_lines <- length(unique(all.dgrp.phenos_combined$line))
+```
+
+## Cleaning the data
+
+### Removing unusual lines
+
+We have phenotype line means for {r num_unique_lines} lines, which is more than we expected. There appear to be some lines that have been used in very few studies, suggesting some of these lines reflect labelling errors.
+
+After checking the [Bloomington Drosophila Stock Centre](https://bdsc.indiana.edu/Home/Search) and [Flybase](http://flybase.org/reports/FBlc0000504.html) we found the following anomalies:
+
+-   Chapman et al (2020): lines 273, 331, 501, 568, 709, 831, 846 - these lines are not phenotyped in any other study and are not documented on flybase.
+
+-   Palmer et al (2018): line 575 - not on Flybase
+
+-   Chowdhury et al (2019): line 471 - not on Flybase (only aberrant line from study)
+
+-   Houston (2019): line 285 - not on Flybase
+
+-   Watanabe and Riddle (2021): line 854 - not on Flybase
+
+-   Battlay et al (2016): lines 226, 847 and 917 - there is no obvious reason for these mysterious lines. There are no obvious typos and the paper states they conduct GWA with 178 lines, which matches the number reported in File S2, which is where we sourced the data.
+
+-   Katzenberger et al (2015): line 521 - no obvious typo (data is ordered by increasing trait value). One-off issue. Not on Flybase.
+
+-   Turner, Miller and Cochrane (2013): line 760 - no obvious typo. One off. Not on Flybase.
+
+-   Montgomery et al (2014): lines 424 and 766 - Errors appear to be mislabelled lines. Table S3 includes RAL lines 424 and 766. Line 766 is out of numeric order in the Table. Most likely to actually be line 776 or 786, but we cannot be sure.
+
+-   He et al (2014): Bloomington stock number 28120 - Error appears to be a typo. Line 28120 is included in the raw data, but isn't listed in Table S2 which shows the lines used in the study. One-off issue.
+
+-   Lafluente, Duneau and Beldade (2018): line 809 - Likely to be a typo or a labelling error. One-off issue.
+
+The following code removes these putatively erroneous lines from the dataset:
+
+```{r}
+# check how many traits each line has been phenotyped for
+line_test <- all.dgrp.phenos_combined %>% group_by(line) %>% 
+  summarise(n_traits = length(Trait)) %>% 
+  arrange(n_traits)
+
+# check specific lines
+
+#print(all.dgrp.phenos_combined %>% 
+ # filter(line == "556"), n = 31)
+
+# remove the aberrant lines
+aberrant_lines <- c(226, 273, 285, 331, 424, 471, 501, 
+                    521, 568, 575, 709, 760, 766, 809, 
+                    831, 846, 847, 854, 917)
+
+all.dgrp.phenos_combined <-
+  all.dgrp.phenos_combined %>% 
+  filter(!(line %in% aberrant_lines))
+```
+
+This still leaves 219 lines, which was unexpected because most studies state that the DGRP consists of 205 lines. However, the DGRP record on Flybase (<http://flybase.org/reports/FBlc0000504.html>) indicates that a total of 219 lines have been included in the DGRP at some point since its creation. We infer that some lines were withdrawn from the Bloomington stock centre, explaining their absence from most DGRP studies.
+
+The lines that have been withdrawn but are included in our dataset are: 80, 272, 343, 378, 387, 393, 398, 476, 514, 554, 556, 591, 750, 771. We chose **not to remove** these lines from our dataset, as many of the studies we include in our dataset make use of these lines.
+
+### Removing data duplicates
+
+Some studies report data that has been previously used (in a way that we missed in our initial data collection), leading to perfect or near perfect correlations between traits. We here remove one such duplicate trait. 
+
+```{r}
+all.dgrp.phenos_combined_subset <-
+  all.dgrp.phenos_combined %>% filter(Trait != "rapid.cold.hardening.25C")
+```
+
+### Removing traits that were measured in heterozyogtes
+
+Some traits have been measured in heterozygotes. This generally occurs when the goal of a study is to observe whether genetic variation affects the response to a genetic disease encoded by a particular variant or the expression of a transgenic construct. These studies are not ideal for our database, as the phenotypes they observe may be affected be dominance and epistatic interactions that are absent in the nearly completely homozygous DGRP lines. We remove these studies from our dataset.
+
+```{r}
+# Remove traits measured in heterozyogtes and traits entered incorrectly
+
+all.dgrp.phenos_combined_subset <- all.dgrp.phenos_combined_subset %>% 
+  filter(Trait != "recombination.rate.3R.f", 
+         Trait != "recombination.rate.X.f", 
+         Trait != "eye.area.diabetes.susceptibility.2014a.m", 
+         Trait != "eye.area.diabetes.susceptibility.2014a.f",
+         Trait != "eye.area.Drop.susceptibility.2014a.f", 
+         Trait != "eye.area.Drop.susceptibility.2014a.m", 
+         Trait != "eye.area.Lobe.susceptibility.2014a.f", 
+         Trait != "eye.area.Lobe.susceptibility.2014a.m", 
+         Trait != "notum.bristles.diabetes.susceptibility.2014a.f", 
+         Trait != "notum.bristles.diabetes.susceptibility.2014a.m", 
+         Trait != "CRISPR.full.resistance.embryo.formation.f", 
+         Trait != "CRISPR.germline.conversion.rate.f", 
+         Trait != "CRISPR.mosaic.resistance.embryo.formation.f", 
+         Trait != "CRISPR.wildtype.rate.m", 
+         Trait != "Canton S(B).olfactory.response.benzaldehyde.f", 
+         Trait != "neur.olfactory.response.benzaldehyde.f", 
+         Trait != "Sema5c.olfactory.response.benzaldehyde.f",
+         !str_detect(Trait, "dopamine.response.to.paraquat.2021.m")) # data for this trait was entered into the database incorrectly, it was only measured in 10 lines so should not be included in our analysis )
+```
+
+### Removing lines that have multiple trait values
+
+For some traits, a small number of lines had >1 trait value. We fixed these datasets in the original spreadsheet before it entered R, but document our fixes here for transparency.
+
+-   Unckless, Rottschaefer and Lazzaro (2015, _G3_) include line 287 twice in their provided data. The trait values were identical, so we simply removed the duplication. 
+
+-   Chow, Wolfner and Clark (2013, _PNAS_) include line 287 twice in their data (coincidence?). They measured two traits: a hazard ratio for tunicamycin-induced survival and an LT50 value. Line 287 has two different hazard ratios, but the same LT50 value. We therefore removed line 287 completely from the hazard ratio dataset, but only removed the duplicate in the LT50 dataset.
+
+-   Hotson and Schneider (2015, _G3_) include line 712 twice in their provided data, for the trait `L.monocytogenes.load.m`. The duplicates provide different values. Due to this ambiguity, we removed line 712 from the dataset.
+
+-   Adebambo et al (2020, _Frontiers in Genetics_) include the line 229 twice. The trait values were identical, so we simply removed the duplication. 
+
+```{r}
+# the code below reports lines that have > 1 measurement for any of the traits in our dataset 
+
+# If there are 0 rows in the tibble, it means no errors remain
+problems <- all.dgrp.phenos_combined_subset %>% 
+  group_by(line, Trait) %>% 
+  summarise(n = n()) %>% 
+  arrange(-n) %>% 
+  filter(n > 1)
+```
+
+### Save the cleaned dataset, with traits measured in the original units
+
+```{r echo=FALSE}
+n_traits_after_cleaning <- all.dgrp.phenos_combined_subset %>% 
+  distinct(Trait) %>% nrow()
+
+n_studies_after_cleaning <- all.dgrp.phenos_combined_subset %>% 
+  distinct(Reference) %>% nrow()
+```
+
+Here, we save the {r n_traits_after_cleaning} traits as a .csv file called `data/derived/all.dgrp.phenos_unscaled.csv`, which you may wish to download and use in your research. The file contains 4 columns which give the name of the DGRP line (`line`), the name of the trait being measured (`Trait`), the reference (`Reference`), and the estimated mean value of the focal trait in the focal DGRP line (`trait_value`). 
+
+To help interpret the contents of this file, we also save a metadata file called `data/derived/meta_data_for_all_traits.csv`, which gives information about each trait. This file is also shown in the HTML Table below. The columns are interpreted as follows:
+
+- `Trait`: The name of the trait. This matches the traits listed in `data/derived/all.dgrp.phenos_unscaled.csv`, and can be used to combine the two spreadsheets (e.g. by using a left join, as in: `dplyr::left_join(all.dgrp.phenos_unscaled, meta_data_for_all_traits)`)
+
+- `# lines measured`: Number of DGRP lines for estimates of the line mean trait value was available.
+
+- `Sex`: The sex of the flies being measured (Female, Male, or Pooled, where the latter means flies of both sexes were measured)
+
+- `Life_stage`: the life stage at which flies were phenotyped (Juvenile: all life stages that precede eclosion, and adulthood: post eclosion) 
+
+- `Trait guild`: A categorisation of the type of trait that was manually assigned by us to aid visualisation in figures.
+
+- `Trait description`: A description of how the trait, including an explanation of the meaning of relatively high and low values.
+
+- `Reference`: The source for the data.
+
+```{r}
+lines_measured <- 
+  all.dgrp.phenos_combined_subset %>% 
+  group_by(Trait) %>% 
+  summarise(`# lines measured` = n()) %>% 
+  arrange(Trait)
+
+table <- all.dgrp.phenos_combined_subset %>% 
+  distinct(Trait, .keep_all = TRUE) %>% 
+  arrange(Trait) %>% 
+  select(-c(trait_value))
+  
+complete_metadata <- left_join(lines_measured, table) %>% 
+  select(Trait, `# lines measured`, Sex, Life_stage, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(`Trait guild`, Trait, Reference)
+
+all.dgrp.phenos_combined_subset %>% 
+  select(line, Trait, trait_value, Reference) %>% 
+  arrange(Trait) %>% 
+  write_csv(file = "data/data_collation/output/all.dgrp.phenos_unscaled.csv")
+
+complete_metadata %>% 
+  write_csv(file = "data/data_collation/output/meta_data_for_all_traits.csv")
+```
+
+
+The full list of traits in the dataset, and metadata about each one, is shown in this table:
+
+```{r}
+# Create a function to build HTML searchable tables
+my_data_table <- function(df){
+  datatable(
+    df, rownames=FALSE,
+    autoHideNavigation = TRUE,
+    extensions = c("Scroller",  "Buttons"),
+    options = list(
+      autoWidth = TRUE,
+      dom = 'Bfrtip',
+      deferRender=TRUE,
+      scrollX=TRUE, scrollY=1000,
+      scrollCollapse=TRUE,
+      buttons =
+        list('pageLength', 'colvis', 'csv', list(
+          extend = 'pdf',
+          pageSize = 'A4',
+          orientation = 'landscape',
+          filename = 'Trait_table')),
+      pageLength = 2115
+    )
+  )
+}
+
+my_data_table(complete_metadata)
+```
+
+
+
+## Save the cleaned dataset, with traits measured in standard units
+
+Some of our traits have already been scaled to have a mean of zero and standard deviation of 1. For consistency, and to aid comparison of variances between traits, we also create and save a version of the complete dataset where all traits have been standardised (by subtracting the mean from each value and dividing by the standard deviation, via R's `scale()` function).
+
+
+```{r}
+all.dgrp.phenos_scaled <- all.dgrp.phenos_combined_subset %>% 
+  select(line, Trait, trait_value, Reference) %>% 
+  group_by(Trait) %>% 
+  mutate(trait_value = as.numeric(scale(trait_value)))
+
+write_csv(all.dgrp.phenos_scaled, file = "data/data_collation/output/all.dgrp.phenos_scaled.csv")
+```

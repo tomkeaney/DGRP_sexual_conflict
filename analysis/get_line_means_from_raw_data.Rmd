@@ -1,0 +1,3364 @@
+---
+title: "Estimating line means from raw data"
+output: html_document
+site: workflowr::wflow_site
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, cache = FALSE)
+```
+
+# Load in necessary packages
+
+```{r load packages}
+library(Matrix)
+library(tidyverse)
+library(brms) # for bayesian models
+library(tidybayes) # for more bayesian things
+library(broom) # convert results of functions into tables
+
+if(!dir.exists("fits/raw_data_fits")) dir.create("fits/raw_data_fits")
+my_scale <- function(x) as.numeric(scale(x))
+```
+
+## Estimating line means from raw data
+
+Some studies/authors provided the raw data that was collected when measuring DGRP phenotypes (e.g. measurements of individual flies), although we need line mean data to calculate the response to selection. To get line means, we fitted Bayesian mixed effect models and used these to estimate mean trait values for each line, using the model formula that made the most sense to us given the study's experimental design (see annotations in the code below). Often, but not always, this conformed with the original analysis. Our analyses of each paper's data are presented in a separate tab below.
+
+Where the response follows a Gaussian distribution, we standardise the response to have a mean of 0 and a standard deviation of 1, in order to make prior specification more straightforward. In these cases, the estimated line means are converted back to the response scale.
+
+The Bayesian models won't run unless you have `stan` and the `brms` package installed. To install `stan` follow these [instructions](https://github.com/stan-dev/rstan/wiki/RStan-Getting-Started).
+
+
+## Analysis of raw data {.tabset}
+
+### Jumbo-Lucioni et al 2012
+
+```{r}
+Jumbo_mito_data <- read_csv("data/data_collation/input/Raw_data_files/Jumbo_Lucioni_2012.csv") %>% 
+  mutate(line = as.factor(Line),
+         Sex = as.factor(Gender),
+         Rep = as.factor(Rep),
+         po_ratio = na_if(`po ratio`, "."),
+         po_ratio = as.numeric(po_ratio)) %>% 
+  rename(state_3 = `st 3 (pmol/s*mg protein)`,
+         state_4 = `st 4 (pmol/s*mg protein)`) %>% 
+  select(line, Sex, Rep, state_3, state_4, po_ratio) %>% 
+  filter(!is.na(line))
+
+# standardise 
+Jumbo_mito_data <-
+  Jumbo_mito_data %>% 
+  mutate(st_state_3 = my_scale(state_3),
+         st_state_4 = my_scale(state_4),
+         st_po_ratio = my_scale(po_ratio)) 
+
+
+
+# respiration state 3 model
+
+state_3_model <- brm(st_state_3 ~ 1 + Sex + (Sex|line),
+                      data = Jumbo_mito_data, family = gaussian,
+                      prior = c(prior(normal(0, 0.5), class = Intercept),
+                                prior(normal(0, 0.5), class = b),
+                                prior(exponential(1), class = sd)),
+                      iter = 6000, warmup = 2000, chains = 4, cores = 4,
+                      seed = 2, file = "fits/raw_data_fits/state_3.model")
+
+#pp_check(state_3_model)
+
+new_data <-
+  expand_grid(line = Jumbo_mito_data$line,
+              Sex = c("F", "M")) %>% 
+  distinct(line, Sex)
+
+     
+fitted_state_3 <- fitted(state_3_model,
+       newdata = new_data) %>% 
+  as_tibble() %>%
+  # now we need to convert back to response scale (note I don't convert Est.Error)
+  mutate(Estimate = Estimate*sd(Jumbo_mito_data$state_3) + mean(Jumbo_mito_data$state_3),
+         Q2.5 = Q2.5*sd(Jumbo_mito_data$state_3) + mean(Jumbo_mito_data$state_3),
+         Q97.5 = Q97.5*sd(Jumbo_mito_data$state_3) + mean(Jumbo_mito_data$state_3))
+
+state_3_estimates <- tibble(new_data, fitted_state_3) %>% 
+  mutate(Sex = if_else(Sex == "F", "Female", "Male"))
+
+# build a function to create tibbles holding sex specific line means
+
+Jumbo_line_means <- function(estimates, y, Trait, description){
+  estimates %>% 
+  filter(Sex == y) %>% 
+  mutate(Trait = Trait,
+         Reference = "Jumbo-Lucioni et al (2012) BMC Genomics",
+         `Trait guild` = "Physiological",
+         `Trait description` = description,
+         trait_value = Estimate) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(line)
+}
+
+# create the state 3 tibbles
+
+# females
+
+state_3_f_line_means <- Jumbo_line_means(state_3_estimates, "Female", "mitochondrial.state.3.respiration.f", "Mean mitochondrial state 3 respiration rate, measured as oxygen consumption (pmol/s* mg of protein). Mitochondria were sourced from the thorax and respiration was measured in vitro. State 3 respiration occurs when protons re-enter the mitochondrial matrix in the presence of ADP, which results in the production of ATP. Higher values indicate higher respiration rates.")
+
+
+# males
+
+state_3_m_line_means <- Jumbo_line_means(state_3_estimates, "Male", "mitochondrial.state.3.respiration.m", "Mean mitochondrial state 3 respiration rate, measured as oxygen consumption (pmol/s* mg of protein). Mitochondria were sourced from the thorax and respiration was measured in vitro. State 3 respiration occurs when protons re-enter the mitochondrial matrix in the presence of ADP, which results in the production of ATP. Higher values indicate higher respiration rates.")
+
+
+# respiration state 4 model
+
+state_4_model <- brm(st_state_4 ~ 1 + Sex + (Sex|line),
+                     data = Jumbo_mito_data, family = gaussian,
+                     prior = c(prior(normal(0, 0.5), class = Intercept),
+                               prior(normal(0, 0.5), class = b),
+                               prior(exponential(1), class = sd)),
+                     iter = 10000, warmup = 4000, chains = 4, cores = 4,
+                     control = list(adapt_delta = 0.95, max_treedepth = 10),
+                     seed = 2, file = "fits/raw_data_fits/state_4.model")
+
+#pp_check(state_4_model)
+
+     
+fitted_state_4 <- fitted(state_4_model,
+       newdata = new_data) %>% 
+  as_tibble() %>%
+  # now we need to convert back to response scale (note I don't convert Est.Error)
+  mutate(Estimate = Estimate*sd(Jumbo_mito_data$state_4) + mean(Jumbo_mito_data$state_4),
+         Q2.5 = Q2.5*sd(Jumbo_mito_data$state_4) + mean(Jumbo_mito_data$state_4),
+         Q97.5 = Q97.5*sd(Jumbo_mito_data$state_4) + mean(Jumbo_mito_data$state_4))
+
+state_4_estimates <- tibble(new_data, fitted_state_4) %>% 
+  mutate(Sex = if_else(Sex == "F", "Female", "Male"))
+
+# create the state 4 tibbles
+
+# females
+
+state_4_f_line_means <- Jumbo_line_means(state_4_estimates, "Female", "mitochondrial.state.4.respiration.f", "Mean mitochondrial state 4 respiration rate, measured as oxygen consumption (pmol/s* mg of protein). Mitochondria were sourced from the thorax and respiration was measured in vitro. State 4 respiration occurs when protons leak into the mitochondrial matrix in the absence of ADP, which is required for ATP synthase. Higher values indicate higher respiration rates.")
+
+# males
+
+state_4_m_line_means <- Jumbo_line_means(state_4_estimates, "Male", "mitochondrial.state.4.respiration.m", "Mean mitochondrial state 4 respiration rate, measured as oxygen consumption (pmol/s* mg of protein). Mitochondria were sourced from the thorax and respiration was measured in vitro. State 4 respiration occurs when protons leak into the mitochondrial matrix in the absence of ADP, which is required for ATP synthase. Higher values indicate higher respiration rates.")
+
+# P:O ratio model
+
+
+
+PO_ratio_model <- brm(st_po_ratio ~ 1 + Sex + (Sex|line),
+                      data = Jumbo_mito_data %>% filter(po_ratio != "NA"), family = gaussian,
+                      prior = c(prior(normal(0, 0.5), class = Intercept),
+                                prior(normal(0, 0.5), class = b),
+                                prior(exponential(1), class = sd)),
+                      iter = 6000, warmup = 2000, chains = 4, cores = 4,
+                      seed = 2, file = "fits/raw_data_fits/PO_ratio.model")
+
+#pp_check(PO_ratio_model)
+
+Jumbo_PO_data <- Jumbo_mito_data %>% filter(po_ratio != "NA")
+     
+fitted_PO_ratio <- fitted(PO_ratio_model, newdata = new_data) %>% 
+  as_tibble() %>%
+  # now we need to convert back to response scale (note I don't convert Est.Error)
+  mutate(Estimate = Estimate*sd(Jumbo_PO_data$po_ratio) + mean(Jumbo_PO_data$po_ratio),
+         Q2.5 = Q2.5*sd(Jumbo_PO_data$po_ratio) + mean(Jumbo_PO_data$po_ratio),
+         Q97.5 = Q97.5*sd(Jumbo_PO_data$po_ratio) + mean(Jumbo_PO_data$po_ratio))
+
+PO_ratio_estimates <- tibble(new_data, fitted_PO_ratio) %>% 
+  mutate(Sex = if_else(Sex == "F", "Female", "Male"))
+
+# create the P:O ratio tibbles
+
+# females
+
+PO_ratio_f_line_means <- Jumbo_line_means(PO_ratio_estimates, "Female", "mitochondrial.PO.ratio.f", "Mean phosphate/oxygen ratio (P:O ratio) - a measure of the efficiency with which mitochondria convert oxygen into ATP. The ratio was here calculated as the amount of ADP consumed per oxygen being reduced during state 3 respriation. Mitochondria were sourced from the thorax and respiration was measured in vitro. Higher values indicate more efficient ATP production.")
+
+# males
+
+PO_ratio_m_line_means <- Jumbo_line_means(PO_ratio_estimates, "Male", "mitochondrial.PO.ratio.m", "Mean phosphate/oxygen ratio (P:O ratio) - a measure of the efficiency with which mitochondria convert oxygen into ATP. The ratio was here calculated as the amount of ADP consumed per oxygen being reduced during state 3 respriation. Mitochondria were sourced from the thorax and respiration was measured in vitro. Higher values indicate more efficient ATP production.")
+
+Jumbo_traits <- 
+  rbind(state_3_f_line_means, 
+        state_3_m_line_means, 
+        state_4_f_line_means, 
+        state_4_m_line_means, 
+        PO_ratio_f_line_means, 
+        PO_ratio_m_line_means)
+      
+```
+
+### Grubbs et al 2013
+
+```{r}
+# Grubbs et al 2013
+
+Grubbs_2013_leg_props <- read_csv("data/data_collation/input/Raw_data_files/Grubbs_2013_leg_props.csv") %>% 
+  mutate(Sex = as.factor(Sex),
+         Line = as.factor(Line),
+         # standardise
+         st_Femur = my_scale(Femur),
+         st_Tibia = my_scale(Tibia),
+         st_Tarsus = my_scale(Tarsus), 
+         st_Total = my_scale(Total))
+
+Grubbs_2013_T1_leg_props <- Grubbs_2013_leg_props %>% 
+filter(T1_T2 == "T1")
+
+Grubbs_2013_T2_leg_props <- Grubbs_2013_leg_props %>% 
+filter(T1_T2 == "T2")
+
+# mean total T1 leg length
+
+T1_leg_length_model <- brm(st_Total ~ 1 + Sex + (Sex|Line),
+                      data = Grubbs_2013_T1_leg_props, family = gaussian,
+                      prior = c(prior(normal(0, 5), class = Intercept),
+                                prior(normal(0, 0.5), class = b),
+                                prior(exponential(1), class = sd)),
+                      iter = 6000, warmup = 2000, chains = 4, cores = 4,
+                      seed = 2, file = "fits/raw_data_fits/T1_leg.length.model", control = list(adapt_delta = 0.95, max_treedepth = 10))
+
+new_data <-
+  expand_grid(Line = Grubbs_2013_leg_props$Line,
+              Sex = c("F", "M")) %>% 
+  distinct(Line, Sex)
+
+fitted_T1_leg_total <- fitted(T1_leg_length_model, newdata = new_data) %>% 
+  as_tibble() %>%
+  # now we need to convert back to response scale (note I don't convert Est.Error)
+  mutate(Estimate = Estimate*sd(Grubbs_2013_T1_leg_props$Total) + mean(Grubbs_2013_T1_leg_props$Total),
+         Q2.5 = Q2.5*sd(Grubbs_2013_T1_leg_props$Total) + mean(Grubbs_2013_T1_leg_props$Total),
+         Q97.5 = Q97.5*sd(Grubbs_2013_T1_leg_props$Total) + mean(Grubbs_2013_T1_leg_props$Total))
+
+# build a function to create tibbles holding sex specific line means
+
+Grubbs_line_means <- function(estimates, y, Trait, guild, description){
+  estimates %>% 
+  filter(Sex == y) %>% 
+  mutate(line = str_remove(Line, "line_"),
+         Trait = Trait,
+         Reference = "Grubbs et al (2013) PLOS One",
+         `Trait guild` = guild,
+         `Trait description` = description,
+         trait_value = Estimate) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(line)
+}
+
+T1_leg_length_estimates <- tibble(new_data, fitted_T1_leg_total) %>% 
+  mutate(Sex = if_else(Sex == "F", "Female", "Male"))
+
+# T1 females
+
+T1_leg_length_f_line_means <- Grubbs_line_means(T1_leg_length_estimates, "Female", "T1.leg.length.f", "Morphological", "Mean leg length for legs originating on the first thoracic segment. Higher values indicate longer legs")
+
+# T1 males
+
+T1_leg_length_m_line_means <- Grubbs_line_means(T1_leg_length_estimates, "Male", "T1.leg.length.m", "Morphological", "Mean leg length for legs originating on the first thoracic segment. Higher values indicate longer legs")
+
+# mean total T2 leg length
+
+T2_leg_length_model <- brm(st_Total ~ 1 + Sex + (Sex|Line),
+                      data = Grubbs_2013_T2_leg_props, family = "Gaussian",
+                      prior = c(prior(normal(0, 5), class = Intercept),
+                                prior(normal(0, 0.5), class = b),
+                                prior(exponential(1), class = sd)),
+                      iter = 6000, warmup = 2000, chains = 4, cores = 4,
+                      seed = 2, file = "fits/raw_data_fits/T2_leg.length.model", control = list(adapt_delta = 0.95, max_treedepth = 10))
+
+fitted_T2_leg_total <- fitted(T2_leg_length_model,
+       newdata = new_data) %>% 
+  as_tibble() %>%
+  # now we need to convert back to response scale (note I don't convert Est.Error)
+  mutate(Estimate = Estimate*sd(Grubbs_2013_T2_leg_props$Total) + mean(Grubbs_2013_T2_leg_props$Total),
+         Q2.5 = Q2.5*sd(Grubbs_2013_T2_leg_props$Total) + mean(Grubbs_2013_T2_leg_props$Total),
+         Q97.5 = Q97.5*sd(Grubbs_2013_T2_leg_props$Total) + mean(Grubbs_2013_T2_leg_props$Total))
+
+
+T2_leg_length_estimates <- tibble(new_data, fitted_T2_leg_total) %>% 
+  mutate(Sex = if_else(Sex == "F", "Female", "Male"))
+
+# T2 females
+
+T2_leg_length_f_line_means <- Grubbs_line_means(T2_leg_length_estimates, "Female", "T2.leg.length.f", "Morphological", "Mean leg length for legs originating on the second thoracic segment. Higher values indicate longer legs")
+
+# T2 males
+
+T2_leg_length_m_line_means <- Grubbs_line_means(T2_leg_length_estimates, "Male", "T2.leg.length.m", "Morphological", "Mean leg length for legs originating on the second thoracic segment. Higher values indicate longer legs")
+
+# Femur length
+
+T1_femur_model <- brm(st_Femur ~ 1 + Sex + (Sex|Line),
+                      data = Grubbs_2013_T1_leg_props, family = gaussian,
+                      prior = c(prior(normal(0, 5), class = Intercept),
+                                prior(normal(0, 0.5), class = b),
+                                prior(exponential(1), class = sd)),
+                      iter = 6000, warmup = 2000, chains = 4, cores = 4,
+                      seed = 2, file = "fits/raw_data_fits/T1.femur.model", 
+                      control = list(adapt_delta = 0.95, max_treedepth = 10))
+
+
+fitted_T1_femur <- fitted(T1_femur_model,
+       newdata = new_data) %>% 
+  as_tibble() %>%
+  # now we need to convert back to response scale (note I don't convert Est.Error)
+  mutate(Estimate = Estimate*sd(Grubbs_2013_T1_leg_props$Femur) + mean(Grubbs_2013_T1_leg_props$Femur),
+         Q2.5 = Q2.5*sd(Grubbs_2013_T1_leg_props$Femur) + mean(Grubbs_2013_T1_leg_props$Femur),
+         Q97.5 = Q97.5*sd(Grubbs_2013_T1_leg_props$Femur) + mean(Grubbs_2013_T1_leg_props$Femur))
+
+T1_femur_estimates <- tibble(new_data, fitted_T1_femur) %>% 
+  mutate(Sex = if_else(Sex == "F", "Female", "Male"))
+
+# T1 females
+
+femur_T1_f_line_means <- Grubbs_line_means(T1_femur_estimates, "Female", "T1.femur.f", "Morphological", "Mean femur length, for legs originating on the first thoracic segment. Higher values indicate longer femurs")
+
+# T1 males
+
+femur_T1_m_line_means <- Grubbs_line_means(T1_femur_estimates, "Male", "T1.femur.m", "Morphological", "Mean femur length, for legs originating on the first thoracic segment. Higher values indicate longer femurs")
+
+T2_femur_model <- brm(st_Femur ~ 1 + Sex + (Sex|Line),
+                      data = Grubbs_2013_T2_leg_props, family = gaussian,
+                      prior = c(prior(normal(0, 5), class = Intercept),
+                                prior(normal(0, 0.5), class = b),
+                                prior(exponential(1), class = sd)),
+                      iter = 6000, warmup = 2000, chains = 4, cores = 4,
+                      seed = 2, file = "fits/raw_data_fits/T2.femur.model", 
+                      control = list(adapt_delta = 0.95, max_treedepth = 10))
+
+
+fitted_T2_femur <- fitted(T2_femur_model,
+       newdata = new_data) %>% 
+  as_tibble() %>%
+  # now we need to convert back to response scale (note I don't convert Est.Error)
+  mutate(Estimate = Estimate*sd(Grubbs_2013_T2_leg_props$Femur) + mean(Grubbs_2013_T2_leg_props$Femur),
+         Q2.5 = Q2.5*sd(Grubbs_2013_T2_leg_props$Femur) + mean(Grubbs_2013_T2_leg_props$Femur),
+         Q97.5 = Q97.5*sd(Grubbs_2013_T2_leg_props$Femur) + mean(Grubbs_2013_T2_leg_props$Femur))
+
+T2_femur_estimates <- tibble(new_data, fitted_T2_femur) %>% 
+  mutate(Sex = if_else(Sex == "F", "Female", "Male"))
+
+# T2 females
+
+femur_T2_f_line_means <- Grubbs_line_means(T2_femur_estimates, "Female", "T2.femur.f", "Morphological", "Mean femur length, for legs originating on the second thoracic segment. Higher values indicate longer femurs")
+
+# T2 males
+
+femur_T2_m_line_means <- Grubbs_line_means(T2_femur_estimates, "Male", "T2.femur.m", "Morphological", "Mean femur length, for legs originating on the second thoracic segment. Higher values indicate longer femurs")
+
+# Tibia length
+
+T1_tibia_model <- brm(st_Tibia ~ 1 + Sex + (Sex|Line),
+                      data = Grubbs_2013_T1_leg_props, family = gaussian,
+                      prior = c(prior(normal(0, 5), class = Intercept),
+                                prior(normal(0, 0.5), class = b),
+                                prior(exponential(1), class = sd)),
+                      iter = 6000, warmup = 2000, chains = 4, cores = 4,
+                      seed = 2, file = "fits/raw_data_fits/T1.tibia.model", 
+                      control = list(adapt_delta = 0.95, max_treedepth = 10))
+
+fitted_T1_tibia <- fitted(T1_tibia_model,
+       newdata = new_data) %>% 
+  as_tibble() %>%
+  # now we need to convert back to response scale (note I don't convert Est.Error)
+  mutate(Estimate = Estimate*sd(Grubbs_2013_T1_leg_props$Tibia) + mean(Grubbs_2013_T1_leg_props$Tibia),
+         Q2.5 = Q2.5*sd(Grubbs_2013_T1_leg_props$Tibia) + mean(Grubbs_2013_T1_leg_props$Tibia),
+         Q97.5 = Q97.5*sd(Grubbs_2013_T1_leg_props$Tibia) + mean(Grubbs_2013_T1_leg_props$Tibia))
+
+T1_tibia_estimates <- tibble(new_data, fitted_T1_tibia) %>% 
+  mutate(Sex = if_else(Sex == "F", "Female", "Male"))
+
+# T1 females
+
+tibia_T1_f_line_means <- Grubbs_line_means(T1_tibia_estimates, "Female", "T1.tibia.f", "Morphological", "Mean tibia length, for legs originating on the first thoracic segment. Higher values indicate longer tibias")
+
+# T1 males
+
+tibia_T1_m_line_means <- Grubbs_line_means(T1_tibia_estimates, "Male", "T1.tibia.m", "Morphological", "Mean tibia length, for legs originating on the second thoracic segment. Higher values indicate longer tibias")
+
+T2_tibia_model <- brm(st_Tibia ~ 1 + Sex + (Sex|Line),
+                      data = Grubbs_2013_T2_leg_props, family = gaussian,
+                      prior = c(prior(normal(0, 5), class = Intercept),
+                                prior(normal(0, 0.5), class = b),
+                                prior(exponential(1), class = sd)),
+                      iter = 10000, warmup = 2000, chains = 4, cores = 4,
+                      seed = 2, file = "fits/raw_data_fits/T2.tibia.model", 
+                      control = list(adapt_delta = 0.95, max_treedepth = 10))
+
+
+fitted_T2_tibia <- fitted(T2_tibia_model,
+       newdata = new_data) %>% 
+  as_tibble() %>%
+  # now we need to convert back to response scale (note I don't convert Est.Error)
+  mutate(Estimate = Estimate*sd(Grubbs_2013_T2_leg_props$Tibia) + mean(Grubbs_2013_T2_leg_props$Tibia),
+         Q2.5 = Q2.5*sd(Grubbs_2013_T2_leg_props$Tibia) + mean(Grubbs_2013_T2_leg_props$Tibia),
+         Q97.5 = Q97.5*sd(Grubbs_2013_T2_leg_props$Tibia) + mean(Grubbs_2013_T2_leg_props$Tibia))
+
+T2_tibia_estimates <- tibble(new_data, fitted_T2_tibia) %>% 
+  mutate(Sex = if_else(Sex == "F", "Female", "Male"))
+
+# T2 females
+
+tibia_T2_f_line_means <- Grubbs_line_means(T2_tibia_estimates, "Female", "T2.tibia.f", "Morphological", "Mean tibia length, for legs originating on the second thoracic segment. Higher values indicate longer tibias")
+
+# T2 males
+
+tibia_T2_m_line_means <- Grubbs_line_means(T2_tibia_estimates, "Male", "T2.tibia.m", "Morphological", "Mean tibia length, for legs originating on the second thoracic segment. Higher values indicate longer tibias")
+
+# Tarsus length
+
+T1_tarsus_model <- brm(st_Tarsus ~ 1 + Sex + (Sex|Line),
+                      data = Grubbs_2013_T1_leg_props, family = gaussian,
+                      prior = c(prior(normal(0, 5), class = Intercept),
+                                prior(normal(0, 0.5), class = b),
+                                prior(exponential(1), class = sd)),
+                      iter = 6000, warmup = 2000, chains = 4, cores = 4,
+                      seed = 2, file = "fits/raw_data_fits/T1.tarsus.model", 
+                      control = list(adapt_delta = 0.95, max_treedepth = 10))
+
+fitted_T1_tarsus <- fitted(T1_tarsus_model,
+       newdata = new_data) %>% 
+  as_tibble() %>%
+  # now we need to convert back to response scale (note I don't convert Est.Error)
+  mutate(Estimate = Estimate*sd(Grubbs_2013_T1_leg_props$Tarsus) + mean(Grubbs_2013_T1_leg_props$Tarsus),
+         Q2.5 = Q2.5*sd(Grubbs_2013_T1_leg_props$Tarsus) + mean(Grubbs_2013_T1_leg_props$Tarsus),
+         Q97.5 = Q97.5*sd(Grubbs_2013_T1_leg_props$Tarsus) + mean(Grubbs_2013_T1_leg_props$Tarsus))
+
+T1_tarsus_estimates <- tibble(new_data, fitted_T1_tarsus) %>% 
+  mutate(Sex = if_else(Sex == "F", "Female", "Male"))
+
+# T1 females
+
+tarsus_T1_f_line_means <- Grubbs_line_means(T1_tarsus_estimates, "Female", "T1.tarsus.f", "Morphological", "Mean tarsus length, for legs originating on the first thoracic segment. Higher values indicate longer tarsus'.")
+
+# T1 males
+
+tarsus_T1_m_line_means <- Grubbs_line_means(T1_tarsus_estimates, "Male", "T1.tarsus.m", "Morphological", "Mean tarsus length, for legs originating on the first thoracic segment. Higher values indicate longer tarsus'.")
+
+T2_tarsus_model <- brm(st_Tarsus ~ 1 + Sex + (Sex|Line),
+                      data = Grubbs_2013_T2_leg_props, family = gaussian,
+                      prior = c(prior(normal(0, 5), class = Intercept),
+                                prior(normal(0, 0.5), class = b),
+                                prior(exponential(1), class = sd)),
+                      iter = 6000, warmup = 2000, chains = 4, cores = 4,
+                      seed = 2, file = "fits/raw_data_fits/T2.tarsus.model", 
+                      control = list(adapt_delta = 0.95, max_treedepth = 10))
+
+fitted_T2_tarsus <- fitted(T2_tarsus_model,
+       newdata = new_data) %>% 
+  as_tibble() %>%
+  # now we need to convert back to response scale (note I don't convert Est.Error)
+  mutate(Estimate = Estimate*sd(Grubbs_2013_T2_leg_props$Tarsus) + mean(Grubbs_2013_T2_leg_props$Tarsus),
+         Q2.5 = Q2.5*sd(Grubbs_2013_T2_leg_props$Tarsus) + mean(Grubbs_2013_T2_leg_props$Tarsus),
+         Q97.5 = Q97.5*sd(Grubbs_2013_T2_leg_props$Tarsus) + mean(Grubbs_2013_T2_leg_props$Tarsus))
+
+T2_tarsus_estimates <- tibble(new_data, fitted_T2_tarsus) %>% 
+  mutate(Sex = if_else(Sex == "F", "Female", "Male"))
+
+# T2 females
+
+tarsus_T2_f_line_means <- Grubbs_line_means(T2_tarsus_estimates, "Female", "T2.tarsus.f", "Morphological", "Mean tarsus length, for legs originating on the second thoracic segment. Higher values indicate longer tarsus'.")
+
+# T2 males
+
+tarsus_T2_m_line_means <- Grubbs_line_means(T2_tarsus_estimates, "Male", "T2.tarsus.m", "Morphological", "Mean tarsus length, for legs originating on the second thoracic segment. Higher values indicate longer tarsus'.")
+
+Grubbs_traits <- rbind(T1_leg_length_f_line_means, 
+                       T1_leg_length_m_line_means, 
+                       T2_leg_length_f_line_means, 
+                       T2_leg_length_m_line_means,
+                       femur_T1_f_line_means, 
+                       femur_T1_m_line_means, 
+                       femur_T2_f_line_means, 
+                       femur_T2_m_line_means,
+                       tibia_T1_f_line_means, 
+                       tibia_T1_m_line_means, 
+                       tibia_T2_f_line_means, 
+                       tibia_T2_m_line_means,
+                       tarsus_T1_f_line_means, 
+                       tarsus_T1_m_line_means, 
+                       tarsus_T2_f_line_means, 
+                       tarsus_T2_m_line_means)
+```
+
+### Dobson et al 2015
+
+From **Supplementary Table 1**'s caption: "In the second approach (c), simpler models were fitted, in which microbiota, weight and Wolbachia status were additive, with genotype nested in experimental block as a random effect. The statistical analysis presented in Fig.1b uses these models simplified by removal of non-significant factors."
+
+We follow this approach to best recapitulate the study's analysis, except that we allow the intercept for the random effect line to vary with microbiota treatment. This is needed in our modelling approach to estimate line-specific effects of microbiota. We also include day as a blocking factor, which represents a block of data collection involving a subset of lines. This controls for micro-environmental variance between blocks of phenotyping. 
+
+```{r}
+# weight
+
+Dobson_NI_microbiome.dryweight <- read_csv("data/data_collation/input/Raw_data_files/Dobson_2015/gwasB.filtered.dw.ab.csv") %>% 
+  mutate(line = as.factor(str_remove(RAL, "RAL_")),
+         wolb = as.factor(wolb),
+         trt = as.factor(trt),
+         day = as.factor(day),
+         # standardise
+         st_weight.5.flies = my_scale(weight.5.flies)) %>% 
+  select(-c(PC1, PC2, PC3, Code, RAL, ...1))
+
+# The data is a bit tricky. Not all lines have been measured in both treatments. Below we look to see first which lines were measured in treatments a and b, then what lines were measured in both. We need this when we estimate the mean difference between treatments for each line
+
+a <- Dobson_NI_microbiome.dryweight %>% filter(trt == "a") %>% distinct(line)
+b <- Dobson_NI_microbiome.dryweight %>% filter(trt == "b") %>% distinct(line)
+
+# inner_join selects lines that have measurements in both treatments 
+
+weight_microbiome_effect_lines <- inner_join(a, b)
+
+# build a function to create tibbles holding specific line means
+
+Dobson_line_means <- function(estimates, Trait, guild, description){
+  estimates %>% 
+  mutate(Trait = Trait,
+         Sex = "Male",
+         Reference = "Dobson et al (2015) Nature Communications",
+          `Trait guild` = guild,
+         `Trait description` = description,
+         trait_value = Estimate) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(line)
+}
+
+weight_microbiome_model <- brm(st_weight.5.flies ~ 1 + trt + wolb + day + (trt|line),
+                               data = Dobson_NI_microbiome.dryweight, family = gaussian,
+                               prior = c(prior(normal(0, 0.5), class = Intercept),
+                                         prior(normal(0, 0.5), class = b),
+                                         prior(exponential(1), class = sd)),
+                               iter = 8000, warmup = 2000, chains = 4, cores = 4,
+                               seed = 2, file = "fits/raw_data_fits/weight.microbiome.model")
+
+#pp_check(weight_microbiome_model)
+
+new_data <-
+  tibble(line = Dobson_NI_microbiome.dryweight$line,
+         trt = Dobson_NI_microbiome.dryweight$trt,
+         wolb = "n",
+         day = "a") %>% 
+  distinct(line, trt, wolb, day)
+              
+
+fitted_dryweight <- fitted(weight_microbiome_model, newdata = new_data) %>% 
+  as_tibble() %>%
+  # now we need to convert back to response scale (note I don't convert Est.Error)
+  mutate(Estimate = Estimate*sd(Dobson_NI_microbiome.dryweight$weight.5.flies) + mean(Dobson_NI_microbiome.dryweight$weight.5.flies),
+         Q2.5 = Q2.5*sd(Dobson_NI_microbiome.dryweight$weight.5.flies) + mean(Dobson_NI_microbiome.dryweight$weight.5.flies),
+         Q97.5 = Q97.5*sd(Dobson_NI_microbiome.dryweight$weight.5.flies) + mean(Dobson_NI_microbiome.dryweight$weight.5.flies))
+
+dry_weight_estimates_axenic <- tibble(new_data, fitted_dryweight) %>% 
+  filter(trt == "a")
+
+weight.anexic_line_means <- Dobson_line_means(dry_weight_estimates_axenic, "weight.anexic.m", "Microbiome", "Mean combined dry weight of 5 adult flies that lacked a microbiome. All micro-organisms were purged from egg-surfaces via dechorionation and larvae were reared on sterile food. Higher values indicate heavier flies.")
+
+dry_weight_estimates_gnotobiotic <- tibble(new_data, fitted_dryweight) %>% 
+  filter(trt == "b")
+
+weight.gnotobiotic_line_means <- Dobson_line_means(dry_weight_estimates_gnotobiotic, "weight.gnotobiotic.m", "Microbiome", "Mean combined dry weight of 5 adult flies that possessed a microbiome. All micro-organisms were purged from egg-surfaces via dechorionation and larvae were reared on medium supplemented with Acetobacter pomorum, Acetobacter tropicalis, Lactobacillus brevis, Lactobacillus fructivorans and Lactobacillus plantarum. All are common commensal bacteria that make up a large proportion of the D. melanogaster microbiome. Higher values indicate heavier flies.")
+
+# Now get the difference between treatments
+
+axenic <- 
+  left_join(weight_microbiome_effect_lines, dry_weight_estimates_axenic) %>% 
+  select(line, Estimate) %>% 
+  rename(axenic_estimate = Estimate)
+
+gnoto <-
+  left_join(weight_microbiome_effect_lines, dry_weight_estimates_gnotobiotic) %>% 
+  select(line, Estimate) %>% 
+  rename(gnoto_estimate = Estimate)
+
+dry_weight_estimates_diff <-
+  left_join(axenic, gnoto) %>% 
+  mutate(Estimate = gnoto_estimate - axenic_estimate)
+
+gnoto_anexic_diff_weight_line_means <- Dobson_line_means(dry_weight_estimates_diff, "weight.microbiome.effect.m", "Microbiome", "Mean change in the combined dry weight of 5 adult flies that possessed a microbiome compared with flies that lacked a microbiome. All micro-organisms were purged from egg-surfaces via dechorionation and larvae were reared either on sterile medium or on medium supplemented with Acetobacter pomorum, Acetobacter tropicalis, Lactobacillus brevis, Lactobacillus fructivorans and Lactobacillus plantarum. All are common commensal bacteria that make up a large proportion of the D. melanogaster microbiome. Higher values indicate that the addition of microbiota had a greater positive effect on weight. Note that the presence of micriobiota on average increased dry weight.")
+
+
+# Glucose
+
+Dobson_glucose_microbiome <- read_csv("data/data_collation/input/Raw_data_files/Dobson_2015/gwasB.filtered.glucose.ab.csv") %>% 
+  mutate(line = as.factor(str_remove(RAL, "RAL_")),
+         wolb = as.factor(wolb),
+         trt = as.factor(trt),
+         day = as.factor(day),
+         # standardise
+         st_glucose = my_scale(glucose)) %>% 
+  select(c(line, wolb, glucose, trt, day, weight.5.flies, st_glucose))
+
+# The data is a bit tricky. Not all lines have been measured in both treatments. Below we look to see first which lines were measured in treatments a and b, then what lines were measured in both. We need this when we estimate the mean difference between treatments for each line
+
+a <- Dobson_glucose_microbiome %>% filter(trt == "a") %>% distinct(line)
+b <- Dobson_glucose_microbiome %>% filter(trt == "b") %>% distinct(line)
+
+# inner_join selects lines that have measures for both treatments
+
+glucose_microbiome_effect_lines <- inner_join(a, b)
+
+# Note that we include weight as a moderator variable. This means we only estimate the direct effect of line on glucose levels, instead of the total effect. This is because line likely also affects weight which is likely to have a flow-on effect on glucose levels. 
+
+glucose_microbiome_model <- brm(st_glucose ~ 1 + trt + wolb + day + weight.5.flies + (trt|line),
+                               data = Dobson_glucose_microbiome, family = gaussian,
+                               prior = c(prior(normal(0, 0.5), class = Intercept),
+                                         prior(normal(0, 0.5), class = b),
+                                         prior(exponential(1), class = sd)),
+                               iter = 8000, warmup = 2000, chains = 4, cores = 4,
+                               seed = 2, file = "fits/raw_data_fits/glucose.microbiome.model")
+
+#pp_check(glucose_microbiome_model)
+
+new_data <-
+  tibble(line = Dobson_glucose_microbiome$line,
+         trt = Dobson_glucose_microbiome$trt,
+         wolb = "n",
+         day = "a",
+         weight.5.flies = 1) %>% 
+  distinct(line, trt, wolb, day, weight.5.flies)
+              
+
+fitted_glucose <- fitted(glucose_microbiome_model,
+       newdata = new_data, allow_new_levels = TRUE) %>% # Why do we need to allow new levels? Might be an issue
+  as_tibble() %>%
+  # now we need to convert back to response scale (note I don't convert Est.Error)
+  mutate(Estimate = Estimate*sd(Dobson_glucose_microbiome$glucose) + mean(Dobson_glucose_microbiome$glucose),
+         Q2.5 = Q2.5*sd(Dobson_glucose_microbiome$glucose) + mean(Dobson_glucose_microbiome$glucose),
+         Q97.5 = Q97.5*sd(Dobson_glucose_microbiome$glucose) + mean(Dobson_glucose_microbiome$glucose))
+
+glucose_estimates_axenic <- tibble(new_data, fitted_glucose) %>% 
+  filter(trt == "a")
+
+glucose.anexic_line_means <- Dobson_line_means(glucose_estimates_axenic, "glucose.anexic.m", "Microbiome", "Mean combined glucose content extracted from 5 adult flies that lacked a microbiome, after controlling for dry weight. All micro-organisms were purged from egg-surfaces via dechorionation and larvae were reared on sterile food. Higher values indicate higher glucose content.")
+
+glucose_estimates_gnotobiotic <- tibble(new_data, fitted_glucose) %>% 
+  filter(trt == "b")
+
+glucose.gnotobiotic_line_means <- Dobson_line_means(glucose_estimates_gnotobiotic, "glucose.gnotobiotic.m", "Microbiome", "Mean combined glucose content extracted from 5 adult flies that possessed a microbiome, after controlling for dry weight. All micro-organisms were purged from egg-surfaces via dechorionation and larvae were reared on medium supplemented with Acetobacter pomorum, Acetobacter tropicalis, Lactobacillus brevis, Lactobacillus fructivorans and Lactobacillus plantarum. All are common commensal bacteria that make up a large proportion of the D. melanogaster microbiome. Higher values indicate higher glucose content.")
+
+# Now get the difference between treatments
+
+axenic_glucose <- 
+  left_join(glucose_microbiome_effect_lines, glucose_estimates_axenic) %>% 
+  select(line, Estimate) %>% 
+  rename(axenic_estimate = Estimate)
+
+gnoto_glucose <-
+  left_join(glucose_microbiome_effect_lines, glucose_estimates_gnotobiotic) %>% 
+  select(line, Estimate) %>% 
+  rename(gnoto_estimate = Estimate)
+
+glucose_estimates_diff <-
+  left_join(axenic_glucose, gnoto_glucose) %>% 
+  mutate(Estimate = gnoto_estimate - axenic_estimate)
+
+gnoto_anexic_diff_glucose_line_means <- Dobson_line_means(glucose_estimates_diff, "glucose.microbiome.effect.m", "Microbiome", "Mean change in the combined glucose content of 5 adult flies that possessed a microbiome compared with flies that lacked a microbiome, after controlling for dry weight. All micro-organisms were purged from egg-surfaces via dechorionation and larvae were reared either on sterile medium or on medium supplemented with Acetobacter pomorum, Acetobacter tropicalis, Lactobacillus brevis, Lactobacillus fructivorans and Lactobacillus plantarum. All are common commensal bacteria that make up a large proportion of the D. melanogaster microbiome. Higher values indicate that the addition of microbiota resulted in a higher glucose content. Note though that the presence of micriobiota on average decreased glucose content.")
+
+
+# Glycogen
+
+Dobson_glycogen_microbiome <- read_csv("data/data_collation/input/Raw_data_files/Dobson_2015/gwasB.filtered.glycogen.ab.csv") %>% 
+  mutate(line = as.factor(str_remove(RAL, "RAL_")),
+         wolb = as.factor(wolb),
+         trt = as.factor(trt),
+         day = as.factor(day),
+         # standardise
+         st_glycogen = my_scale(glycogen)) %>% 
+  select(c(line, wolb, glycogen, st_glycogen, trt, day, weight.5.flies))
+
+# The data is a bit tricky. Not all lines have been measured in both treatments. Below we look to see first which lines were measured in treatments a and b, then what lines were measured in both. We need this when we estimate the mean difference between treatments for each line
+
+a <- Dobson_glycogen_microbiome %>% filter(trt == "a") %>% distinct(line)
+b <- Dobson_glycogen_microbiome %>% filter(trt == "b") %>% distinct(line)
+
+# inner_join selects lines that have measures for both treatments
+
+glycogen_microbiome_effect_lines <- inner_join(a, b)
+
+glycogen_microbiome_model <- brm(st_glycogen ~ 1 + trt + wolb + day + weight.5.flies + (trt|line),
+                               data = Dobson_glycogen_microbiome, family = gaussian,
+                               prior = c(prior(normal(0, 0.5), class = Intercept),
+                                         prior(normal(0, 0.5), class = b),
+                                         prior(exponential(1), class = sd)),
+                               iter = 8000, warmup = 2000, chains = 4, cores = 4,
+                               seed = 2, file = "fits/raw_data_fits/glycogen.microbiome.model")
+
+#pp_check(glycogen_microbiome_model)
+
+new_data <-
+  tibble(line = Dobson_glycogen_microbiome$line,
+         trt = Dobson_glycogen_microbiome$trt,
+         wolb = "n",
+         day = "a",
+         weight.5.flies = 1) %>% 
+  distinct(line, trt, wolb, day, weight.5.flies)
+              
+
+fitted_glycogen <- fitted(glycogen_microbiome_model,
+       newdata = new_data) %>%
+  as_tibble() %>%
+  # now we need to convert back to response scale (note I don't convert Est.Error)
+  mutate(Estimate = Estimate*sd(Dobson_glycogen_microbiome$glycogen) + mean(Dobson_glycogen_microbiome$glycogen),
+         Q2.5 = Q2.5*sd(Dobson_glycogen_microbiome$glycogen) + mean(Dobson_glycogen_microbiome$glycogen),
+         Q97.5 = Q97.5*sd(Dobson_glycogen_microbiome$glycogen) + mean(Dobson_glycogen_microbiome$glycogen))
+
+glycogen_estimates_axenic <- tibble(new_data, fitted_glycogen) %>% 
+  filter(trt == "a")
+
+glycogen.anexic_line_means <- Dobson_line_means(glycogen_estimates_axenic, "glycogen.anexic.m", "Microbiome", "Mean combined glycogen content extracted from 5 adult flies that lacked a microbiome, after controlling for dry weight. All micro-organisms were purged from egg-surfaces via dechorionation and larvae were reared on sterile food. Higher values indicate higher glycogen content.")
+
+glycogen_estimates_gnotobiotic <- tibble(new_data, fitted_glycogen) %>% 
+  filter(trt == "b")
+
+glycogen.gnotobiotic_line_means <- Dobson_line_means(glycogen_estimates_gnotobiotic, "glycogen.gnotobiotic.m", "Microbiome",  "Mean combined glycogen content extracted from 5 adult flies that possessed a microbiome, after controlling for dry weight. All micro-organisms were purged from egg-surfaces via dechorionation and larvae were reared on medium supplemented with Acetobacter pomorum, Acetobacter tropicalis, Lactobacillus brevis, Lactobacillus fructivorans and Lactobacillus plantarum. All are common commensal bacteria that make up a large proportion of the D. melanogaster microbiome. Higher values indicate higher glycogen content.")
+
+# Now get the difference between treatments
+
+axenic_glycogen <- 
+  left_join(glycogen_microbiome_effect_lines, glycogen_estimates_axenic) %>% 
+  select(line, Estimate) %>% 
+  rename(axenic_estimate = Estimate)
+
+gnoto_glycogen <-
+  left_join(glycogen_microbiome_effect_lines, glycogen_estimates_gnotobiotic) %>% 
+  select(line, Estimate) %>% 
+  rename(gnoto_estimate = Estimate)
+
+glycogen_estimates_diff <-
+  left_join(axenic_glycogen, gnoto_glycogen) %>% 
+  mutate(Estimate = gnoto_estimate - axenic_estimate)
+
+gnoto_anexic_diff_glycogen_line_means <- Dobson_line_means(glycogen_estimates_diff, "glycogen.microbiome.effect.m", "Microbiome", "Mean change in the combined glycogen content of 5 adult flies that possessed a microbiome compared with flies that lacked a microbiome, after controlling for dry weight. All micro-organisms were purged from egg-surfaces via dechorionation and larvae were reared either on sterile medium or on medium supplemented with Acetobacter pomorum, Acetobacter tropicalis, Lactobacillus brevis, Lactobacillus fructivorans and Lactobacillus plantarum. All are common commensal bacteria that make up a large proportion of the D. melanogaster microbiome. Higher values indicate that the addition of microbiota resulted in a higher glycogen content. Note that the presence of micriobiota on average increased glycogen content.")
+
+# Protein
+
+Dobson_protein_microbiome <- read_csv("data/data_collation/input/Raw_data_files/Dobson_2015/gwasB.filtered.protein.ab.csv") %>% 
+  mutate(line = as.factor(str_remove(RAL, "RAL_")),
+         wolb = as.factor(wolb),
+         trt = as.factor(trt),
+         day = as.factor(day),
+         # standardise
+         st_protein = my_scale(protein)) %>% 
+  select(c(line, wolb, protein, st_protein, trt, day, weight.5.flies))
+
+# The data is a bit tricky. Not all lines have been measured in both treatments. Below we look to see first which lines were measured in treatments a and b, then what lines were measured in both. We need this when we estimate the mean difference between treatments for each line
+
+a <- Dobson_protein_microbiome %>% filter(trt == "a") %>% distinct(line)
+b <- Dobson_protein_microbiome %>% filter(trt == "b") %>% distinct(line)
+
+# inner_join selects lines that have measures for both treatments
+
+protein_microbiome_effect_lines <- inner_join(a, b)
+
+protein_microbiome_model <- brm(st_protein ~ 1 + trt + wolb + day + weight.5.flies + (trt|line),
+                               data = Dobson_protein_microbiome, family = gaussian,
+                               prior = c(prior(normal(0, 0.5), class = Intercept),
+                                         prior(normal(0, 0.5), class = b),
+                                         prior(exponential(1), class = sd)),
+                               iter = 8000, warmup = 2000, chains = 4, cores = 4,
+                               seed = 2, file = "fits/raw_data_fits/protein.microbiome.model")
+
+#pp_check(protein_microbiome_model)
+
+new_data <-
+  tibble(line = Dobson_protein_microbiome$line,
+         trt = Dobson_protein_microbiome$trt,
+         wolb = "n",
+         day = "a",
+         weight.5.flies = 1) %>% 
+  distinct(line, trt, wolb, day, weight.5.flies)
+              
+
+fitted_protein <- fitted(protein_microbiome_model,
+       newdata = new_data) %>%
+  as_tibble() %>%
+  # now we need to convert back to response scale (note I don't convert Est.Error)
+  mutate(Estimate = Estimate*sd(Dobson_protein_microbiome$protein) + mean(Dobson_protein_microbiome$protein),
+         Q2.5 = Q2.5*sd(Dobson_protein_microbiome$protein) + mean(Dobson_protein_microbiome$protein),
+         Q97.5 = Q97.5*sd(Dobson_protein_microbiome$protein) + mean(Dobson_protein_microbiome$protein))
+
+protein_estimates_axenic <- tibble(new_data, fitted_protein) %>% 
+  filter(trt == "a")
+
+protein.anexic_line_means <- Dobson_line_means(protein_estimates_axenic, "protein.anexic.m", "Microbiome", "Mean combined protein content extracted from 5 adult flies that lacked a microbiome, after controlling for dry weight. All micro-organisms were purged from egg-surfaces via dechorionation and larvae were reared on sterile food. Higher values indicate higher protein content.")
+
+protein_estimates_gnotobiotic <- tibble(new_data, fitted_protein) %>% 
+  filter(trt == "b")
+
+protein.gnotobiotic_line_means <- Dobson_line_means(protein_estimates_gnotobiotic, "protein.gnotobiotic.m", "Microbiome", "Mean combined protein content extracted from 5 adult flies that possessed a microbiome, after controlling for dry weight. All micro-organisms were purged from egg-surfaces via dechorionation and larvae were reared on medium supplemented with Acetobacter pomorum, Acetobacter tropicalis, Lactobacillus brevis, Lactobacillus fructivorans and Lactobacillus plantarum. All are common commensal bacteria that make up a large proportion of the D. melanogaster microbiome. Higher values indicate higher protein content.")
+
+# Now get the difference between treatments
+
+axenic_protein <- 
+  left_join(protein_microbiome_effect_lines, protein_estimates_axenic) %>% 
+  select(line, Estimate) %>% 
+  rename(axenic_estimate = Estimate)
+
+gnoto_protein <-
+  left_join(protein_microbiome_effect_lines, protein_estimates_gnotobiotic) %>% 
+  select(line, Estimate) %>% 
+  rename(gnoto_estimate = Estimate)
+
+protein_estimates_diff <-
+  left_join(axenic_protein, gnoto_protein) %>% 
+  mutate(Estimate = gnoto_estimate - axenic_estimate)
+
+gnoto_anexic_diff_protein_line_means <- Dobson_line_means(protein_estimates_diff, "protein.microbiome.effect.m", "Microbiome", "Mean change in the combined protein content of 5 adult flies that possessed a microbiome compared with flies that lacked a microbiome, after controlling for dry weight. All micro-organisms were purged from egg-surfaces via dechorionation and larvae were reared either on sterile medium or on medium supplemented with Acetobacter pomorum, Acetobacter tropicalis, Lactobacillus brevis, Lactobacillus fructivorans and Lactobacillus plantarum. All are common commensal bacteria that make up a large proportion of the D. melanogaster microbiome. Higher values indicate that the addition of microbiota resulted in a higher protein content. Note that the presence of micriobiota on average increased protein content.")
+
+# TAG glycerol
+
+Dobson_TAG_glycerol_microbiome <- read_csv("data/data_collation/input/Raw_data_files/Dobson_2015/gwasB.filtered.TAG_glycerol.ab.csv") %>% 
+  mutate(line = as.factor(str_remove(RAL, "RAL_")),
+         #wolb = as.factor(wolb),
+         trt = as.factor(trt),
+         day = as.factor(day),
+         # standardise
+         st_TAG_glycerol = my_scale(TAG_glycerol)) %>% 
+  select(c(line, TAG_glycerol, st_TAG_glycerol, trt, day, weight.5.flies))
+
+# The data is a bit tricky. Not all lines have been measured in both treatments. Below we look to see first which lines were measured in treatments a and b, then what lines were measured in both. We need this when we estimate the mean difference between treatments for each line
+
+a <- Dobson_TAG_glycerol_microbiome %>% filter(trt == "a") %>% distinct(line)
+b <- Dobson_TAG_glycerol_microbiome %>% filter(trt == "b") %>% distinct(line)
+
+# inner_join selects lines that have measures for both treatments
+
+TAG_glycerol_microbiome_effect_lines <- inner_join(a, b)
+
+TAG_glycerol_microbiome_model <- brm(st_TAG_glycerol ~ 1 + trt + day + weight.5.flies + (trt|line),
+                               data = Dobson_TAG_glycerol_microbiome, family = gaussian,
+                               prior = c(prior(normal(0, 0.5), class = Intercept),
+                                         prior(normal(0, 0.5), class = b),
+                                         prior(exponential(1), class = sd)),
+                               iter = 8000, warmup = 2000, chains = 4, cores = 4,
+                               seed = 2, file = "fits/raw_data_fits/TAG_glycerol.microbiome.model")
+
+#pp_check(TAG_glycerol_microbiome_model)
+
+new_data <-
+  tibble(line = Dobson_TAG_glycerol_microbiome$line,
+         trt = Dobson_TAG_glycerol_microbiome$trt,
+         day = "a",
+         weight.5.flies = 1) %>% 
+  distinct(line, trt, day, weight.5.flies)
+              
+
+fitted_TAG_glycerol <- fitted(TAG_glycerol_microbiome_model,
+                              newdata = new_data) %>%
+  as_tibble() %>%
+  # now we need to convert back to response scale (note I don't convert Est.Error)
+  mutate(Estimate = Estimate*sd(Dobson_TAG_glycerol_microbiome$TAG_glycerol) + mean(Dobson_TAG_glycerol_microbiome$TAG_glycerol),
+         Q2.5 = Q2.5*sd(Dobson_TAG_glycerol_microbiome$TAG_glycerol) + mean(Dobson_TAG_glycerol_microbiome$TAG_glycerol),
+         Q97.5 = Q97.5*sd(Dobson_TAG_glycerol_microbiome$TAG_glycerol) + mean(Dobson_TAG_glycerol_microbiome$TAG_glycerol))
+
+TAG_glycerol_estimates_axenic <- tibble(new_data, fitted_TAG_glycerol) %>% 
+  filter(trt == "a")
+
+TAG_glycerol.anexic_line_means <- Dobson_line_means(TAG_glycerol_estimates_axenic, "triglyceride.anexic.m", "Microbiome", "Mean combined triglyceride (TAG) content after glycerol substraction extracted from 5 adult flies that lacked a microbiome, after controlling for dry weight. All micro-organisms were purged from egg-surfaces via dechorionation and larvae were reared on sterile food. Higher values indicate higher TAG content.")
+
+TAG_glycerol_estimates_gnotobiotic <- tibble(new_data, fitted_TAG_glycerol) %>% 
+  filter(trt == "b")
+
+TAG_glycerol.gnotobiotic_line_means <- Dobson_line_means(TAG_glycerol_estimates_gnotobiotic, "triglyceride.gnotobiotic.m", "Microbiome", "Mean combined triglyceride (TAG) content after glycerol substraction extracted from 5 adult flies that possessed a microbiome, after controlling for dry weight. All micro-organisms were purged from egg-surfaces via dechorionation and larvae were reared on medium supplemented with Acetobacter pomorum, Acetobacter tropicalis, Lactobacillus brevis, Lactobacillus fructivorans and Lactobacillus plantarum. All are common commensal bacteria that make up a large proportion of the D. melanogaster microbiome. Higher values indicate higher TAG content.")
+
+# Now get the difference between treatments
+
+axenic_TAG_glycerol <- 
+  left_join(TAG_glycerol_microbiome_effect_lines, TAG_glycerol_estimates_axenic) %>% 
+  select(line, Estimate) %>% 
+  rename(axenic_estimate = Estimate)
+
+gnoto_TAG_glycerol <-
+  left_join(TAG_glycerol_microbiome_effect_lines, TAG_glycerol_estimates_gnotobiotic) %>% 
+  select(line, Estimate) %>% 
+  rename(gnoto_estimate = Estimate)
+
+TAG_glycerol_estimates_diff <-
+  left_join(axenic_TAG_glycerol, gnoto_TAG_glycerol) %>% 
+  mutate(Estimate = gnoto_estimate - axenic_estimate)
+
+gnoto_anexic_diff_TAG_glycerol_line_means <- Dobson_line_means(TAG_glycerol_estimates_diff, "TAG.glycerol.microbiome.effect.m", "Microbiome", "Mean change in combined triglyceride content after glycerol substraction of 5 adult flies that possessed a microbiome compared with flies that lacked a microbiome, after controlling for dry weight. All micro-organisms were purged from egg-surfaces via dechorionation and larvae were reared either on sterile medium or on medium supplemented with Acetobacter pomorum, Acetobacter tropicalis, Lactobacillus brevis, Lactobacillus fructivorans and Lactobacillus plantarum. All are common commensal bacteria that make up a large proportion of the D. melanogaster microbiome. Higher values indicate that the addition of microbiota resulted in a higher TAG content. Note though that the presence of micriobiota on average decreased TAG content.")
+
+Dobson_traits <- rbind(weight.anexic_line_means, 
+                       weight.gnotobiotic_line_means, 
+                       gnoto_anexic_diff_weight_line_means,
+                       glucose.anexic_line_means, 
+                       glucose.gnotobiotic_line_means, 
+                       gnoto_anexic_diff_glucose_line_means,
+                       glycogen.anexic_line_means, 
+                       glycogen.gnotobiotic_line_means, 
+                       gnoto_anexic_diff_glycogen_line_means,
+                       protein.anexic_line_means, 
+                       protein.gnotobiotic_line_means, 
+                       gnoto_anexic_diff_protein_line_means,
+                       TAG_glycerol.anexic_line_means, 
+                       TAG_glycerol.gnotobiotic_line_means, 
+                       gnoto_anexic_diff_TAG_glycerol_line_means)
+```
+
+
+### Gaertner et al 2015
+
+```{r}
+
+Gaertner_2015_male_mating <- read_csv("data/data_collation/input/Raw_data_files/Gaertner_2015_male_mating.csv") %>% 
+  select(Block, Day, Assay, Chamber, Line, Subject, SUM, orient_female, approach, wing, genital_lick, attempt_cop, copulate, sum_court) %>%
+  rename(MMP = SUM) %>% 
+  mutate(Block = as.factor(Block),
+         line = as.factor(Line),
+         courtship_events = orient_female + approach + wing + genital_lick + attempt_cop,
+         mating_latency = 31 - copulate, # we subtract from 31 to tell the model that flies did not start the assay mating 
+         censor = if_else(mating_latency == 31, 1, 0))
+
+# build a function to create tibbles holding specific line means
+
+Gaertner_line_means <- function(estimates, Trait, guild, description){
+  estimates %>% 
+  mutate(Trait = Trait,
+         Sex = "Male",
+         Reference = "Gaertner et al (2015) G3",
+          `Trait guild` = guild,
+         `Trait description` = description,
+         trait_value = Estimate) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(line)
+}
+
+# We will model the 5 courtship processes individually (note that the courtship data is very zero inflated)
+
+# orientation towards females
+
+orient_model <- brm(orient_female ~ 1 + Block + (1|line),
+                    data = Gaertner_2015_male_mating, family = zero_inflated_poisson,
+                    prior = c(prior(normal(3, 0.5), class = Intercept),
+                              prior(normal(0, 0.2), class = b),
+                              prior(cauchy(0, 0.2), class = sd),
+                              prior(beta(2, 6), class = zi)),  # the brms default is beta(1, 1)), our specified prior is more sceptical of extreme values
+                    iter = 6000, warmup = 2000, chains = 4, cores = 4,
+                    seed = 2, file = "fits/raw_data_fits/orient.female.model",
+                    control = list(adapt_delta = 0.8, max_treedepth = 12))
+
+new_data <-
+  tibble(line = Gaertner_2015_male_mating$Line,
+         Block = 1) %>% 
+  distinct(line, Block)
+              
+
+fitted_orient <- fitted(orient_model,
+       newdata = new_data,
+       re_formula = orient_female ~ (1|line)) %>% 
+  as_tibble()
+
+orient_to_female_m_estimates <- tibble(new_data, fitted_orient) 
+
+orient_to_female_m_line_means <- Gaertner_line_means(orient_to_female_m_estimates, "orient.towards.female.m", "Behavioural", "Mean number of times a DGRP male orientated towards a virgin female, detected by scan sampling 30 times over a 15 minute period. Higher values indicate a greater number of orientations, and potentially more persistent courtship.")
+
+# approaching females
+
+approach_model <- brm(approach ~ 1 + Block + (1|line),
+                      data = Gaertner_2015_male_mating, family = zero_inflated_poisson,
+                      prior = c(prior(normal(3, 0.5), class = Intercept),
+                                prior(normal(0, 0.2), class = b),
+                                prior(cauchy(0, 0.2), class = sd),
+                                prior(beta(2, 6), class = zi)),  # the brms default is beta(1, 1)), our specified prior is more sceptical of extreme values
+                      iter = 6000, warmup = 2000, chains = 4, cores = 4,
+                      seed = 2, file = "fits/raw_data_fits/approach.female.model",
+                      control = list(adapt_delta = 0.8, max_treedepth = 10))
+
+fitted_approach <- fitted(approach_model,
+       newdata = new_data,
+       re_formula = approach ~ (1|line)) %>% 
+  as_tibble()
+
+approach_female_m_estimates <- tibble(new_data, fitted_approach) 
+
+approach_female_m_line_means <- Gaertner_line_means(approach_female_m_estimates, "approach.female.m", "Behavioural", "Mean number of times a DGRP male approached a virgin female, detected by scan sampling 30 times over a 15 minute period. Higher values indicate a greater number of approaches, and potentially more persistent courtship.")
+
+# wing display (singing)
+
+wing_display_model <- brm(wing ~ 1 + Block + (1|line),
+                          data = Gaertner_2015_male_mating, family = zero_inflated_poisson(),
+                          prior = c(prior(normal(3, 0.5), class = Intercept),
+                                    prior(normal(0, 0.2), class = b),
+                                    prior(cauchy(0, 0.2), class = sd),
+                                    prior(beta(2, 6), class = zi)),  # the brms default is beta(1, 1)), our specified prior is more sceptical of extreme values
+                          iter = 6000, warmup = 2000, chains = 4, cores = 4,
+                          seed = 2, file = "fits/raw_data_fits/wing.display.model",
+                          control = list(adapt_delta = 0.8, max_treedepth = 10))
+
+fitted_wing_display <- fitted(wing_display_model,
+       newdata = new_data,
+       re_formula = wing ~ (1|line)) %>% 
+  as_tibble()
+
+wing_display_m_estimates <- tibble(new_data, fitted_wing_display) 
+
+wing_display_frequency_m_line_means <- Gaertner_line_means(wing_display_m_estimates, "wing.display.frequency.m", "Behavioural", "Mean number of times a DGRP male extended their wing at a 90 degree angle in rapid vibration while in the presence of a virgin female, detected by scan sampling 30 times over a 15 minute period. Higher values indicate a greater number of wing displays, and potentially more persistent courtship.")
+
+# genital licking
+
+genital_licking_model <- brm(genital_lick ~ 1 + Block + (1|line),
+                             data = Gaertner_2015_male_mating, family = zero_inflated_poisson(),
+                             prior = c(prior(normal(3, 0.5), class = Intercept),
+                                       prior(normal(0, 0.2), class = b),
+                                       prior(cauchy(0, 0.2), class = sd),
+                                       prior(beta(2, 6), class = zi)),  # the brms default is beta(1, 1)), our specified prior is more sceptical of extreme values
+                             iter = 6000, warmup = 2000, chains = 4, cores = 4,
+                             seed = 2, file = "fits/raw_data_fits/genital.lick.model",
+                             control = list(adapt_delta = 0.8, max_treedepth = 10))
+
+fitted_genital_licking <- fitted(genital_licking_model,
+       newdata = new_data,
+       re_formula = genital_lick ~ (1|line)) %>% 
+  as_tibble()
+
+genital_licking_m_estimates <- tibble(new_data, fitted_genital_licking) 
+
+genital_licking_m_line_means <- Gaertner_line_means(genital_licking_m_estimates, "genital.licking.frequency.m", "Behavioural", "Mean number of genital licks by DGRP male while courting a virgin female, detected by scan sampling 30 times over a 15 minute period. Higher values indicate a greater frequency of genital licking, and potentially more persistent courtship.")
+
+# attempted copulations
+
+attempted_copulations_model <- brm(attempt_cop ~ 1 + Block + (1|line),
+                                   data = Gaertner_2015_male_mating, family = zero_inflated_poisson(),
+                                   prior = c(prior(normal(3, 0.5), class = Intercept),
+                                             prior(normal(0, 0.2), class = b),
+                                             prior(cauchy(0, 0.2), class = sd),
+                                             prior(beta(2, 6), class = zi)),  # the brms default is beta(1, 1)), our specified prior is more sceptical of extreme values
+                                   iter = 6000, warmup = 2000, chains = 4, cores = 4,
+                                   seed = 2, file = "fits/raw_data_fits/attempt.cop.model",
+                                   control = list(adapt_delta = 0.9, max_treedepth = 10))
+
+fitted_attempted_copulations <- 
+  fitted(attempted_copulations_model,
+         newdata = new_data) %>% 
+  as_tibble()
+
+attempted_copulations_m_estimates <- tibble(new_data, fitted_attempted_copulations) 
+
+attempted_copulations_m_line_means <- Gaertner_line_means(attempted_copulations_m_estimates, "attempted.copulation.frequency.m", "Behavioural", "Mean number of attempted copulations by DGRP male while courting a virgin female, detected by scan sampling 30 times over a 15 minute period. Higher values indicate a greater frequency of copulation attempts, and potentially more persistent courtship.")
+
+# Mating latency (like a no choice trial)
+
+# The data is right censored for males that did not mate
+
+mating_latency_model <-
+  brm(mating_latency | cens(censor) ~ 1 + Block + (1|line),
+      data = Gaertner_2015_male_mating, 
+      family = weibull(), inits = 0,
+      prior = c(prior(normal(0, 1), class = Intercept), # the intercept in this model is the rate of decline in un-mated males
+                prior(exponential(1), class = sd)),
+      iter = 8000, warmup = 2000, chains = 4, cores = 4,
+      seed = 2, file = "fits/raw_data_fits/mating.latency.model",
+      control = list(adapt_delta = 0.9, max_treedepth = 10))
+
+fitted_mating_latency <- fitted(mating_latency_model,
+       newdata = new_data,
+       re_formula = mating_latency ~ (1|line)) %>% 
+  as_tibble()
+
+mating_latency_m_estimates <- tibble(new_data, fitted_mating_latency) 
+
+mating_latency_m_line_means <- Gaertner_line_means(mating_latency_m_estimates, "mating.latency.2015.m", "Behavioural", "Mean latency until a DGRP male was observed copulating with a virgin female, detected by scan sampling 30 times over a 15 minute period. Lower values indicate males that began mating faster, which could be interpreted as males that are more attractive to females.")
+
+Gaertner_traits <- rbind(orient_to_female_m_line_means, 
+                         approach_female_m_line_means, 
+                         wing_display_frequency_m_line_means, 
+                         genital_licking_m_line_means, 
+                         attempted_copulations_m_line_means, 
+                         mating_latency_m_line_means)
+```
+
+### Najarro et al 2015
+
+```{r}
+
+# Line 34061 doesn't exist on Bloomington or flybase. There is a 34062 though (line 49). Currently removed
+
+Najarro_2015_caff_resistance <- read_csv("data/data_collation/input/Raw_data_files/Najarro_et_al_2015_caffeine_resistance.csv") %>% 
+  # remove unidentified line
+  filter(line != 34061) %>% 
+  mutate(line = as.factor(line),
+         # standardise
+         st_CaffeineResistance = my_scale(CaffeineResistance))
+ 
+ # mean caffeine resistance model
+
+caffeine_resistance_model <- brm(st_CaffeineResistance ~ 1 + (1|line),
+                      data = Najarro_2015_caff_resistance, family = "Gaussian",
+                      prior = c(prior(normal(0, 0.5), class = Intercept),
+                                prior(exponential(1), class = sd)),
+                      iter = 6000, warmup = 2000, chains = 4, cores = 4,
+                      seed = 2, file = "fits/raw_data_fits/caffeine.resistance.model")
+
+new_data <-
+  tibble(line = Najarro_2015_caff_resistance$line) %>% 
+  distinct(line)
+
+fitted_caffeine_resistance <- fitted(caffeine_resistance_model,
+                                     newdata = new_data) %>% 
+  as_tibble() %>%
+  # now we need to convert back to response scale (note I don't convert Est.Error)
+  mutate(Estimate = Estimate*sd(Najarro_2015_caff_resistance$CaffeineResistance) + mean(Najarro_2015_caff_resistance$CaffeineResistance),
+         Q2.5 = Q2.5*sd(Najarro_2015_caff_resistance$CaffeineResistance) + mean(Najarro_2015_caff_resistance$CaffeineResistance),
+         Q97.5 = Q97.5*sd(Najarro_2015_caff_resistance$CaffeineResistance) + mean(Najarro_2015_caff_resistance$CaffeineResistance))
+
+caffeine_resistance_line_means <- tibble(new_data, fitted_caffeine_resistance) %>% 
+  mutate(Trait = "caffeine.resistance.f",
+         Sex = "Female",
+         Reference = "Najarro et al (2015) PLOS Genetics",
+         `Trait guild` = "Drug response",
+         `Trait description` = "Mean time, in hours, adult females survived during continuous exposure to medium supplemented with 1% caffeine. Higher values indicate greater resistance to caffeine",
+         trait_value = Estimate) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(line)
+```
+
+### Appel et al 2016
+
+We need to do some wrangling to fit an appropriate model for these data. The response is a learning score that is bounded between -100 to 100. It is the percentage of flies that approached a trained target compared with a control target. Negative values indicate that the flies preferred the control target; positive values indicate a preference for the trained target. This data generating process can be approximated using the beta distribution. However, we need to re-express the data so that it falls between 0 and 1. 
+
+The authors calculate the learning score using the formula $learning.score =\frac{(Trained.odour - Control.odour)*100}{Trained.odour + control.odour}$. A value of 0 represents an even split of flies between both odours. We can convert this to the proportion scale, where this even split now = 0.5.
+
+We can transform our data using the following formula:
+
+$normalised.learning.score = \frac{learning.score - min(learning.score)}{max(learing.score) - min(learning.score)}$
+
+
+```{r}
+
+## Punishment learning
+
+Appel_2016_memory_punishment <- read_csv("data/data_collation/input/Raw_data_files/Appel_2016_memory_learning.csv") %>% 
+  filter(Test == "Punishment",
+         memory_score != "-") %>% 
+  mutate(line = as.factor(line),
+         Group_ID = as.factor(Group_ID),
+         Sex = as.factor(Sex),
+         memory_score = as.numeric(memory_score),
+         # ok here's our normalising step. Note that a value of -100 now = 0
+         # this means that lower values = greater learning i.e. a value of 0.1 means 90% of flies avoided the punishment associated odour
+         norm_mem_score = (memory_score - min(memory_score)) / (max(memory_score) - min(memory_score))
+                           )
+
+# I don't have a good read on sensible priors here, so I'll rely on brms defaults
+
+punishment_memory_model <- brm(norm_mem_score ~ 1 + Sex + (Sex|line),
+                       data = Appel_2016_memory_punishment, family = zero_one_inflated_beta(),
+                       iter = 6000, warmup = 2000, chains = 4, cores = 4,
+                       seed = 2, file = "fits/raw_data_fits/punishment.memory.model",
+                       control = list(adapt_delta = 0.9, max_treedepth = 10))
+
+
+new_data <-
+  expand_grid(line = Appel_2016_memory_punishment$line,
+              Sex = c("Female", "Male")) %>% 
+  distinct(line, Sex)
+
+fitted_punishment_memory <- fitted(punishment_memory_model,
+       newdata = new_data) %>% 
+  as_tibble()
+
+# females
+
+punishment_memory_f_line_means <- tibble(new_data, fitted_punishment_memory) %>%
+  filter(Sex == "Female") %>% 
+  mutate(Trait = "punishment.memory.learning.f",
+         Sex = "Female",
+         Reference = "Appel et al (2016) Biology Letters",
+         `Trait guild` = "Behavioural",
+         `Trait description` = "Mean aversion towards an odour flies were trained to associate with the onset of an electric shock. Higher values indicate that flies showed a greater aversion toward the odour, suggesting that they associated the odor with 'punishment'. Higher values also indicate a higher learning score",
+         trait_value = Estimate) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(line)
+
+# males
+
+punishment_memory_m_line_means <- tibble(new_data, fitted_punishment_memory) %>%
+  filter(Sex == "Male") %>% 
+  mutate(Trait = "punishment.memory.learning.m",
+         Sex = "Male",
+         Reference = "Appel et al (2016) Biology Letters",
+         `Trait guild` = "Behavioural",
+         `Trait description` = "Mean aversion towards an odour flies were trained to associate with the onset of an electric shock. Higher values indicate that flies showed a greater aversion toward the odour, suggesting that they associated the odor with 'punishment'. Higher values also indicate a greater learning score.",
+         trait_value = Estimate) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(line)
+
+## Relief learning
+
+Appel_2016_memory_relief <- read_csv("data/data_collation/input/Raw_data_files/Appel_2016_memory_learning.csv") %>% 
+  filter(Test == "Relief",
+         memory_score != "-") %>% 
+   mutate(line = as.factor(line),
+         Group_ID = as.factor(Group_ID),
+         Sex = as.factor(Sex),
+         memory_score = as.numeric(memory_score),
+          # ok here's our normalising step. Note that a value of -100 now = 0
+         # this means that lower values = greater learning i.e. a value of 0.1 means 90% of flies avoided the punishment associated odour
+         norm_mem_score = (memory_score - min(memory_score)) / (max(memory_score) - min(memory_score)))
+         
+# I don't have a good read on sensible priors here, so I'll rely on brms defaults
+
+relief_memory_model <- brm(norm_mem_score ~ 1 + Sex + (Sex|line),
+                           data = Appel_2016_memory_relief, family = zero_one_inflated_beta(),
+                           iter = 6000, warmup = 2000, chains = 4, cores = 4,
+                           seed = 2, file = "fits/raw_data_fits/relief.memory.model",
+                           control = list(adapt_delta = 0.8, max_treedepth = 10))
+
+#pp_check(relief_memory_model)
+
+new_data <-
+  expand_grid(line = Appel_2016_memory_relief$line,
+              Sex = c("Female", "Male")) %>% 
+  distinct(line, Sex)
+
+fitted_relief_memory <- fitted(relief_memory_model,
+       newdata = new_data) %>% 
+  as_tibble()
+
+# females
+
+relief_memory_f_line_means <- tibble(new_data, fitted_relief_memory) %>%
+  filter(Sex == "Female") %>% 
+  mutate(Trait = "relief.memory.learning.f",
+         Sex = "Female",
+         Reference = "Appel et al (2016) Biology Letters",
+         `Trait guild` = "Behavioural",
+         `Trait description` = "Mean preference for an odor flies were trained to associate with the end of an electric shock. Higher values indicate that flies showed a stronger preference towards the odor, suggesting that they associated the odor with 'relief'. Higher values also indicate a greater learning score.",
+         trait_value = Estimate) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(line)
+
+# males
+
+relief_memory_m_line_means <- tibble(new_data, fitted_relief_memory) %>%
+  filter(Sex == "Male") %>% 
+  mutate(Trait = "relief.memory.learning.m",
+         Sex = "Male",
+         Reference = "Appel et al (2016) Biology Letters",
+         `Trait guild` = "Behavioural",
+         `Trait description` = "Mean preference for an odor flies were trained to associate with the end of an electric shock. Higher values indicate that flies showed a stronger preference towards the odor, suggesting that they associated the odor with 'relief'. Higher values also indicate a greater learning score.",
+         trait_value = Estimate) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(line)
+
+Appel_traits <- rbind(punishment_memory_f_line_means,
+                      punishment_memory_m_line_means,
+                      relief_memory_f_line_means,
+                      relief_memory_m_line_means)
+
+```
+
+### Munoz-Munoz et al 2016
+
+```{r}
+
+Munoz_2016_wing_size <- read_csv("data/data_collation/input/Raw_data_files/munoz_munoz_2016.csv") %>% 
+  mutate(line = as.factor(Strain),
+         Repl = (as.factor(Repl)),
+         CS = as.double(CS),
+         # standardise
+         st_CS = my_scale(CS))
+
+wing_size_model <- brm(st_CS ~ 1 + Sex + (Sex|line),
+                       data = Munoz_2016_wing_size, family = gaussian,
+                       prior = c(prior(normal(0, 0.5), class = Intercept),
+                                 prior(normal(0, 0.5), class = b),
+                                 prior(exponential(1), class = sd)),
+                       iter = 6000, warmup = 2000, chains = 4, cores = 4,
+                       seed = 2, file = "fits/raw_data_fits/wing.size.model",
+                       control = list(adapt_delta = 0.8, max_treedepth = 10))
+
+new_data <-
+  expand_grid(line = Munoz_2016_wing_size$line,
+              Sex = c("F", "M")) %>% 
+  distinct(line, Sex)
+
+fitted_wing_size <- fitted(wing_size_model,
+       newdata = new_data) %>% 
+  as_tibble() %>%
+  # now we need to convert back to response scale (note I don't convert Est.Error)
+  mutate(Estimate = Estimate*sd(Munoz_2016_wing_size$CS) + mean(Munoz_2016_wing_size$CS),
+         Q2.5 = Q2.5*sd(Munoz_2016_wing_size$CS) + mean(Munoz_2016_wing_size$CS),
+         Q97.5 = Q97.5*sd(Munoz_2016_wing_size$CS) + mean(Munoz_2016_wing_size$CS))
+
+# females
+
+wing_size_f_line_means <- tibble(new_data, fitted_wing_size) %>%
+  mutate(Sex = if_else(Sex == "F", "Female", "Male")) %>% 
+  filter(Sex == "Female") %>% 
+  mutate(Trait = "wing.size.f",
+         Sex = "Female",
+         Reference = "Muñoz-Muñoz et al (2016) Evolution",
+         `Trait guild` = "Morphological",
+         `Trait description` = "Mean centroid size - the square root of the sum of squared distances of a set of wing landmarks to the centroid of this landmark configuration. Higher values indicate larger wings.",
+         trait_value = Estimate) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(line)
+
+# males
+
+wing_size_m_line_means <- tibble(new_data, fitted_wing_size) %>%
+  mutate(Sex = if_else(Sex == "F", "Female", "Male")) %>% 
+  filter(Sex == "Male") %>% 
+  mutate(Trait = "wing.size.m",
+         Sex = "Male",
+         Reference = "Muñoz-Muñoz et al (2016) Evolution",
+         `Trait guild` = "Morphological",
+         `Trait description` = "Mean centroid size - the square root of the sum of squared distances of a set of wing landmarks to the centroid of this landmark configuration. Higher values indicate larger wings.",
+         trait_value = Estimate) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(line)
+
+Munoz_traits <- rbind(wing_size_f_line_means,
+                      wing_size_m_line_means)
+```
+
+### Freda, 2017
+
+We have line mean data for larvae, but raw data for adults. Therefore, we only need to model the adult data here.
+
+```{r}
+Freda_2017_cold_hardiness <- read_csv("data/data_collation/input/Raw_data_files/Freda_2017_ThermalHardiness.csv") %>% 
+  mutate(line = as.factor(line),
+         Sex = as.factor(Sex))
+
+# I don't have a good read on sensible priors here, so I'll rely on brms defaults
+
+cold_hardiness_model <- brm(Proportion_alive ~ 1 + Sex + (Sex|line),
+                           data = Freda_2017_cold_hardiness, family = zero_one_inflated_beta(),
+                           iter = 6000, warmup = 2000, chains = 4, cores = 4,
+                           seed = 2, file = "fits/raw_data_fits/cold_hardiness.model",
+                           control = list(adapt_delta = 0.8, max_treedepth = 10))
+
+#pp_check(cold_hardiness_model)
+
+new_data <-
+  expand_grid(line = Freda_2017_cold_hardiness$line,
+              Sex = c("Female", "Male")) %>% 
+  distinct(line, Sex)
+
+fitted_cold_hardiness <- fitted(cold_hardiness_model,
+       newdata = new_data) %>% 
+  as_tibble()
+
+# females
+
+cold_hardiness_f_line_means <- tibble(new_data, fitted_cold_hardiness) %>%
+  filter(Sex == "Female") %>% 
+  mutate(Trait = "cold.hardiness.f",
+         Sex = "Female",
+         Reference = "Freda et al (2017) Integrative and Comparative Biology",
+         `Trait guild` = "Temperature related",
+         `Trait description` = "Mean proportion of surviving adults 24 hours post exposure to an hour of cold shock (-5°C). Higher values indicate flies that are more resistant to cold shock.",
+         trait_value = Estimate) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(line)
+
+# males
+
+cold_hardiness_m_line_means <- tibble(new_data, fitted_cold_hardiness) %>%
+  filter(Sex == "Male") %>% 
+  mutate(Trait = "cold.hardiness.m",
+         Sex = "Male",
+         Reference = "Freda et al (2017) Integrative and Comparative Biology",
+         `Trait guild` = "Temperature related",
+         `Trait description` = "Mean proportion of surviving adults 24 hours post exposure to an hour of cold shock (-5°C). Higher values indicate flies that are more resistant to cold shock.",
+         trait_value = Estimate) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(line)
+
+Freda_2017_traits <- rbind(cold_hardiness_f_line_means,
+                      cold_hardiness_m_line_means)
+
+```
+
+
+### Najarro, Hackett and Macdonald, 2017
+
+```{r}
+
+Najarro_2017_boric_acid <- read_csv("data/data_collation/input/Raw_data_files/najarro_2017.csv") %>% 
+  rename(lifespan = `life-span (hr) on 1.5% boric acid`) %>% 
+  mutate(line = as.factor(line),
+         st_lifespan = my_scale(lifespan))
+
+boric_acid_model <- brm(st_lifespan ~ 1 + (1|line),
+                        data = Najarro_2017_boric_acid, family = "Gaussian",
+                        prior = c(prior(normal(0, 0.5), class = Intercept),
+                                  prior(exponential(1), class = sd)),
+                        iter = 6000, warmup = 2000, chains = 4, cores = 4,
+                        seed = 2, file = "fits/raw_data_fits/boric.acid.model")
+
+
+
+# get predictions from the model for each line
+
+new_data <-
+  tibble(line = Najarro_2017_boric_acid$line) %>% 
+  distinct(line)
+
+fitted_boric_acid <- fitted(boric_acid_model,
+       newdata = new_data) %>% 
+  as_tibble() %>%
+  # now we need to convert back to response scale (note I don't convert Est.Error)
+  mutate(Estimate = Estimate*sd(Najarro_2017_boric_acid$lifespan) + mean(Najarro_2017_boric_acid$lifespan),
+         Q2.5 = Q2.5*sd(Najarro_2017_boric_acid$lifespan) + mean(Najarro_2017_boric_acid$lifespan),
+         Q97.5 = Q97.5*sd(Najarro_2017_boric_acid$lifespan) + mean(Najarro_2017_boric_acid$lifespan))
+
+boric_acid_line_means <- tibble(new_data, fitted_boric_acid) %>% 
+  mutate(line = str_remove(line, "RAL"),
+         Trait = "boric.acid.resistance.f",
+         Sex = "Female",
+         Reference = "Najarro, Hackett and Macdonald (2017) G3",
+         `Trait guild` = "Insecticide response",
+         `Trait description` = "Mean lifespan, measured in hours, for mated females exposed to media supplemented with 1.5% boric acid (BH3O3, BP168). Boric acid is a common household pesticide. Higher values indicate a greater resistance to boric acid.",
+         trait_value = Estimate) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(line)
+```
+
+### Dean et al 2018
+
+To model copulation latency Dean _et al_ log transform the data and fit a linear model with a gaussian distribution. This model struggles to converge using `brms`, so we treat the data as time to event with right censoring for the flies that failed to mate within a 2 hour window (coded as 120 in the dataset). To model this data we fit a survival model, specifying a weibull distribution. 
+
+To model insemination capacity Dean _et al_ specify a quasipoisson distribution family because they treat the data as underdispersed counts. There is no family like this in `brms`. However, we can treat the data as binomial, with each female treated as a YES/NO for mating success. The posterior predictive check suggests this is a good fit to the data. Our predictions are also a good match with those of Dean et al.
+
+```{r}
+Dean_2018_data <- read_csv("data/data_collation/input/Raw_data_files/Dean_2018.csv") %>% 
+   mutate(line = as.factor(Line),
+          Rep = as.factor(Rep),
+          Block = as.factor(Block),
+          censor = if_else(LatCop == 120, 1, 0))
+
+copulation_latency_model <- brm(LatCop | cens(censor) ~ 1 + Block + (1|line),
+                       data = Dean_2018_data, family = weibull(),
+                       prior = c(prior(normal(0, 1), class = Intercept),
+                                 prior(normal(0, 1), class = b),
+                                 prior(exponential(1), class = sd)),
+                       iter = 6000, warmup = 2000, chains = 4, cores = 4,
+                       seed = 2, file = "fits/raw_data_fits/copulation_latency.model",
+                       control = list(adapt_delta = 0.8, max_treedepth = 10))
+
+#pp_check(copulation_latency_model)
+
+new_data <-
+  tibble(line = Dean_2018_data$line,
+         Block = 1) %>% 
+  distinct(line, Block)
+
+
+fitted_cop_lat <- fitted(copulation_latency_model,
+       newdata = new_data) %>% 
+  as_tibble()
+
+cop_lat_line_means <- tibble(new_data, fitted_cop_lat) %>%
+  mutate(Trait = "copulation.latency.m",
+         Sex = "Male",
+         Reference = "Dean et al (2020) Evolution",
+         `Trait guild` = "Behavioural",
+         `Trait description` = "Mean time (mins) from a male flies introduction to a female until the onset of mating. Lower values indicate shorter copulation latencies and potentially more attractive males",
+         trait_value = Estimate) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(trait_value)
+
+# Dean et al fit a quasipoisson model because they treat the data as underdispersed counts. There is no family like this in brms. However, I think we can treat the data as binomial with each female treated as a YES/NO for mating success. The posterior predictive check suggests this is a good fit to the data.
+
+Dean_2018_data <-
+  Dean_2018_data %>% 
+  mutate(Cohabiting_females = 10)
+
+insemination_capacity_model <- brm(promiscuity | trials(Cohabiting_females) ~ 1 + Block + (1|line),
+                                   data = Dean_2018_data, family = binomial,
+                                   prior = c(prior(normal(0, 0.5), class = Intercept),
+                                             prior(normal(0, 0.5), class = b),
+                                             prior(exponential(1), class = sd)),
+                                   iter = 6000, warmup = 2000, chains = 4, cores = 4,
+                                   seed = 2, file = "fits/raw_data_fits/insemination_capacity.model",
+                                   control = list(adapt_delta = 0.8, max_treedepth = 10))
+
+
+
+#pp_check(insemination_capacity_model)
+
+new_data <-
+  tibble(line = Dean_2018_data$line,
+         Cohabiting_females = 1,
+         Block =1) %>% 
+  distinct(line, Cohabiting_females, Block)
+
+
+fitted_insem_capac <- fitted(insemination_capacity_model,
+       newdata = new_data) %>% 
+  as_tibble()
+
+insem_capac_line_means <- tibble(new_data, fitted_insem_capac) %>%
+  mutate(Trait = "insemination.capacity.m",
+         Sex = "Male",
+         Reference = "Dean et al (2020) Evolution",
+         `Trait guild` = "Life history",
+         `Trait description` = "Mean proportion of 10 females that a single male successfully inseminated in 48 hours. Insemination was verified by identification of viable pupal progeny. Higher values indicate males with a greater insemination capacity.",
+         trait_value = Estimate) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(trait_value)
+
+Dean_traits <- rbind(cop_lat_line_means,
+                     insem_capac_line_means)
+
+```
+
+### Duneau et al 2018
+
+We fit a slightly different parathion model to that presented in the manuscript. This is because some lines are resistant to parathion, leading to heavy sensoring. This results in two groups of lines: those that are susceptible and those that are resistant. The resistant lines have estimated mean survival times of 400+ days, which is not realistic for D. melanogaster. Therefore, I instead model resistance to parathion using a binomial response, which describes whether the line had surviving flies 48 hours after exposure to parathion.
+
+```{r}
+
+# Deltamethrin
+
+Duneau_2018_deltamethrin_data <- read_csv("data/data_collation/input/Raw_data_files/Duneau_2018/Duneau_2018_deltamethrin.csv") %>% 
+   mutate(line = str_remove(DGRP_lines, "line_"),
+          Experiment = as.factor(Experiment),
+          line = as.factor(line)) %>% 
+  filter(Sample.size != "NA")
+
+deltamethrin_model <-
+  brm(Delta_Alive.at.48h | trials(Sample.size) ~ 1  + Experiment + (1|line),
+      data = Duneau_2018_deltamethrin_data,
+      prior = c(prior(normal(0, 0.5), class = Intercept),
+                prior(normal(0, 0.5), class = b),
+                prior(exponential(1), class = sd)),
+      family = binomial(),
+      iter = 10000, warmup = 4000, chains = 4, cores = 4,
+      seed = 2, file = "fits/raw_data_fits/deltamethrin.model",
+      control = list(adapt_delta = 0.95, max_treedepth = 10))
+
+#pp_check(deltamethrin_model)
+
+new_data_Duneau <-
+  tibble(line = Duneau_2018_deltamethrin_data$line,
+         Experiment = "Exp 1",
+         Sample.size = 1) %>% 
+  distinct(line, Experiment, Sample.size)
+
+
+fitted_deltamethrin <- fitted(deltamethrin_model,
+       newdata = new_data_Duneau,
+       allow_new_levels = TRUE) %>% 
+  as_tibble()
+
+deltamethrin_line_means <- tibble(new_data_Duneau, fitted_deltamethrin) %>%
+  mutate(Trait = "deltamethrin.resistance.m",
+         Sex = "Male",
+         Reference = "Duneau et al (2018) G3",
+         `Trait guild` = "Insecticide response",
+         `Trait description` = "Mean survival 48 hours after exposure to deltamethrin, a pyrethroid pesticide. Higher values indicate greater resistance to deltamethrin.",
+         trait_value = Estimate) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(line)
+
+
+# Parathion
+
+# set up data for right censoring in brms - it is the opposite to what the survival frequentist package uses. We don't use this but it is useful to know if we do choose to fit a time to event model
+
+Duneau_2018_parathion_data <- read_csv("data/data_collation/input/Raw_data_files/Duneau_2018/Duneau_2018_parathion.csv") %>% 
+   mutate(line = str_remove(DGRP_lines, "line_"),
+          Experiment = as.factor(Experiment)) %>% 
+  mutate(line = as.factor(line),
+         Alive.at.48hr = if_else(Censor == 1, 0, 1),
+         Censor = if_else(Censor == 1, "none", "right")) 
+
+# fit the new binomial model
+
+parathion_binomial_model <-
+  brm(Alive.at.48hr ~ 1 + Experiment + (1|line),
+      data = Duneau_2018_parathion_data,
+      prior = c(prior(normal(0, 0.5), class = Intercept),
+                prior(normal(0, 0.5), class = b),
+                prior(exponential(1), class = sd)),
+      family = bernoulli,
+      cores = 4, chains = 4, iter = 6000, warmup = 2000,
+      control = list(adapt_delta = 0.9, max_treedepth = 10),
+      seed = 1, file = "fits/raw_data_fits/parathion_binomial.model")
+
+#pp_check(parathion_binomial_model) 
+
+new_data <-
+  tibble(line = Duneau_2018_parathion_data$line,
+         Experiment = "Experiment_1") %>% 
+  distinct(line, Experiment)
+
+
+fitted_parathion_binomial <- fitted(parathion_binomial_model,
+       newdata = new_data) %>% 
+  as_tibble()
+
+parathion_binomial_line_means <- tibble(new_data, fitted_parathion_binomial) %>%
+  mutate(Trait = "parathion.resistance.m",
+         Sex = "Male",
+         Reference = "Duneau et al (2018) G3",
+         `Trait guild` = "Insecticide response",
+         `Trait description` = "Mean survival 48 hours after exposure to parathion, an organophosphate pesticide. Higher values indicate greater resistance to parathion.",
+         trait_value = Estimate) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(line)
+
+Duneau_traits <- rbind(deltamethrin_line_means,
+                       parathion_binomial_line_means)
+
+
+```
+
+### Palmer et al 2018
+
+```{r}
+
+Palmer_2018_KV_data <- read_csv("data/data_collation/input/Raw_data_files/Palmer_2018_kallithea.csv") %>% 
+  group_by(Injection.date) %>%
+  mutate(injection_date = as_factor(cur_group_id())) %>% 
+  ungroup() %>% 
+  mutate(line = as.factor(Line),
+         Sex = as.factor(Sex),
+         value = as.numeric(value))
+  
+
+Palmer_2018_LT50 <-
+  Palmer_2018_KV_data %>% 
+  filter(trait.column == "Mortality") %>% 
+  mutate(# standardise
+         st_value = my_scale(value))
+
+# LT50 model
+
+kv_LT50_model <- brm(st_value ~ 1 + Sex + (Sex|line) + (1|injection_date),
+                       data = Palmer_2018_LT50, family = gaussian(),
+                       prior = c(prior(normal(0, 0.5), class = Intercept),
+                                 prior(normal(0, 0.5), class = b),
+                                 prior(exponential(1), class = sd)),
+                       iter = 8000, warmup = 4000, chains = 4, cores = 4,
+                       seed = 2, file = "fits/raw_data_fits/kv.LT50.model",
+                       control = list(adapt_delta = 0.97, max_treedepth = 12))
+
+ #pp_check(kv_LT50_model)
+
+new_data <-
+  expand_grid(line = Palmer_2018_LT50$line,
+              Sex = c("Female", "Male")) %>% 
+  distinct(line, Sex)
+
+fitted_kv_LT50 <- fitted(kv_LT50_model,
+       newdata = new_data,
+       re_formula = value ~ (Sex|line),
+       allow_new_levels = TRUE) %>% # sometimes we need to include this for fitted to work. It changes nothing in the output 
+  as_tibble() %>%
+  # now we need to convert back to response scale (note I don't convert Est.Error)
+  mutate(Estimate = Estimate*sd(Palmer_2018_LT50$value) + mean(Palmer_2018_LT50$value),
+         Q2.5 = Q2.5*sd(Palmer_2018_LT50$value) + mean(Palmer_2018_LT50$value),
+         Q97.5 = Q97.5*sd(Palmer_2018_LT50$value) + mean(Palmer_2018_LT50$value))
+
+# females
+
+kv_LT50_f_line_means <- tibble(new_data, fitted_kv_LT50) %>%
+  filter(Sex == "Female") %>% 
+  mutate(Trait = "kallithea.resistance.LT50.f",
+         Sex = "Female",
+         Reference = "Palmer et al (2018) PLOS Pathogens",
+         `Trait guild` = "Pathogen response",
+         `Trait description` = "Median number of days adult flies survived post infection with Kallithea virus (50 nL of 105 ID50 originally injected). Measured as LT50 - the point at which 50% of 10 flies died. Higher values indicate greater resistance to Kallithea virus.",
+         trait_value = Estimate) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(line)
+
+# males
+
+kv_LT50_m_line_means <- tibble(new_data, fitted_kv_LT50) %>%
+  filter(Sex == "Male") %>% 
+  mutate(Trait = "kallithea.resistance.LT50.m",
+         Sex = "Male",
+         Reference = "Palmer et al (2018) PLOS Pathogens",
+         `Trait guild` = "Pathogen response",
+         `Trait description` = "Median number of days adult flies survived post infection with Kallithea virus (50 nL of 105 ID50 originally injected). Measured as LT50 - the point at which 50% of 10 flies died. Higher values indicate greater resistance to Kallithea virus.",
+         trait_value = Estimate) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(line)
+
+# titre model
+
+Palmer_2018_KV_titre_data <-
+  Palmer_2018_KV_data %>% 
+  filter(trait.column == "titre") %>% 
+   mutate(# standardise
+         st_value = my_scale(value))
+
+kv_titre_model <- brm(st_value ~ 1 + (1|line) + (1|injection_date),
+                       data = Palmer_2018_KV_titre_data, family = gaussian(),
+                       prior = c(prior(normal(0, 0.5), class = Intercept),
+                                 prior(exponential(1), class = sd)),
+                       iter = 6000, warmup = 2000, chains = 4, cores = 4,
+                       seed = 2, file = "fits/raw_data_fits/kv.titre.model",
+                       control = list(adapt_delta = 0.9, max_treedepth = 12))
+
+
+new_data <-
+  expand_grid(line = Palmer_2018_KV_titre_data$line,
+              Sex = "Female") %>% 
+  distinct(line, Sex)
+
+fitted_kv_titre <- fitted(kv_titre_model,
+       newdata = new_data,
+       re_formula = value ~ (1|line),
+       allow_new_levels = TRUE) %>% # sometimes we need to include this for fitted to work. It changes nothing in the output 
+  as_tibble() %>%
+  # now we need to convert back to response scale (note I don't convert Est.Error)
+  mutate(Estimate = Estimate*sd(Palmer_2018_KV_titre_data$value) + mean(Palmer_2018_KV_titre_data$value),
+         Q2.5 = Q2.5*sd(Palmer_2018_KV_titre_data$value) + mean(Palmer_2018_KV_titre_data$value),
+         Q97.5 = Q97.5*sd(Palmer_2018_KV_titre_data$value) + mean(Palmer_2018_KV_titre_data$value))
+
+# females
+
+kv_titre_f_line_means <- tibble(new_data, fitted_kv_titre) %>%
+  filter(Sex == "Female") %>% 
+  mutate(Trait = "kallithea.viral.load.f",
+         Sex = "Female",
+         Reference = "Palmer et al (2018) PLOS Pathogens",
+         `Trait guild` = "Pathogen response",
+         `Trait description` = "Mean viral titre of kallithea virus found in groups of 10 adult females, 8 days after injection of 50 nL of 105 ID50 KV.  This is a measure of viral load, with higher values indicating greater viral load.",
+         trait_value = Estimate) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(line)
+
+Palmer_traits <- rbind(kv_LT50_f_line_means,
+                       kv_LT50_m_line_means,
+                       kv_titre_f_line_means)
+
+```
+
+### Teets and Hahn 2018
+
+Cumulative cold tolerance data was supplied by the authors in line mean form, so we do not model it here.
+
+```{r}
+Teets_2018_cold_data <- read_csv("data/data_collation/input/Raw_data_files/Teets_Hahn_2018_data.csv") %>% 
+  mutate(line = as.factor(`Line (DGRP)`),
+         Temp = as.factor(Temp))
+
+cold_survival_model <- brm(Live | trials(Total) ~ 1 + Temp + (Temp|line),
+                       data = Teets_2018_cold_data, family = binomial(),
+                       prior = c(prior(normal(0, 0.5), class = Intercept),
+                                 prior(normal(0, 0.5), class = b),
+                                 prior(exponential(1), class = sd)),
+                       iter = 6000, warmup = 2000, chains = 4, cores = 4,
+                       seed = 2, file = "fits/raw_data_fits/cold.survival.model",
+                       control = list(adapt_delta = 0.9, max_treedepth = 12))
+
+
+#pp_check(cold_survival_model)
+
+new_data <-
+  expand_grid(line = Teets_2018_cold_data$line,
+              Temp = Teets_2018_cold_data$Temp,
+              Total = 1) %>% 
+  distinct(line, Temp, Total)
+
+fitted_cold_survival <- fitted(cold_survival_model,
+       newdata = new_data) %>% 
+  as_tibble()
+
+cold_survival_line_means_data <- tibble(new_data, fitted_cold_survival) %>% 
+  mutate(Sex = "Female")
+
+# build a function to create tibbles holding line and temp specific line means
+
+Teets_line_means <- function(estimates, value, Trait, description){
+  estimates %>%
+  filter(Temp == value) %>% 
+  mutate(Trait = Trait,
+         Reference = "Teets and Hahn (2018) Journal of Evolutionary Biology",
+         `Trait guild` ="Temperature related",
+         `Trait description` = description,
+         trait_value = Estimate) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(line)
+}
+
+neg1_cold_tolerance_line_means <- Teets_line_means(cold_survival_line_means_data, value = "-1", "cold.tolerance.-1.f", "Mean proportion of surviving adults 24 hours after an hour of exposure to -1 °C. Higher values indicate flies that are more tolerant to cold exposure.")
+
+neg2_cold_tolerance_line_means <- Teets_line_means(cold_survival_line_means_data, value = "-2", "cold.tolerance.-2.f", "Mean proportion of surviving adults 24 hours after an hour of exposure to -2 °C. Higher values indicate flies that are more tolerant to cold exposure.")
+
+neg3_cold_tolerance_line_means <- Teets_line_means(cold_survival_line_means_data, value = "-3", "cold.tolerance.-3.f", "Mean proportion of surviving adults 24 hours after an hour of exposure to -3 °C. Higher values indicate flies that are more tolerant to cold exposure.")
+
+neg4_cold_tolerance_line_means <- Teets_line_means(cold_survival_line_means_data, value = "-4", "cold.tolerance.-4.f", "Mean proportion of surviving adults 24 hours after an hour of exposure to -4 °C. Higher values indicate flies that are more tolerant to cold exposure.")
+
+neg5_cold_tolerance_line_means <- Teets_line_means(cold_survival_line_means_data, value = "-5", "cold.tolerance.-5.f", "Mean proportion of surviving adults 24 hours after an hour of exposure to -5 °C. Higher values indicate flies that are more tolerant to cold exposure.")
+
+neg6_cold_tolerance_line_means <- Teets_line_means(cold_survival_line_means_data, value = "-6", "cold.tolerance.-6.f", "Mean proportion of surviving adults 24 hours after an hour of exposure to -6 °C. Higher values indicate flies that are more tolerant to cold exposure.")
+
+neg7_cold_tolerance_line_means <- Teets_line_means(cold_survival_line_means_data, value = "-7", "cold.tolerance.-7.f", "Mean proportion of surviving adults 24 hours after an hour of exposure to -7 °C. Higher values indicate flies that are more tolerant to cold exposure.")
+
+Teets_traits <- rbind(neg1_cold_tolerance_line_means,
+                      neg2_cold_tolerance_line_means,
+                      neg3_cold_tolerance_line_means,
+                      neg4_cold_tolerance_line_means,
+                      neg5_cold_tolerance_line_means,
+                      neg6_cold_tolerance_line_means,
+                      neg7_cold_tolerance_line_means)
+
+```
+
+
+### Everman et al 2019
+
+```{r}
+
+Everman_2019_starvation_resistance <- read_csv("data/data_collation/input/Raw_data_files/Everman_2019_starvation_res.csv") %>% 
+  mutate(line = as.factor(line),
+         Sex = as.factor(Sex),
+         Lifespan_hrs = as.numeric(Lifespan_hrs),
+         # standardise
+         st_Lifespan_hrs = my_scale(Lifespan_hrs))
+
+
+starvation_resistance_model <- brm(st_Lifespan_hrs ~ 1 + Sex + (Sex|line),
+                       data = Everman_2019_starvation_resistance, family = gaussian(),
+                       prior = c(prior(normal(0, 0.5), class = Intercept),
+                                 prior(normal(0, 0.5), class = b),
+                                 prior(exponential(1), class = sd)),
+                       iter = 6000, warmup = 2000, chains = 4, cores = 4,
+                       seed = 2, file = "fits/raw_data_fits/starvation.res.model",
+                       control = list(adapt_delta = 0.9, max_treedepth = 10))
+
+ #pp_check(starvation_resistance_model)
+
+
+new_data <-
+  expand_grid(line = Everman_2019_starvation_resistance$line,
+              Sex = c("Female", "Male")) %>% 
+  distinct(line, Sex)
+
+fitted_starvation_resistance <- fitted(starvation_resistance_model,
+       newdata = new_data) %>% 
+  as_tibble() %>%
+  # now we need to convert back to response scale (note I don't convert Est.Error)
+  mutate(Estimate = Estimate*sd(Everman_2019_starvation_resistance$Lifespan_hrs) + mean(Everman_2019_starvation_resistance$Lifespan_hrs),
+         Q2.5 = Q2.5*sd(Everman_2019_starvation_resistance$Lifespan_hrs) + mean(Everman_2019_starvation_resistance$Lifespan_hrs),
+         Q97.5 = Q97.5*sd(Everman_2019_starvation_resistance$Lifespan_hrs) + mean(Everman_2019_starvation_resistance$Lifespan_hrs))
+
+# females
+
+starvation_resistance_f_line_means <- tibble(new_data, fitted_starvation_resistance) %>%
+  filter(Sex == "Female") %>% 
+  mutate(Trait = "starvation.resistance.2019.f",
+         Sex = "Female",
+         Reference = "Everman et al (2019) Genetics",
+         `Trait guild` = "Stress response",
+         `Trait description` = "Mean hours survived on inedible food medium, used as a measure of starvation resistance. Higher values indicate flies that exhibited greater starvation resistance.",
+         trait_value = Estimate) %>% 
+  mutate(line = str_remove(line, "RAL-")) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(line)
+
+# males
+
+starvation_resistance_m_line_means <- tibble(new_data, fitted_starvation_resistance) %>%
+  filter(Sex == "Male") %>% 
+  mutate(Trait = "starvation.resistance.2019.m",
+         Sex = "Male",
+         Reference = "Everman et al (2019) Genetics",
+         `Trait guild` = "Stress response",
+         `Trait description` = "Mean hours survived on inedible food medium, used as a measure of starvation resistance. Higher values indicate flies that exhibited greater starvation resistance.",
+         trait_value = Estimate) %>% 
+  mutate(line = str_remove(line, "RAL-")) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(line)
+
+Everman_traits <- rbind(starvation_resistance_f_line_means,
+                        starvation_resistance_m_line_means)
+```
+
+### Freda 2019
+
+```{r}
+Freda_2019a <- read_csv("data/data_collation/input/Raw_data_files/Freda_2019/Cold18.csv") %>% 
+   mutate(line = as.factor(dgrpline))
+
+Freda_2019b <- read_csv("data/data_collation/input/Raw_data_files/Freda_2019/Cold25.csv") %>% 
+   mutate(line = as.factor(dgrpline)) %>% 
+  filter(n > 0)
+
+Freda_2019c <- read_csv("data/data_collation/input/Raw_data_files/Freda_2019/Heat18.csv") %>% 
+   mutate(line = as.factor(dgrpline))
+
+Freda_2019d <- read_csv("data/data_collation/input/Raw_data_files/Freda_2019/Heat25.csv") %>% 
+   mutate(line = as.factor(dgrpline))
+
+# Cold hardiness at 18C for larvae model
+
+cold_hardiness_18_larvae_model <- brm(alive | trials(n) ~ 1 + (1|line),
+                       data = Freda_2019a %>% filter(stage == "L"), family = binomial(),
+                       prior = c(prior(normal(0, 0.5), class = Intercept),
+                                 prior(exponential(1), class = sd)),
+                       iter = 6000, warmup = 2000, chains = 4, cores = 4,
+                       seed = 2, file = "fits/raw_data_fits/ch_18_l.model",
+                       control = list(adapt_delta = 0.9, max_treedepth = 10))
+
+ #pp_check(cold_hardiness_18_larvae_model)
+
+Freda_2019a_larvae_data <-
+  Freda_2019a %>% filter(stage == "L")
+
+new_data <-
+  tibble(line = Freda_2019a_larvae_data$line,
+         n = 1) %>% 
+  distinct(line, n)
+
+fitted_ch_18_l <- fitted(cold_hardiness_18_larvae_model,
+       newdata = new_data) %>% 
+  as_tibble()
+
+# larvae
+
+cold_hardiness_18_l_line_means <- tibble(new_data, fitted_ch_18_l) %>%
+  mutate(Trait = "cold.hardiness.18C.larvae",
+         Sex = "Both",
+         Reference = "Freda et al (2019) Heredity",
+         `Trait guild` = "Temperature related",
+         `Trait description` = "Mean proportion of third instar larvae that survived exposure to -6.5°C for an hour. These larvae were otherwise reared at 18°C. Higher values indicate greater cold hardiness.",
+         trait_value = Estimate) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(line)
+
+
+# Cold hardiness at 18C for females model
+
+cold_hardiness_18_f_model <- brm(f_female | trials(s_female) ~ 1 + (1|line),
+                       data = Freda_2019a %>% filter(stage == "A"), family = binomial(),
+                       prior = c(prior(normal(0, 0.5), class = Intercept),
+                                 prior(exponential(1), class = sd)),
+                       iter = 6000, warmup = 2000, chains = 4, cores = 4,
+                       seed = 2, file = "fits/raw_data_fits/ch_18_f.model",
+                       control = list(adapt_delta = 0.9, max_treedepth = 10))
+
+ #pp_check(cold_hardiness_18_f_model)
+
+Freda_2019a_larvae_data <-
+  Freda_2019a %>% filter(stage == "A")
+
+new_data <-
+  tibble(line = Freda_2019a_larvae_data$line,
+         s_female = 1) %>% 
+  distinct(line, s_female)
+
+fitted_ch_18_f <- fitted(cold_hardiness_18_f_model,
+       newdata = new_data,
+       allow_new_levels = TRUE) %>% # sometimes we need to include this for fitted to work. It changes nothing in the output
+  as_tibble()
+
+# female
+
+cold_hardiness_18_f_line_means <- tibble(new_data, fitted_ch_18_f) %>%
+  mutate(Trait = "cold.hardiness.18C.f",
+         Sex = "Female",
+         Reference = "Freda et al (2019) Heredity",
+         `Trait guild` = "Temperature related",
+         `Trait description` = "Mean proportion of adult flies that survived exposure to -6.5°C for an hour. These flies were originally reared at 18°C. Higher values indicate greater cold hardiness.",
+         trait_value = Estimate) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(line)
+
+# Cold hardiness at 18C for males model
+
+cold_hardiness_18_m_model <- brm(f_male | trials(s_male) ~ 1 + (1|line),
+                       data = Freda_2019a %>% filter(stage == "A"), family = binomial(),
+                       prior = c(prior(normal(0, 0.5), class = Intercept),
+                                 prior(exponential(1), class = sd)),
+                       iter = 6000, warmup = 2000, chains = 4, cores = 4,
+                       seed = 2, file = "fits/raw_data_fits/ch_18_m.model",
+                       control = list(adapt_delta = 0.9, max_treedepth = 10))
+
+ #pp_check(cold_hardiness_18_m_model)
+
+Freda_2019a_larvae_data <-
+  Freda_2019a %>% filter(stage == "A")
+
+new_data <-
+  tibble(line = Freda_2019a_larvae_data$line,
+         s_male = 1) %>% 
+  distinct(line, s_male)
+
+fitted_ch_18_m <- fitted(cold_hardiness_18_m_model,
+       newdata = new_data,
+              allow_new_levels = TRUE) %>% # sometimes we need to include this for fitted to work. It changes nothing in the output 
+  as_tibble()
+
+cold_hardiness_18_m_line_means <- tibble(new_data, fitted_ch_18_m) %>%
+  mutate(Trait = "cold.hardiness.18C.m",
+         Sex = "Male",
+         Reference = "Freda et al (2019) Heredity",
+         `Trait guild` = "Temperature related",
+         `Trait description` = "Mean proportion of adult flies that survived exposure to -6.5°C for an hour. These flies were originally reared at 18°C. Higher values indicate greater cold hardiness.",
+         trait_value = Estimate) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(line)
+
+#################
+
+# Cold hardiness at 25C for larvae model
+
+cold_hardiness_25_larvae_model <- brm(alive | trials(n) ~ 1 + (1|line),
+                       data = Freda_2019b %>% filter(stage == "L"), family = binomial(),
+                       prior = c(prior(normal(0, 0.5), class = Intercept),
+                                 prior(exponential(1), class = sd)),
+                       iter = 6000, warmup = 2000, chains = 4, cores = 4,
+                       seed = 2, file = "fits/raw_data_fits/ch_25_l.model",
+                       control = list(adapt_delta = 0.9, max_treedepth = 10))
+
+ #pp_check(cold_hardiness_25_larvae_model)
+
+Freda_2019b_larvae_data <-
+  Freda_2019b %>% filter(stage == "L")
+
+new_data <-
+  tibble(line = Freda_2019b_larvae_data$line,
+         n = 1) %>% 
+  distinct(line, n)
+
+fitted_ch_25_l <- fitted(cold_hardiness_25_larvae_model,
+       newdata = new_data) %>% 
+  as_tibble()
+
+# larvae
+
+cold_hardiness_25_l_line_means <- tibble(new_data, fitted_ch_25_l) %>%
+  mutate(Trait = "cold.hardiness.25C.larvae",
+         Sex = "Both",
+         Reference = "Freda et al (2019) Heredity",
+         `Trait guild` = "Temperature related",
+         `Trait description` = "Mean proportion of third instar larvae that survived exposure to -6.5°C for an hour. These larvae were otherwise reared at 25°C. Higher values indicate greater cold hardiness.",
+         trait_value = Estimate) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(line)
+
+
+# Cold hardiness at 25C for females model
+
+cold_hardiness_25_f_model <- brm(f_female | trials(s_female) ~ 1 + (1|line),
+                       data = Freda_2019b %>% filter(stage == "A"), family = binomial(),
+                       prior = c(prior(normal(0, 0.5), class = Intercept),
+                                 prior(exponential(1), class = sd)),
+                       iter = 6000, warmup = 2000, chains = 4, cores = 4,
+                       seed = 2, file = "fits/raw_data_fits/ch_25_f.model",
+                       control = list(adapt_delta = 0.9, max_treedepth = 10))
+
+ #pp_check(cold_hardiness_25_f_model)
+
+Freda_2019b_f_data <-
+  Freda_2019b %>% filter(stage == "A")
+
+new_data <-
+  tibble(line = Freda_2019b_f_data$line,
+         s_female = 1) %>% 
+  distinct(line, s_female)
+
+fitted_ch_25_f <- fitted(cold_hardiness_25_f_model,
+       newdata = new_data) %>% 
+  as_tibble()
+
+cold_hardiness_25_f_line_means <- tibble(new_data, fitted_ch_25_f) %>%
+  mutate(Trait = "cold.hardiness.25C.f",
+         Sex = "Female",
+         Reference = "Freda et al (2019) Heredity",
+         `Trait guild` = "Temperature related",
+         `Trait description` = "Mean proportion of adult flies that survived exposure to -6.5°C for an hour. These flies were originally reared at 25°C. Higher values indicate greater cold hardiness.",
+         trait_value = Estimate) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(line)
+
+# Cold hardiness at 25C for males model
+
+cold_hardiness_25_m_model <- brm(f_male | trials(s_male) ~ 1 + (1|line),
+                       data = Freda_2019b %>% filter(stage == "A"), family = binomial(),
+                       prior = c(prior(normal(0, 0.5), class = Intercept),
+                                 prior(exponential(1), class = sd)),
+                       iter = 6000, warmup = 2000, chains = 4, cores = 4,
+                       seed = 2, file = "fits/raw_data_fits/ch_25_m.model",
+                       control = list(adapt_delta = 0.9, max_treedepth = 10))
+
+ #pp_check(cold_hardiness_25_m_model)
+
+Freda_2019b_m_data <-
+  Freda_2019b %>% filter(stage == "A")
+
+new_data <-
+  tibble(line = Freda_2019b_m_data$line,
+         s_male = 1) %>% 
+  distinct(line, s_male)
+
+fitted_ch_25_m <- fitted(cold_hardiness_25_m_model,
+       newdata = new_data) %>% 
+  as_tibble()
+
+cold_hardiness_25_m_line_means <- tibble(new_data, fitted_ch_25_m) %>%
+  mutate(Trait = "cold.hardiness.25C.m",
+         Sex = "Male",
+         Reference = "Freda et al (2019) Heredity",
+         `Trait guild` = "Temperature related",
+         `Trait description` = "Mean proportion of adult flies that survived exposure to -6.5°C for an hour. These flies were originally reared at 25°C. Higher values indicate greater cold hardiness.",
+         trait_value = Estimate) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(line)
+
+##############
+
+# Heat hardiness at 18C for larvae model
+
+heat_hardiness_18_larvae_model <- brm(alive | trials(n) ~ 1 + (1|line),
+                       data = Freda_2019c %>% filter(stage == "L"), family = binomial(),
+                       prior = c(prior(normal(0, 0.5), class = Intercept),
+                                 prior(exponential(1), class = sd)),
+                       iter = 6000, warmup = 2000, chains = 4, cores = 4,
+                       seed = 2, file = "fits/raw_data_fits/hh_18_l.model",
+                       control = list(adapt_delta = 0.9, max_treedepth = 10))
+
+ #pp_check(heat_hardiness_18_larvae_model)
+
+Freda_2019c_larvae_data <-
+  Freda_2019c %>% filter(stage == "L")
+
+new_data <-
+  tibble(line = Freda_2019c_larvae_data$line,
+         n = 1) %>% 
+  distinct(line, n)
+
+fitted_hh_18_l <- fitted(heat_hardiness_18_larvae_model,
+       newdata = new_data) %>% 
+  as_tibble()
+
+heat_hardiness_18_l_line_means <- tibble(new_data, fitted_hh_18_l) %>%
+  mutate(Trait = "heat.hardiness.18C.larvae",
+         Sex = "Both",
+         Reference = "Freda et al (2019) Heredity",
+         `Trait guild` = "Temperature related",
+         `Trait description` = "Mean proportion of third instar larvae that survived exposure to 38°C for an hour. These larvae were otherwise reared at 18°C. Higher values indicate greater heat hardiness.",
+         trait_value = Estimate) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(line)
+
+
+# Heat hardiness at 18C for females model
+
+heat_hardiness_18_f_model <- brm(f_female | trials(s_female) ~ 1 + (1|line),
+                       data = Freda_2019c %>% filter(stage == "A"), family = binomial(),
+                       prior = c(prior(normal(0, 0.5), class = Intercept),
+                                 prior(exponential(1), class = sd)),
+                       iter = 6000, warmup = 2000, chains = 4, cores = 4,
+                       seed = 2, file = "fits/raw_data_fits/hh_18_f.model",
+                       control = list(adapt_delta = 0.9, max_treedepth = 10))
+
+ #pp_check(heat_hardiness_18_f_model)
+
+Freda_2019c_f_data <-
+  Freda_2019c %>% filter(stage == "A")
+
+new_data <-
+  tibble(line = Freda_2019c_f_data$line,
+         s_female = 1) %>% 
+  distinct(line, s_female)
+
+fitted_hh_18_f <- fitted(heat_hardiness_18_f_model,
+       newdata = new_data) %>% 
+  as_tibble()
+
+heat_hardiness_18_f_line_means <- tibble(new_data, fitted_hh_18_f) %>%
+  mutate(Trait = "heat.hardiness.18C.f",
+         Sex = "Female",
+         Reference = "Freda et al (2019) Heredity",
+         `Trait guild` = "Temperature related",
+         `Trait description` = "Mean proportion of adult flies that survived exposure to 38°C for an hour. These flies were originally reared at 18°C. Higher values indicate greater heat hardiness.",
+         trait_value = Estimate) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(line)
+
+# Heat hardiness at 18C for males model
+
+heat_hardiness_18_m_model <- brm(f_male | trials(s_male) ~ 1 + (1|line),
+                       data = Freda_2019c %>% filter(stage == "A"), family = binomial(),
+                       prior = c(prior(normal(0, 0.5), class = Intercept),
+                                 prior(exponential(1), class = sd)),
+                       iter = 6000, warmup = 2000, chains = 4, cores = 4,
+                       seed = 2, file = "fits/raw_data_fits/hh_18_m.model",
+                       control = list(adapt_delta = 0.9, max_treedepth = 10))
+
+ #pp_check(heat_hardiness_18_m_model)
+
+Freda_2019c_m_data <-
+  Freda_2019c %>% filter(stage == "A")
+
+new_data <-
+  tibble(line = Freda_2019c_m_data$line,
+         s_male = 1) %>% 
+  distinct(line, s_male)
+
+fitted_hh_18_m <- fitted(heat_hardiness_18_m_model,
+       newdata = new_data) %>% 
+  as_tibble()
+
+heat_hardiness_18_m_line_means <- tibble(new_data, fitted_hh_18_m) %>%
+  mutate(Trait = "heat.hardiness.18C.m",
+         Sex = "Male",
+         Reference = "Freda et al (2019) Heredity",
+         `Trait guild` = "Temperature related",
+         `Trait description` = "Mean proportion of adult flies that survived exposure to 38°C for an hour. These flies were originally reared at 18°C. Higher values indicate greater heat hardiness.",
+         trait_value = Estimate) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(line)
+
+#################
+
+# Heat hardiness at 25C for larvae model
+
+heat_hardiness_25_larvae_model <- brm(alive | trials(n) ~ 1 + (1|line),
+                       data = Freda_2019d %>% filter(stage == "L"), family = binomial(),
+                       prior = c(prior(normal(0, 0.5), class = Intercept),
+                                 prior(exponential(1), class = sd)),
+                       iter = 6000, warmup = 2000, chains = 4, cores = 4,
+                       seed = 2, file = "fits/raw_data_fits/hh_25_l.model",
+                       control = list(adapt_delta = 0.9, max_treedepth = 10))
+
+ #pp_check(heat_hardiness_25_larvae_model)
+
+Freda_2019d_larvae_data <-
+  Freda_2019d %>% filter(stage == "L")
+
+new_data <-
+  tibble(line = Freda_2019d_larvae_data$line,
+         n = 1) %>% 
+  distinct(line, n)
+
+fitted_hh_25_l <- fitted(heat_hardiness_25_larvae_model,
+       newdata = new_data) %>% 
+  as_tibble()
+
+# females
+
+heat_hardiness_25_l_line_means <- tibble(new_data, fitted_ch_25_l) %>%
+  mutate(Trait = "heat.hardiness.25C.larvae",
+         Sex = "Both",
+         Reference = "Freda et al (2019) Heredity",
+         `Trait guild` = "Temperature related",
+         `Trait description` = "Mean proportion of third instar larvae that survived exposure to 38°C for an hour. These larvae were otherwise reared at 25°C. Higher values indicate greater heat hardiness.",
+         trait_value = Estimate) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(line)
+
+
+# Heat hardiness at 25C for females model
+
+heat_hardiness_25_f_model <- brm(f_female | trials(s_female) ~ 1 + (1|line),
+                       data = Freda_2019d %>% filter(stage == "A"), family = binomial(),
+                       prior = c(prior(normal(0, 0.5), class = Intercept),
+                                 prior(exponential(1), class = sd)),
+                       iter = 6000, warmup = 2000, chains = 4, cores = 4,
+                       seed = 2, file = "fits/raw_data_fits/hh_25_f.model",
+                       control = list(adapt_delta = 0.9, max_treedepth = 10))
+
+ #pp_check(heat_hardiness_25_f_model)
+
+Freda_2019d_f_data <-
+  Freda_2019d %>% filter(stage == "A")
+
+new_data <-
+  tibble(line = Freda_2019d_f_data$line,
+         s_female = 1) %>% 
+  distinct(line, s_female)
+
+fitted_hh_25_f <- fitted(heat_hardiness_25_f_model,
+       newdata = new_data) %>% 
+  as_tibble()
+
+heat_hardiness_25_f_line_means <- tibble(new_data, fitted_hh_25_f) %>%
+  mutate(Trait = "heat.hardiness.25C.f",
+         Sex = "Female",
+         Reference = "Freda et al (2019) Heredity",
+         `Trait guild` = "Temperature related",
+         `Trait description` = "Mean proportion of adult flies that survived exposure to 38°C for an hour. These flies were originally reared at 25°C. Higher values indicate greater heat hardiness.",
+         trait_value = Estimate) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(line)
+
+# Heat hardiness at 25C for males model
+
+heat_hardiness_25_m_model <- brm(f_male | trials(s_male) ~ 1 + (1|line),
+                       data = Freda_2019d %>% filter(stage == "A"), family = binomial(),
+                       prior = c(prior(normal(0, 0.5), class = Intercept),
+                                 prior(exponential(1), class = sd)),
+                       iter = 6000, warmup = 2000, chains = 4, cores = 4,
+                       seed = 2, file = "fits/raw_data_fits/hh_25_m.model",
+                       control = list(adapt_delta = 0.9, max_treedepth = 10))
+
+ #pp_check(heat_hardiness_25_m_model)
+
+Freda_2019d_m_data <-
+  Freda_2019d %>% filter(stage == "A")
+
+new_data <-
+  tibble(line = Freda_2019d_m_data$line,
+         s_male = 1) %>% 
+  distinct(line, s_male)
+
+fitted_hh_25_m <- fitted(heat_hardiness_25_m_model,
+       newdata = new_data) %>% 
+  as_tibble()
+
+heat_hardiness_25_m_line_means <- tibble(new_data, fitted_hh_25_m) %>%
+  mutate(Trait = "heat.hardiness.25C.m",
+         Sex = "Male",
+         Reference = "Freda et al (2019) Heredity",
+         `Trait guild` = "Temperature related",
+         `Trait description` = "Mean proportion of adult flies that survived exposure to 38°C for an hour. These flies were originally reared at 25°C. Higher values indicate greater heat hardiness.",
+         trait_value = Estimate) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(line)
+
+Freda_2019_traits <- rbind(cold_hardiness_18_l_line_means,
+                           cold_hardiness_18_f_line_means,
+                           cold_hardiness_18_m_line_means,
+                           cold_hardiness_25_l_line_means,
+                           cold_hardiness_25_f_line_means,
+                           cold_hardiness_25_m_line_means,
+                           heat_hardiness_18_l_line_means,
+                           heat_hardiness_18_f_line_means,
+                           heat_hardiness_18_m_line_means,
+                           heat_hardiness_25_l_line_means,
+                           heat_hardiness_25_f_line_means,
+                           heat_hardiness_25_m_line_means)
+```
+
+### Pitchers et al 2019
+
+This study measures wing shape and area. They then run a multivariate GWA. Here, we just model the mean centroid size for each line.
+
+For whatever reason, this is a hard trait to model.
+
+```{r}
+Pitchers_2019_data <- read_csv("data/data_collation/input/Raw_data_files/Pitchers_2019_wing_multivariate.csv") %>% 
+  mutate(line = as.factor(Linenum),
+         Lab = as.factor(Lab),
+         Perp = as.factor(Perp),
+         block = as.factor(block),
+         Sex = as.factor(Sex))
+
+Houle_data <- Pitchers_2019_data %>% 
+  filter(Lab == "Hou") %>% 
+  mutate(
+    # standardise
+    st_csmm = my_scale(csmm))
+
+Dworkin_data <- Pitchers_2019_data %>% 
+  filter(Lab == "Dwo") %>% 
+   mutate(
+    # standardise
+    st_csmm = my_scale(csmm))
+
+# Houle lab model
+
+wing_centroid_size_model_Hou <- brm(st_csmm ~ Sex + (Sex|line),
+                      family = gaussian, data = Houle_data,
+                      prior = c(prior(normal(0, 0.5), class = Intercept),
+                                prior(normal(0, 0.5), class = b),
+                                prior(exponential(1), class = sd)),
+                      iter = 6000, warmup = 2000, chains = 4, cores = 4,
+                      seed = 2, file = "fits/raw_data_fits/Houle_cs_wing.model",
+                      control = list(adapt_delta = 0.9, max_treedepth = 10))
+
+#pp_check(wing_centroid_size_model_Hou)
+
+new_data <-
+  tibble(line = Houle_data$line,
+         Sex = Houle_data$Sex) %>% 
+  distinct(line, Sex)
+
+fitted_wing_houle <- fitted(wing_centroid_size_model_Hou,
+       newdata = new_data,
+       allow_new_levels = TRUE) %>% # sometimes we need to include this for fitted to work. It changes nothing in the output
+  as_tibble() %>%
+  # now we need to convert back to response scale (note I don't convert Est.Error)
+  mutate(Estimate = Estimate*sd(Houle_data$csmm) + mean(Houle_data$csmm),
+         Q2.5 = Q2.5*sd(Houle_data$csmm) + mean(Houle_data$csmm),
+         Q97.5 = Q97.5*sd(Houle_data$csmm) + mean(Houle_data$csmm))
+
+centroid_size_Houle_f_line_means <- tibble(new_data, fitted_wing_houle) %>%
+  filter(Sex == "F") %>% 
+  mutate(Trait = "wing.centroid.size.2019_Houle.f",
+         Sex = "Female",
+         Reference = "Pitchers et al (2019) Evolution",
+         `Trait guild` = "Morphological",
+         `Trait description` = "Mean left wing centroid size for flies measured in the Houle lab. Images were taken of live flies using the 'Wingmachine' system. Higher values indicate larger wings.",
+         trait_value = Estimate) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(line)
+
+centroid_size_Houle_m_line_means <- 
+  tibble(new_data, fitted_wing_houle) %>%
+  filter(Sex == "M") %>% 
+  mutate(Trait = "wing.centroid.size.2019_Houle.m",
+         Sex = "Male",
+         Reference = "Pitchers et al (2019) Evolution",
+         `Trait guild` = "Morphological",
+         `Trait description` = "Mean left wing centroid size for flies measured in the Houle lab. Images were taken of live flies using the 'Wingmachine' system. Higher values indicate larger wings.",
+         trait_value = Estimate) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(line)
+
+# Dworkin lab model
+
+wing_centroid_size_model_Dwo_f <- brm(st_csmm ~ (1|line),
+                      family = student, data = Dworkin_data %>% filter(Sex == "F"),
+                      prior = c(prior(normal(0, 0.5), class = Intercept),
+                               #prior(normal(0, 0.5), class = b),
+                                prior(exponential(1), class = sd)),
+                      iter = 20000, warmup = 4000, chains = 4, cores = 4,
+                      seed = 2, file = "fits/raw_data_fits/Dwo_cs_wing.f.model",
+                      control = list(adapt_delta = 0.9, max_treedepth = 12))
+
+#pp_check(wing_centroid_size_model_Dwo_f)
+
+dworkin_f <- Dworkin_data %>% filter(Sex == "F")
+
+new_data <-
+  tibble(line = dworkin_f$line,
+         Sex = "F") %>% 
+  distinct(line, Sex)
+
+fitted_wing_dworkin_f <- fitted(wing_centroid_size_model_Dwo_f,
+       newdata = new_data,
+       allow_new_levels = TRUE) %>% # sometimes we need to include this for fitted to work. It changes nothing in the output 
+  as_tibble() %>%
+  # now we need to convert back to response scale (note I don't convert Est.Error)
+  mutate(Estimate = Estimate*sd(Dworkin_data$csmm) + mean(Dworkin_data$csmm),
+         Q2.5 = Q2.5*sd(Dworkin_data$csmm) + mean(Dworkin_data$csmm),
+         Q97.5 = Q97.5*sd(Dworkin_data$csmm) + mean(Dworkin_data$csmm))
+
+centroid_size_Dworkin_f_line_means <- tibble(new_data, fitted_wing_dworkin_f) %>%
+  mutate(Trait = "wing.centroid.size.2019_Dworkin.f",
+         Sex = "Female",
+         Reference = "Pitchers et al (2019) Evolution",
+         `Trait guild` = "Morphological",
+         `Trait description` = "Mean left wing centroid size for flies measured in the Dworkin lab. Images were taken of dissected wings using an Olympus microscope. Higher values indicate larger wings.",
+         trait_value = Estimate) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(line)
+
+wing_centroid_size_model_Dwo_m <- brm(st_csmm ~ (1|line),
+                      family = student, data = Dworkin_data %>% filter(Sex == "M"),
+                      prior = c(prior(normal(0, 0.5), class = Intercept),
+                               #prior(normal(0, 0.5), class = b),
+                                prior(exponential(1), class = sd)),
+                      iter = 20000, warmup = 4000, chains = 4, cores = 4,
+                      seed = 2, file = "fits/raw_data_fits/Dwo_cs_wing.m.model",
+                      control = list(adapt_delta = 0.9, max_treedepth = 12))
+
+
+dworkin_m <- Dworkin_data %>% filter(Sex == "M")
+
+new_data <-
+  tibble(line = dworkin_m$line,
+         Sex = "M") %>% 
+  distinct(line, Sex)
+
+fitted_wing_dworkin_m <- fitted(wing_centroid_size_model_Dwo_m,
+       newdata = new_data,
+       allow_new_levels = TRUE) %>% # sometimes we need to include this for fitted to work. It changes nothing in the output 
+  as_tibble() %>%
+  # now we need to convert back to response scale (note I don't convert Est.Error)
+  mutate(Estimate = Estimate*sd(Dworkin_data$csmm) + mean(Dworkin_data$csmm),
+         Q2.5 = Q2.5*sd(Dworkin_data$csmm) + mean(Dworkin_data$csmm),
+         Q97.5 = Q97.5*sd(Dworkin_data$csmm) + mean(Dworkin_data$csmm))
+
+centroid_size_Dworkin_m_line_means <- tibble(new_data, fitted_wing_dworkin_m) %>%
+  mutate(Trait = "wing.centroid.size.2019_Dworkin.m",
+         Sex = "Male",
+         Reference = "Pitchers et al (2019) Evolution",
+         `Trait guild` = "Morphological",
+         `Trait description` = "Mean wing centroid size for flies measured in the Dworkin lab. Images were taken of dissected wings using an Olympus microscope. Higher values indicate larger wings.",
+         trait_value = Estimate) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(line)
+
+Pitchers_traits <- 
+  rbind(centroid_size_Houle_f_line_means,
+        centroid_size_Houle_m_line_means,
+        centroid_size_Dworkin_f_line_means,
+        centroid_size_Dworkin_m_line_means)
+
+```
+
+### Rohde et al 2019
+
+```{r}
+Rohde_2019_data <- read_csv("data/data_collation/input/Raw_data_files/Rohde_2019.csv") %>% 
+  mutate(line = as.factor(DGRP_id),
+         arena_id = as.factor(arena_id),
+         treatment = as.factor(treatment),
+         day_id = as.factor(day_id),
+         neighbour = as.factor(neighbour),
+         plate_id = as.factor(plate_id),
+         # standardise
+         st_distance_cm = my_scale(distance_cm))
+
+# distance travelled
+
+activity_model <- brm(st_distance_cm ~ treatment + (1|day_id) + (1|plate_id) + (treatment|line),
+                      family = gaussian, data = Rohde_2019_data,
+                      prior = c(prior(normal(0, 0.5), class = Intercept),
+                                prior(normal(0, 0.5), class = b),
+                                prior(exponential(1), class = sd)),
+                      iter = 6000, warmup = 2000, chains = 4, cores = 4,
+                      seed = 2, file = "fits/raw_data_fits/activity.model",
+                      control = list(adapt_delta = 0.9, max_treedepth = 10))
+
+#pp_check(activity_model)
+
+new_data <-
+  tibble(line = Rohde_2019_data$line,
+         treatment = Rohde_2019_data$treatment) %>% 
+  distinct(line, treatment)
+
+
+fitted_activity <- fitted(activity_model,
+       newdata = new_data,
+       re_formula = distance_cm ~ (treatment|line)) %>% 
+  as_tibble() %>%
+  # now we need to convert back to response scale (note I don't convert Est.Error)
+  mutate(Estimate = Estimate*sd(Rohde_2019_data$distance_cm) + mean(Rohde_2019_data$distance_cm),
+         Q2.5 = Q2.5*sd(Rohde_2019_data$distance_cm) + mean(Rohde_2019_data$distance_cm),
+         Q97.5 = Q97.5*sd(Rohde_2019_data$distance_cm) + mean(Rohde_2019_data$distance_cm))
+
+activity_line_estimates <- tibble(new_data, fitted_activity) %>% 
+  select(line, treatment, Estimate) %>% 
+  mutate(treatment = if_else(treatment == 1, "MPH", "SUC"))
+
+# first lets get line means for activity in the control sucrose treatment
+
+activity_line_means <- activity_line_estimates %>%
+  filter(treatment == "SUC") %>% 
+  mutate(Trait = "activity.m",
+         Sex = "Male",
+         Reference = "Rohde et al (2019) Genetics",
+         `Trait guild` = "Activity",
+         `Trait description` = "Mean distance moved during a 10-min trial in a circular arena (16mm diameter x 6mm height), following 24 hrs of exposure to a 5% sucrose solution diet. Higher values indicate more active flies.",
+         trait_value = Estimate) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(line)
+
+# now get line means for activity in the mph treatment
+
+activity_mph_line_means <- activity_line_estimates %>%
+  filter(treatment == "MPH") %>% 
+  mutate(Trait = "activity.MPH.m",
+         Sex = "Male",
+         Reference = "Rohde et al (2019) Genetics",
+         `Trait guild` = "Activity",
+         `Trait description` = "Mean distance moved during a 10-min trial in a circular arena (16mm diameter x 6mm height), following 24 hrs of exposure to a 5% sucrose solution diet, supplemented with MPH (1.5 mg ml^-1). MPH, methylphenidate, is a drug used to treat attention-deficit/hyperactivity disorder (ADHD) in humans. Higher values indicate more active flies.",
+         trait_value = Estimate) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(line)
+
+# now lets get means for the effect of mph on movement by getting the difference between treatments
+
+SUC_activity <- 
+  activity_line_means %>% 
+  select(line, trait_value) %>% 
+  rename(SUC_estimate = trait_value)
+
+mph_activity <- 
+  activity_mph_line_means %>% 
+  select(line, trait_value) %>% 
+  rename(mph_estimate = trait_value)
+
+activity_estimates_diff <-
+  left_join(SUC_activity, mph_activity) %>% 
+  mutate(Estimate = mph_estimate - SUC_estimate)
+
+mph_effect_line_means <- activity_estimates_diff %>%
+  mutate(Trait = "MPH.effect.on.activity.m",
+         Sex = "Male",
+         Reference = "Rohde et al (2019) Genetics",
+         `Trait guild` = "Drug response",
+         `Trait description` = "Mean difference in distance moved during a 10-min trial in a circular arena (16mm diameter x 6mm height) between flies fed a control 5% sucrose solution and a 5% sucrose solution supplemented with 1.5 mg ml^-1 methylphenidate (MPH). MPH is a drug used to treat the symptoms of attention-deficit/hyperactivity disorder (ADHD) in humans. Positive values indicate greater activity when flies were supplemented with MPH.",
+         trait_value = Estimate) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(line)
+
+Rohde_traits <- rbind(activity_line_means,
+                      activity_mph_line_means,
+                      mph_effect_line_means)
+```
+
+### Everett et al 2020
+
+This is mainly data wrangling. We find the mean from two data points for each line simply via the `mean()` function.
+
+```{r}
+Everett_2020_data <- read_csv("data/data_collation/input/Raw_data_files/Everett_microbiome_2020.csv") 
+
+microbiome_line_means <- 
+  Everett_2020_data %>% 
+  pivot_longer(!`Microbial Species`, names_to = "line", values_to = "trait_value") %>% 
+  mutate(Sex = if_else(str_detect(line, "F"), "Female", "Male"),
+         line = str_remove(line, "_F1"),
+         line = str_remove(line, "_F2"),
+         line = str_remove(line, "_M1"),
+         line = str_remove(line, "_M2")) %>% 
+  group_by(`Microbial Species`, line, Sex) %>% 
+  summarise(trait_value = mean(trait_value)) %>% 
+  mutate( Reference = "Everett et al (2020) Genome Research",
+          `Trait guild` = "Microbiome",
+          `Trait description` = "Mean reads per million (originally Log2 normalised) values for reads from each DGRP RNA-seq sample uniquely aligning to each microbial species. Higher values indicate a greater load of the microbial species.",
+          Trait = str_replace(`Microbial Species`, " ", "."),
+          Trait_1 = if_else(str_detect(Sex, "Female"), ".f", ".m")) %>% 
+  unite(Trait, Trait, Trait_1, sep = "", remove = TRUE) %>%
+  ungroup() %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(Trait, line, Sex)
+```
+
+
+### Chapman et al 2020
+
+Note that I haven't included Wolbachia status in the model.
+
+```{r}
+Chapman_2020_data <- read_csv("data/data_collation/input/Raw_data_files/Chapman_2020.csv") %>% 
+   mutate(line = as.factor(Line),
+          Treatment = as.factor(Treatment),
+          Date = as.factor(Date))
+
+
+E.faecalis_model <- brm(Alive_at_day5 | trials(number_infected) ~ 1 + Infector + Date + (1|Vial) + (1|line),
+                       data = Chapman_2020_data, family = binomial(),
+                       prior = c(prior(normal(0, 0.5), class = Intercept),
+                                 prior(normal(0, 0.5), class = b),
+                                 prior(exponential(1), class = sd)),
+                       iter = 6000, warmup = 2000, chains = 4, cores = 4,
+                       seed = 2, file = "fits/raw_data_fits/E.faecalis.model",
+                       control = list(adapt_delta = 0.9, max_treedepth = 10))
+
+ #pp_check(E.faecalis_model)
+
+# set the fixed effects in the new data for which we will derive predictions to the reference levels in the model i.e. Infector = jo and Date = `5/3/17`
+
+new_data <-
+  tibble(line = Chapman_2020_data$line,
+         number_infected = 1,
+         Infector = "Jo",
+         Date = '5/3/17') %>% 
+  distinct(line, number_infected, Infector, Date) 
+
+
+fitted_E.faecalis <- fitted(E.faecalis_model,
+       newdata = new_data,
+       re_formula = Alive_at_day5 | trials(number_infected) ~ (1|line)) %>% 
+  as_tibble()
+
+E.faecalis_line_means <- tibble(new_data, fitted_E.faecalis) %>%
+  mutate(Trait = "E.faecalis.resistance.m",
+         Sex = "Male",
+         Reference = "Chapman et al (2020) Genes",
+         `Trait guild` = "Pathogen response",
+         `Trait description` = "Mean proportion of adult flies that were alive 5 days after infection with the bacterial pathogen E. faecalis. Higher values indicate greater resistance to E. faecalis",
+         trait_value = Estimate) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(line)
+
+```
+
+### Zhou et al 2020
+
+Line means are provided for the non-metabolome traits in the supplementary material. Raw data are provided for the metabolome traits, which we model below. 
+
+There are 453 metabolites. We need a quick and easy way to model these and find line means. To do this, we fit relatively simple gaussian models with Sex as a fixed effect (where this is applicable) and line as a random effect, with a sex-specific intercept.
+
+Five traits show no genetic variation in one of the sexes; that is, each line has the same value. We do not model these, but still need to model the trait for the sex that shows genetic variation. We fit a very similar model, except without the sex fixed effect. 
+
+```{r}
+Zhou_data <- 
+  read_csv("data/data_collation/input/Raw_data_files/Zhou_2020.csv") %>% 
+  select(-c(`SUB PATHWAY`, `METABOLITE  ID`, PLATFORM, `CHEMICAL ID`,
+            `RETENTION INDEX`, MASS, CAS, PUBCHEM, KEGG, `CLIENT IDENTIFIER`)) %>% 
+  pivot_longer(cols = 3:242, names_to = "ID", values_to = "Trait_value") %>% 
+  separate(ID, into = c("Line", "Sex", "Rep"), sep = "-", remove = TRUE) %>% 
+  mutate(line = as.factor(Line), Sex = as.factor(Sex)) %>% 
+  select(-Line) %>% 
+  # standardise
+  group_by(METABOLITE, Sex) %>% 
+  mutate(st_trait_value = my_scale(Trait_value)) %>% 
+  ungroup() %>%
+  # some traits have the same value for every line; these can't be standardised because the SD = 0. We remove these traits from the dataset
+  filter(st_trait_value != "NaN")
+  
+
+# this is our model outline, based on one random metabolite. We can then update this model with new data (for another metabolite) to model every trait, which is advantageous because it prevents brms needing to recompile every time. With the model already compiled we can simply update the data, which saves a lot of time.
+
+data <- Zhou_data %>% filter(METABOLITE == "xanthurenate")
+
+model_outline <- brm(data = data,
+             st_trait_value ~ 1 + Sex + (Sex|line),
+             family = gaussian,
+             prior = c(prior(normal(0, 0.5), class = Intercept),
+                       prior(normal(0, 0.5), class = b),
+                       prior(exponential(1), class = sd)),
+             iter = 6000, warmup = 2000, chains = 4, 
+             cores = 4, seed = 1, control = list(adapt_delta = 0.95, 
+                                                 max_treedepth = 12))
+
+## Now make a function to run a model for each trait and get the posterior line means for each sex 
+
+metabolite_modeller <- function(selected_trait){
+  
+  data <- Zhou_data %>% filter(METABOLITE == selected_trait)
+  
+  model <- update(model_outline, newdata = data) # same model, but with new data each time
+  
+fitted_new_data <-
+  tibble(line = data$line,
+         Sex = data$Sex,
+         Trait = data$METABOLITE,
+         `Trait guild` = "Metabolome",
+         `Trait description` = "Metabolites identified by mass spectrometry with scaled measurement for each sample (100 flies, replicated three times). Data were scaled to account for run-day blocks. Higher values indicate greater quantities.",
+         Reference = "Zhou et al (2020) Genome Research") %>% 
+  distinct(line, Trait, Sex, `Trait guild`, `Trait description`, Reference)
+
+
+fitted_metabolite <- fitted(model,
+       newdata = fitted_new_data) %>% 
+  as_tibble() %>%
+  # now we need to convert back to response scale (note I don't convert Est.Error)
+  mutate(trait_value = Estimate*sd(data$Trait_value) + mean(data$Trait_value),
+         Q2.5 = Q2.5*sd(data$Trait_value) + mean(data$Trait_value),
+         Q97.5 = Q97.5*sd(data$Trait_value) + mean(data$Trait_value))
+
+metabolite_line_estimates <- tibble(fitted_new_data, fitted_metabolite) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  mutate(Sex = if_else(Sex == "F", "Female", "Male"),
+         Trait = if_else(Sex == "Female", paste(Trait, "f", sep = "."), paste(Trait, "m", sep = ".")))
+  
+}
+
+# create a list of all trait to iterate our function over
+
+Both_sexes <-
+  Zhou_data %>% 
+  distinct(METABOLITE, Sex) %>%
+  group_by(METABOLITE) %>% 
+  summarise(n = n()) %>% 
+  filter(n > 1)
+
+trait_list_both_sexes <- Both_sexes$METABOLITE
+
+## Now make a function to run a model for each trait and get the posterior line means for traits only measured in a single sex
+
+metabolite_modeller_single_sex <- function(selected_trait){
+  
+  data <- Zhou_data %>% filter(METABOLITE == selected_trait)
+  
+  model <- update(model_outline, newdata = data,
+                  st_trait_value ~ 1 + (1|line),
+                  family = gaussian,
+                  prior = c(prior(normal(0, 0.5), class = Intercept),
+                            prior(exponential(1), class = sd))) # same model, but with new data each time
+  
+  fitted_new_data <-
+    tibble(line = data$line,
+           Sex = data$Sex,
+           Trait = data$METABOLITE,
+           `Trait guild` = "Metabolome",
+           `Trait description` = "Metabolites identified by mass spectrometry with scaled measurement for each sample (100 flies, replicated three times). Data were scaled to account for run-day blocks. Higher values indicate greater quantities.",
+           Reference = "Zhou et al (2020) Genome Research") %>% 
+    distinct(line, Trait, Sex, `Trait guild`, `Trait description`, Reference)
+  
+  
+  fitted_metabolite <- fitted(model,
+                              newdata = fitted_new_data) %>% 
+    as_tibble() %>%
+    # now we need to convert back to response scale (note I don't convert Est.Error)
+    mutate(trait_value = Estimate*sd(data$Trait_value) + mean(data$Trait_value),
+           Q2.5 = Q2.5*sd(data$Trait_value) + mean(data$Trait_value),
+           Q97.5 = Q97.5*sd(data$Trait_value) + mean(data$Trait_value))
+  
+  metabolite_line_estimates <- tibble(fitted_new_data, fitted_metabolite) %>% 
+    select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+    mutate(Sex = if_else(Sex == "F", "Female", "Male"),
+           Trait = if_else(Sex == "Female", paste(Trait, "f", sep = "."), paste(Trait, "m", sep = ".")))
+  
+}
+
+# create trait list to run function over
+
+Single_sex <-
+  Zhou_data %>% 
+  distinct(METABOLITE, Sex) %>%
+  group_by(METABOLITE) %>% 
+  summarise(n = n()) %>% 
+  filter(n == 1)
+
+trait_list_single_sex <- Single_sex$METABOLITE
+
+# Run the models
+
+Run_function <- FALSE # Change this to TRUE to re-run the models
+
+if(Run_function){
+  
+  models_both_sexes <- map_dfr(trait_list_both_sexes, metabolite_modeller) # map_dfr returns a data frame created by row-binding each output
+  
+  models_single_sex <- map_dfr(trait_list_single_sex, metabolite_modeller_single_sex)
+  
+  Zhou_line_means <-
+    rbind(models_both_sexes,
+          models_single_sex)
+  
+  Zhou_line_means %>% 
+    write_csv("data/data_collation/output/Zhou_line_means.csv")
+} else {
+  Zhou_line_means <- read_csv("data/data_collation/output/Zhou_line_means.csv") %>% 
+    mutate(Trait = str_replace_all(Trait, "[/]", "_"),
+           Trait = str_remove(Trait, "[*]"))  # replace invalid names
+}
+  
+```
+
+### Zwoinska et al 2020 
+
+The authors treat temperature as a continuous variable. But they only have measures at 3 temperatures, so we choose to consider temperature as an ordered predictor, following Solomon Kurz's [translation](https://bookdown.org/content/4857/monsters-and-mixtures.html#ordered-categorical-predictors) of McElreath (2020) to the `brms` framework. This approach results in an improved model fit.
+
+```{r}
+
+Zwoinska_male_data <- read_csv("data/data_collation/input/Raw_data_files/Zwoinska_2020/Zwoinska_males_2020.csv") %>% 
+  rename(line = DGRP) %>% 
+  mutate(line = as.factor(line),
+         Batch = as.factor(Batch),
+         Temperature_new = recode(Temperature,
+                                  "25" = 1,
+                                  "27" = 2,
+                                  "29" = 3) %>% 
+           as.integer())
+
+
+fertility_male_model_ordered <-
+  brm(Larvae ~ 1 + mo(Temperature_new) + (mo(Temperature_new)|line),
+      data = Zwoinska_male_data,
+      prior = c(prior(normal(0, 0.5), class = Intercept),
+                prior(normal(0, 0.5), class = b),
+                prior(dirichlet(2, 2), class = simo, coef = moTemperature_new1),
+                prior(exponential(1), class = sd)),
+      family = bernoulli,
+      cores = 4, chains = 4, iter = 4000, warmup = 2000,
+      control = list(adapt_delta = 0.9, max_treedepth = 10),
+      seed = 1, file = "fits/raw_data_fits/fertility_male.model_ordered")
+
+
+new_data <-
+  tibble(line = Zwoinska_male_data$line,
+         Temperature_new = Zwoinska_male_data$Temperature_new,
+         Batch = 1) %>% 
+  distinct(line, Temperature_new, Batch)
+
+
+fitted_male_fertility <- fitted(fertility_male_model_ordered,
+       newdata = new_data) %>% 
+  as_tibble()
+
+fertility_m_line_estimates <- tibble(new_data, fitted_male_fertility) %>% 
+  mutate(.keep = "unused", 
+            Temperature = recode(Temperature_new,
+                                  "1" = 25,
+                                  "2" = 27,
+                                  "3" = 29)) 
+
+# build a function to create the line means tibbles
+
+Zwoinska_line_means <- function(estimates, value, Trait, sex, description){
+  estimates %>%
+  filter(Temperature == value) %>% 
+  mutate(Trait = Trait,
+         Sex = sex,
+         Reference = "Zwoinska et al (2020) Frontiers in Genetics",
+         `Trait guild` = "Life history",
+         `Trait description` = description,
+         trait_value = Estimate) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(line)
+}
+
+fertility_25C_m_line_means <- Zwoinska_line_means(fertility_m_line_estimates, "25", "fertility.25C.m", "Male", "Mean proportion of males that produced viable larvae. Males were reared at 25C. Higher values indicates greater fertility.")
+
+fertility_27C_m_line_means <- Zwoinska_line_means(fertility_m_line_estimates, "27", "fertility.27C.m", "Male", "Mean proportion of males that produced viable larvae. Males were reared at 27C. Higher values indicates greater fertility")
+
+fertility_29C_m_line_means <- Zwoinska_line_means(fertility_m_line_estimates, "29", "fertility.29C.m", "Male", "Mean proportion of males that produced viable larvae. Males were reared at 29C. Higher values indicates greater fertility")
+
+# we need a plasticity measure
+
+## The code below uses the slope estimated by the model for each line as the plasticity measure.
+
+# get predictions from the model for each line (note fitted() isn't used, instead we grab the estimates straight from the models posterior). The line rankings produced here are very similar to the slopes estimates presented in Table S1 in Zwoinska et al (2020).
+
+fertility_m_temp_effect_line_means <- as_draws_df(fertility_male_model_ordered) %>% 
+  select(starts_with("r_line") & contains("moTemperature")) %>% 
+  gather() %>% 
+  group_by(key) %>%
+  # the trait in question is plasticity, which is measured by the line specific random slope between treatments - we can get this straight from our posterior samples, without adding anything else 
+  summarise(mean = mean(value) %>% round(digits = 2)) %>% 
+  mutate(line = str_remove(key, "r_line")) %>% 
+  mutate(line = str_remove(line, ",moTemperature_new")) %>% 
+  mutate(line = gsub("\\[|\\]", "", line),
+         Trait = "fertility.thermal.susceptibility.m",
+         Reference = "Zwoinska et al (2020) Frontiers in Genetics",
+         `Trait guild` = "Temperature related",
+         Sex = "Male",
+         `Trait description` = "Mean slope of the change in male fertility (the proportion of males that produced viable larvae), between 25C, 27C and 29C rearing conditions. Lower slope values indicate a greater decrease in fertility with an increase in temperature. This is a measure of thermal susceptibility.",
+         trait_value = mean
+  ) %>%
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(trait_value)
+
+# Slopes are hard to interpret, so we also provide this data in a different format. Below we calculate the change in fertility between 25C and 29C for each line. Greater values indicate a greater loss in fertility. Note this approach produces a very similar line ordering to the above approach
+
+new_data <-
+  new_data %>% 
+  mutate(ID = paste0("V", 1:372))
+  
+
+fitted_male_fertility <- fitted(fertility_male_model_ordered,
+       newdata = new_data, summary = F) %>% 
+  as_tibble() %>% 
+  pivot_longer(cols = everything(), names_to = "ID", values_to = "Estimate")
+
+fitted_male_fertility <- right_join(new_data, fitted_male_fertility) %>% 
+  as_tibble %>% 
+  select(-ID)
+
+# Different numbers of lines have been phenotyped for fertility in the 25C and 29C conditions. The code below finds the lines that are measured in one temp but not the other and removes them. We then find the difference in fertility between 25 and 29C conditions
+
+a <- 
+  fitted_male_fertility %>% 
+  filter(Temperature_new == 1, line != "38" & line != "83" & line != "395", line != "707" & line != "727") %>%
+  rename(Temp25 = Estimate)
+
+c <- 
+  fitted_male_fertility %>%
+  filter(Temperature_new == 3, line != "911") %>%
+  rename(Temp29 = Estimate) %>%
+  select(-c(Temperature_new, Batch, line))
+
+#a_line <- a %>% distinct(line) 
+#c_line <- c %>% distinct(line) # we remove the line column in the above code to make binding possible. This line of code will therefore not work, but it has already done its job.
+
+#anti_join(a_line, c_line) # this line finds the lines present in the a_line vector but not in the b_line vector
+#anti_join(c_line, a_line) # this line finds the lines present in the b_line vector but not in the a_line vector
+
+
+backup_approach <- cbind(a, c) %>% 
+  as_tibble() %>% 
+  mutate(fertility_diff = Temp25 - Temp29) %>% 
+  group_by(line) %>% 
+  summarise(trait_value = mean(fertility_diff)) %>% 
+  mutate(Trait = "fertility.thermal.susceptibility.m",
+         Reference = "Zwoinska et al (2020) Frontiers in Genetics",
+         `Trait guild` = "Temperature related",
+         Sex = "Male",
+         `Trait description` = "Mean change in male fertility (the proportion of males that produced viable larvae), between 25C and 29C rearing conditions. Higher values indicate a greater decrease in fertility. This is a measure of thermal susceptibility or thermal plasticity in fertility.") %>%
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(-trait_value)
+
+
+# female fertility
+
+Zwoinska_female_data <- read_csv("data/data_collation/input/Raw_data_files/Zwoinska_2020/Zwoinska_females_2020.csv") %>% 
+  rename(line = DGRP) %>% 
+  mutate(line = as.factor(line),
+         Batch = as.factor(Batch),
+         Temperature_new = recode(Temperature,
+                                  "25" = 1,
+                                  "27" = 2,
+                                  "29" = 3) %>% 
+           as.integer())
+
+
+
+fertility_female_model_ordered <-
+  brm(Larvae ~ 1 + mo(Temperature_new) + (mo(Temperature_new)|line),
+      data = Zwoinska_female_data,
+      prior = c(prior(normal(0, 0.5), class = Intercept),
+                prior(normal(0, 0.5), class = b),
+                prior(dirichlet(2, 2), class = simo, coef = moTemperature_new1),
+                prior(exponential(1), class = sd)),
+      family = bernoulli,
+      cores = 4, chains = 4, iter = 4000, warmup = 2000,
+      control = list(adapt_delta = 0.9, max_treedepth = 10),
+      seed = 1, file = "fits/raw_data_fits/fertility_female.model_ordered")
+
+
+new_data <-
+  tibble(line = Zwoinska_female_data$line,
+         Temperature_new = Zwoinska_female_data$Temperature_new,
+         Batch = 1) %>% 
+  distinct(line, Temperature_new, Batch)
+
+
+fitted_female_fertility <- fitted(fertility_female_model_ordered,
+       newdata = new_data) %>% 
+  as_tibble()
+
+fertility_f_line_estimates <- tibble(new_data, fitted_female_fertility) %>% 
+    mutate(.keep = "unused", 
+            Temperature = recode(Temperature_new,
+                                  "1" = 25,
+                                  "2" = 27,
+                                  "3" = 29)) 
+
+fertility_25C_f_line_means <- Zwoinska_line_means(fertility_f_line_estimates, "25", "fertility.25C.f", "Female", "Mean proportion of females that produced viable larvae. Females were reared at 25C. Higher values indicates greater fertility.")
+
+fertility_27C_f_line_means <- Zwoinska_line_means(fertility_f_line_estimates, "27", "fertility.27C.f", "Female", "Mean proportion of females that produced viable larvae. Females were reared at 27C. Higher values indicates greater fertility")
+
+fertility_29C_f_line_means <- Zwoinska_line_means(fertility_f_line_estimates, "29", "fertility.29C.f", "Female", "Mean proportion of females that produced viable larvae. Females were reared at 29C. Higher values indicates greater fertility")
+
+# get predictions from the model for each line (note fitted() isn't used, instead we grab the estimates straight from the models posterior). Once again, the line rankings produced here are very similar to the slopes estimates presented in Table S1 in Zwoinska et al (2020).
+
+# we need a plasticity measure
+
+## The code below uses the slope estimated by the model for each line as the plasticity measure.
+
+# get predictions from the model for each line (note fitted() isn't used, instead we grab the estimates straight from the models posterior). The line rankings produced here are very similar to the slopes estimates presented in Table S1 in Zwoinska et al (2020).
+
+fertility_f_temp_effect_line_means <- as_draws_df(fertility_female_model_ordered) %>% 
+  select(starts_with("r_line") & contains("moTemperature")) %>% 
+  gather() %>% 
+  group_by(key) %>%
+  # the trait in question is plasticity, which is measured by the line specific random slope between treatments - we can get this straight from our posterior samples, without adding anything else 
+  summarise(mean = mean(value) %>% round(digits = 2)) %>% 
+  mutate(line = str_remove(key, "r_line")) %>% 
+  mutate(line = str_remove(line, ",moTemperature_new")) %>% 
+  mutate(line = gsub("\\[|\\]", "", line),
+         Trait = "fertility.thermal.susceptibility.f",
+         Reference = "Zwoinska et al (2020) Frontiers in Genetics",
+         `Trait guild` = "Temperature related",
+         Sex = "Female",
+         `Trait description` = "Mean slope of the change in female fertility (the proportion of males that produced viable larvae), between 25C, 27C and 29C rearing conditions. Lower slope values indicate a greater decrease in fertility with an increase in temperature. This is a measure of thermal susceptibility.",
+         trait_value = mean
+  ) %>%
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(trait_value)
+
+# Slopes are hard to interpret, so we also provide this data in a different format. Below we calculate the change in fertility between 25C and 29C for each line. Greater values indicate a greater loss in fertility. Note this approach produces a very similar line ordering to the bove approach
+
+new_data <-
+  new_data %>% 
+  mutate(ID = paste0("V", 1:120))
+  
+
+fitted_female_fertility <- fitted(fertility_female_model_ordered,
+       newdata = new_data, summary = F) %>% 
+  as_tibble() %>% 
+  pivot_longer(cols = everything(), names_to = "ID", values_to = "Estimate")
+
+fitted_female_fertility <- right_join(new_data, fitted_female_fertility) %>% 
+  as_tibble %>% 
+  select(-ID)
+
+# phenotypes for all 40 lines are measured so no fancy steps for binding are needed
+
+a_female <- 
+  fitted_female_fertility %>% 
+  filter(Temperature_new == 1) %>%
+  rename(Temp25 = Estimate)
+
+c_female <- 
+  fitted_female_fertility %>%
+  filter(Temperature_new == 3) %>%
+  rename(Temp29 = Estimate) %>%
+  select(-c(Temperature_new, Batch, line))
+
+
+backup_approach <- cbind(a_female, c_female) %>% 
+  as_tibble() %>% 
+  mutate(fertility_diff = Temp25 - Temp29) %>% 
+  group_by(line) %>% 
+  summarise(trait_value = mean(fertility_diff)) %>% 
+  mutate(Trait = "fertility.thermal.susceptibility.f",
+         Reference = "Zwoinska et al (2020) Frontiers in Genetics",
+         `Trait guild` = "Temperature related",
+         Sex = "Female",
+         `Trait description` = "Mean change in female fertility (the proportion of males that produced viable larvae), between 25C and 29C rearing conditions. Higher values indicate a greater decrease in fertility. This is a measure of thermal susceptibility or thermal plasticity in fertility.") %>%
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(-trait_value)
+
+
+# combine all the data from this study into a simple dataframe
+
+Zwoinska_traits <- rbind(fertility_25C_m_line_means,
+                         fertility_27C_m_line_means,
+                         fertility_29C_m_line_means,
+                         fertility_m_temp_effect_line_means,
+                         fertility_25C_f_line_means,
+                         fertility_27C_f_line_means,
+                         fertility_29C_f_line_means,
+                         fertility_f_temp_effect_line_means)
+```
+
+### Chowdhury et al 2021
+
+```{r}
+Chowdhury_2021_aggressive_lunges <- read_csv("data/data_collation/input/Raw_data_files/Chowdhury_2021_aggression.csv") %>% 
+  mutate(line = as.factor(line))
+
+
+aggression_model <- brm(agressive.lunges.per.20mins.m ~ 1 + (1|line),
+                       data = Chowdhury_2021_aggressive_lunges, family = zero_inflated_poisson(),
+                       prior = c(prior(normal(3, 0.5), class = Intercept),
+                                 prior(exponential(1), class = sd)),
+                       iter = 6000, warmup = 2000, chains = 4, cores = 4,
+                       seed = 2, file = "fits/raw_data_fits/aggression.model",
+                       control = list(adapt_delta = 0.9, max_treedepth = 10))
+
+ #pp_check(aggression_model)
+
+
+new_data <-
+  tibble(line = Chowdhury_2021_aggressive_lunges$line) %>% 
+  distinct(line)
+
+fitted_aggression <- fitted(aggression_model,
+       newdata = new_data) %>% 
+  as_tibble()
+
+
+
+aggression_m_line_means <- tibble(new_data, fitted_aggression) %>%
+  mutate(Trait = "aggression.2021.m",
+         Sex = "Male",
+         Reference = "Chowdhury et al Nature Communications Biology",
+         `Trait guild` = "Behavioural",
+         `Trait description` = "Mean number of aggressive lunges made in 20 min window following removal of a divider, by pairs of DGRP males of same genotype. Trials were run after males were kept isolated for five days. Higher values indicate more aggressive males.",
+         trait_value = Estimate) %>% 
+  mutate(line = str_remove(line, "RAL-")) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(line)
+
+```
+
+### Watanabe and Riddle 2021 
+
+```{r}
+Watanabe_climbing_data <- read_csv("data/data_collation/input/Raw_data_files/Watanabe_Riddle_2021.csv") %>% 
+  rename(line = Line) %>% 
+  mutate(line = str_remove(line, "line_"),
+         line = as.factor(line),
+         Vial = as.factor(Vial))
+
+# Females
+
+Watanabe_female_data <-
+  Watanabe_climbing_data %>% 
+  filter(Sex == "F") %>% 
+  mutate(# standardise
+    st_Climbing = my_scale(Climbing))
+
+climbing_female_model <-
+  brm(st_Climbing ~ 1 +  Treatment + (1|Vial) + (Treatment|line),
+      data = Watanabe_female_data,
+      prior = c(prior(normal(0, 0.5), class = Intercept),
+                prior(normal(0, 0.5), class = b),
+                prior(exponential(1), class = sd)),
+      family = gaussian,
+      cores = 4, chains = 4, iter = 6000, warmup = 2000,
+      control = list(adapt_delta = 0.9, max_treedepth = 10),
+      seed = 1, file = "fits/raw_data_fits/climbing_female.model")
+
+new_data <-
+  tibble(line = Watanabe_female_data$line,
+         Treatment = Watanabe_female_data$Treatment,
+         Vial = 1) %>% 
+  distinct(line, Treatment, Vial)
+
+
+fitted_female_climbing <- fitted(climbing_female_model,
+       newdata = new_data) %>% 
+  as_tibble() %>%
+  # now we need to convert back to response scale (note I don't convert Est.Error)
+  mutate(Estimate = Estimate*sd(Watanabe_female_data$Climbing) + mean(Watanabe_female_data$Climbing),
+         Q2.5 = Q2.5*sd(Watanabe_female_data$Climbing) + mean(Watanabe_female_data$Climbing),
+         Q97.5 = Q97.5*sd(Watanabe_female_data$Climbing) + mean(Watanabe_female_data$Climbing))
+
+climbing_f_line_estimates <- tibble(new_data, fitted_female_climbing)
+
+# build a function to create the line means tibbles
+
+Watanabe_line_means <- function(estimates, value, Trait, sex, description){
+  estimates %>%
+  filter(Treatment == value) %>% 
+  mutate(Trait = Trait,
+         Sex = sex,
+         Reference = "Watanabe and Riddle (2021) Royal Society Open Science",
+         `Trait guild` ="Activity",
+         `Trait description` = description,
+         trait_value = Estimate) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(line)
+}
+
+climbing_f_line_means <- Watanabe_line_means(climbing_f_line_estimates, "C", "climbing.f", "Female", "Mean climbing index, following five days of standard conditions. Higher values indicate greater climbing ability.")
+
+climbing_post_exercise_f_line_means <- Watanabe_line_means(climbing_f_line_estimates, "T", "climbing.post.exercise.f", "Female", "Mean climbing index, following five days consecutive days of forced exercise (two hours a day). Higher values indicate greater climbing ability.")
+
+# get predictions from the model for each line (note fitted() isn't used, instead we grab the estimates straight from the models posterior). Once again, the line rankings produced here are very similar to the slopes estimates presented in Watanabe and Riddle (2021).
+
+# Now get the difference between treatments
+
+control_climbing_f <- 
+  climbing_f_line_means %>% 
+  select(line, trait_value) %>% 
+  rename(control_estimate = trait_value)
+
+exercise_climbing_f <- 
+  climbing_post_exercise_f_line_means %>% 
+  select(line, trait_value) %>% 
+  rename(exercise_estimate = trait_value)
+
+climbing_estimates_diff <-
+  left_join(control_climbing_f, exercise_climbing_f) %>% 
+  mutate(Estimate = exercise_estimate - control_estimate)
+
+climbing_f_exercise_effect_line_means <- climbing_estimates_diff %>%
+  mutate(Trait = "climbing.exercise.effect.f",
+         Sex = "Female",
+         Reference = "Watanabe and Riddle (2021) Royal Society Open Science",
+         `Trait guild` = "Activity",
+         `Trait description` = "Mean change in the climbing ability of adults, between flies that were and were not exposed to exercise five days previously. Positive values indicate an increase in climbing ability with exercise.",
+         trait_value = Estimate) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(line)
+
+# males
+
+Watanabe_male_data <-
+  Watanabe_climbing_data %>% 
+  filter(Sex == "M") %>% 
+  mutate(# standardise
+    st_Climbing = my_scale(Climbing))
+
+climbing_male_model <-
+  brm(st_Climbing ~ 1 +  Treatment + (1|Vial) + (Treatment|line),
+      data = Watanabe_male_data,
+      prior = c(prior(normal(0, 0.5), class = Intercept),
+                prior(normal(0, 0.5), class = b),
+                prior(exponential(1), class = sd)),
+      family = gaussian,
+      cores = 4, chains = 4, iter = 6000, warmup = 2000,
+      control = list(adapt_delta = 0.99, max_treedepth = 10),
+      seed = 1, file = "fits/raw_data_fits/climbing_male.model")
+
+#pp_check(climbing_male_model)
+
+new_data <-
+  tibble(line = Watanabe_male_data$line,
+         Treatment = Watanabe_male_data$Treatment,
+         Vial = 1) %>% 
+  distinct(line, Treatment, Vial)
+
+
+fitted_male_climbing <- fitted(climbing_male_model,
+       newdata = new_data,
+       allow_new_levels = TRUE) %>% 
+  as_tibble() %>%
+  # now we need to convert back to response scale (note I don't convert Est.Error)
+  mutate(Estimate = Estimate*sd(Watanabe_male_data$Climbing) + mean(Watanabe_male_data$Climbing),
+         Q2.5 = Q2.5*sd(Watanabe_male_data$Climbing) + mean(Watanabe_male_data$Climbing),
+         Q97.5 = Q97.5*sd(Watanabe_male_data$Climbing) + mean(Watanabe_male_data$Climbing))
+
+climbing_m_line_estimates <- tibble(new_data, fitted_male_climbing)
+
+climbing_m_line_means <- Watanabe_line_means(climbing_m_line_estimates, "C", "climbing.m", "Male", "Mean climbing index, following five days of standard conditions. Higher values indicate greater climbing ability.")
+
+climbing_post_exercise_m_line_means <- Watanabe_line_means(climbing_m_line_estimates, "T", "climbing.post.exercise.m", "Male", "Mean climbing index, following five days consecutive days of forced exercise (two hours a day). Higher values indicate greater climbing ability.")
+
+# Now get the difference between treatments
+
+control_climbing_m <- 
+  climbing_m_line_means %>% 
+  select(line, trait_value) %>% 
+  rename(control_estimate = trait_value)
+
+exercise_climbing_m <- 
+  climbing_post_exercise_m_line_means %>% 
+  select(line, trait_value) %>% 
+  rename(exercise_estimate = trait_value)
+
+climbing_estimates_diff_m <-
+  left_join(control_climbing_m, exercise_climbing_m) %>% 
+  mutate(Estimate = exercise_estimate - control_estimate)
+
+climbing_m_exercise_effect_line_means <- climbing_estimates_diff_m %>%
+  mutate(Trait = "climbing.exercise.effect.m",
+         Sex = "Male",
+         Reference = "Watanabe and Riddle (2021) Royal Society Open Science",
+         `Trait guild` = "Activity",
+         `Trait description` = "Mean change in the climbing ability of adults, between flies that were and were not exposed to exercise five days previously. Positive values indicate an increase in climbing ability with exercise.",
+         trait_value = Estimate) %>% 
+  select(line, Trait, Sex, trait_value, `Trait guild`, `Trait description`, Reference) %>% 
+  arrange(line)
+
+
+Watanabe_traits <- rbind(climbing_f_line_means,
+                         climbing_f_exercise_effect_line_means,
+                         climbing_post_exercise_f_line_means,
+                         climbing_m_line_means,
+                         climbing_m_exercise_effect_line_means,
+                         climbing_post_exercise_m_line_means)
+```
+
+## Combine and save all the estimated line means
+
+```{r}
+estimated_line_means <-
+  rbind(Jumbo_traits,
+        Grubbs_traits,
+        Dobson_traits,
+        Gaertner_traits,
+        caffeine_resistance_line_means,
+        Appel_traits,
+        Munoz_traits,
+        Freda_2017_traits,
+        boric_acid_line_means,
+        Dean_traits,
+        Duneau_traits,
+        Palmer_traits,
+        Teets_traits,
+        Everman_traits,
+        Freda_2019_traits,
+        Pitchers_traits,
+        Rohde_traits,
+        microbiome_line_means,
+        E.faecalis_line_means,
+        Zhou_line_means,
+        Zwoinska_traits,
+        aggression_m_line_means,
+        Watanabe_traits)
+
+meta_data <- 
+  left_join(by = "Trait",
+            estimated_line_means %>% 
+              select(Trait, Sex, `Trait guild`, `Trait description`, Reference) %>% 
+              distinct(),
+            read_csv("data/data_collation/input/Raw_data_files/Life_stage_screen.csv")
+  ) %>% 
+  mutate(Life_stage = case_when(Life_stage == "Juvenile" ~ "Juvenile",
+                                is.na(Life_stage) ~ "Adult"))
+
+trait_data <- estimated_line_means %>% 
+  select(-Sex, -`Trait guild`, -`Trait description`, -Reference) 
+
+write_csv(trait_data, "data/data_collation/output/dgrp_phenos_calculated_from_raw_data.csv")
+write_csv(meta_data, "data/data_collation/output/dgrp_phenos_calculated_from_raw_data_meta_data.csv")
+```

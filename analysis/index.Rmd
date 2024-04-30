@@ -8,18 +8,18 @@ editor_options:
   chunk_output_type: console
 ---
 
-This website presents an analysis of the evolutionary response to selection in the DGRP. We are particularly interested in how the presence of separate sexes affects trait evolution. 
+This website presents an analysis of the evolutionary response to selection in the DGRP. We are particularly interested in how the presence of separate sexes affects trait evolution. The data collation tab contains information on how the DGRP was collated and quality controlled. The 'Finding line means' tab documents the statistical modelling we used to find line means when only raw, individual level data was provided by the original study.  
 
 In the analysis we:
 
-1. Identify the traits with the strongest predicted evolutionary responses in females and males.
+1. Use the secondary theorem of natural selection to find the expected response to selection for many traits.
 
-2. Test whether the average absolute response to selection is stronger in males than it is in females.
+2. Test whether the expected response to selection is stronger in males than it is in females.
 
-3. Assess whether the response to selection tends to be sexually concordant or sexually antagonistic.
+3. Assess whether the expected response to selection tends to be sexually concordant or sexually antagonistic.
 
 $~$
 
-The analysis is split in two parts. The first considers the response to selection for organsimal-level phenotypes e.g. body size, lifespan. The second uses data on expression levels of ~14,000 known genes i.e. an analysis of how the transcriptome responds to selection in each sex.
+The analysis is split in two parts. The first considers the response to selection for organismal-level phenotypes e.g. body size, lifespan. The second uses data on expression levels of ~14,000 genes.
 
 We welcome any queries or comments concerning our analysis; please email `tkeaney@uni-mainz.de` 
