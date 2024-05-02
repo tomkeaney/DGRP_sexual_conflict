@@ -421,7 +421,7 @@ class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span>
 <div class="tab-content">
 <div id="summary" class="tab-pane fade in active">
 <p>
-<strong>Last updated:</strong> 2024-04-30
+<strong>Last updated:</strong> 2024-05-02
 </p>
 <p>
 <strong>Checks:</strong> <span
@@ -552,15 +552,15 @@ project makes it easier to run your code on other machines.</p>
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomtomkeaneyDGRPsexualconflicttreed168c737b43832f4d76fb89eefb8a1d956d6b843targetblankd168c73a">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomtomkeaneyDGRPsexualconflicttree41e9b1ba5e92acec567ca511920cbf932089e500targetblank41e9b1ba">
 <span class="glyphicon glyphicon-ok text-success"
 aria-hidden="true"></span> <strong>Repository version:</strong>
-<a href="https://github.com/tomkeaney/DGRP_sexual_conflict/tree/d168c737b43832f4d76fb89eefb8a1d956d6b843" target="_blank">d168c73</a>
+<a href="https://github.com/tomkeaney/DGRP_sexual_conflict/tree/41e9b1ba5e92acec567ca511920cbf932089e500" target="_blank">41e9b1b</a>
 </a>
 </p>
 </div>
 <div
-id="strongRepositoryversionstrongahrefhttpsgithubcomtomkeaneyDGRPsexualconflicttreed168c737b43832f4d76fb89eefb8a1d956d6b843targetblankd168c73a"
+id="strongRepositoryversionstrongahrefhttpsgithubcomtomkeaneyDGRPsexualconflicttree41e9b1ba5e92acec567ca511920cbf932089e500targetblank41e9b1ba"
 class="panel-collapse collapse">
 <div class="panel-body">
 <p>
@@ -570,7 +570,7 @@ reproducibility.
 </p>
 <p>
 The results in this page were generated with repository version
-<a href="https://github.com/tomkeaney/DGRP_sexual_conflict/tree/d168c737b43832f4d76fb89eefb8a1d956d6b843" target="_blank">d168c73</a>.
+<a href="https://github.com/tomkeaney/DGRP_sexual_conflict/tree/41e9b1ba5e92acec567ca511920cbf932089e500" target="_blank">41e9b1b</a>.
 See the <em>Past versions</em> tab to see a history of the changes made
 to the R Markdown and HTML files.
 </p>
@@ -592,11 +592,15 @@ Ignored files:
 Untracked files:
     Untracked:  %
     Untracked:  -PC18-107.Rhistory
+    Untracked:  ESM.Rmd
+    Untracked:  ESM.pdf
+    Untracked:  Evolution_review_analysis_folders.zip
+    Untracked:  Evolution_review_analysis_folders/
     Untracked:  Manuscript/
     Untracked:  PRISMA.pptx
     Untracked:  R_transcriptome_medians.csv
     Untracked:  Reported_heritability.xlsx
-    Untracked:  Supplementary_data/
+    Untracked:  Supplementary_datasets/
     Untracked:  code/get_gene_annotations.R
     Untracked:  cuts/
     Untracked:  data/R_medians.csv
@@ -661,6 +665,40 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/tomkeaney/DGRP_sexual_conflict/blob/41e9b1ba5e92acec567ca511920cbf932089e500/analysis/Data_collation.Rmd" target="_blank">41e9b1b</a>
+</td>
+<td>
+tomkeaney
+</td>
+<td>
+2024-05-02
+</td>
+<td>
+Final commit before submission
+</td>
+</tr>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/tomkeaney/DGRP_sexual_conflict/6a390805ea6e4eec7916ddd72f9722906b92c230/docs/Data_collation.html" target="_blank">6a39080</a>
+</td>
+<td>
+tomkeaney
+</td>
+<td>
+2024-04-30
+</td>
+<td>
+Build site.
+</td>
+</tr>
 <tr>
 <td>
 html
@@ -821,14 +859,19 @@ are: 80, 272, 343, 378, 387, 393, 398, 476, 514, 554, 556, 591, 750,
 dataset, as many of the studies we include in our dataset make use of
 these lines.</p>
 </div>
-<div id="removing-data-duplicates" class="section level3">
-<h3>Removing data duplicates</h3>
+<div id="removing-data-duplicates-and-incorrect-entries"
+class="section level3">
+<h3>Removing data duplicates and incorrect entries</h3>
 <p>Some studies report data that has been previously used (in a way that
 we missed in our initial data collection), leading to perfect or near
 perfect correlations between traits. We here remove one such duplicate
 trait.</p>
+<p>Another study includes data that we entered into the database
+incorrectly: one trait was measured in 10 lines (below our cutoff) but
+was entered for 99 lines. We remove this error from the dataset.</p>
 <pre class="r"><code>all.dgrp.phenos_combined_subset &lt;-
-  all.dgrp.phenos_combined %&gt;% filter(Trait != &quot;rapid.cold.hardening.25C&quot;)</code></pre>
+  all.dgrp.phenos_combined %&gt;% filter(Trait != &quot;rapid.cold.hardening.25C&quot;,
+                                      Trait != &quot;dopamine.response.to.paraquat.2021.m&quot;)</code></pre>
 </div>
 <div id="removing-traits-that-were-measured-in-heterozyogtes"
 class="section level3">
@@ -860,8 +903,7 @@ all.dgrp.phenos_combined_subset &lt;- all.dgrp.phenos_combined_subset %&gt;%
          Trait != &quot;CRISPR.wildtype.rate.m&quot;, 
          Trait != &quot;Canton S(B).olfactory.response.benzaldehyde.f&quot;, 
          Trait != &quot;neur.olfactory.response.benzaldehyde.f&quot;, 
-         Trait != &quot;Sema5c.olfactory.response.benzaldehyde.f&quot;,
-         !str_detect(Trait, &quot;dopamine.response.to.paraquat.2021.m&quot;)) # data for this trait was entered into the database incorrectly, it was only measured in 10 lines so should not be included in our analysis )</code></pre>
+         Trait != &quot;Sema5c.olfactory.response.benzaldehyde.f&quot;) </code></pre>
 </div>
 <div id="removing-lines-that-have-multiple-trait-values"
 class="section level3">
