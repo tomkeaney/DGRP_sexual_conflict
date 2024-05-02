@@ -104,13 +104,16 @@ This still leaves 219 lines, which was unexpected because most studies state tha
 
 The lines that have been withdrawn but are included in our dataset are: 80, 272, 343, 378, 387, 393, 398, 476, 514, 554, 556, 591, 750, 771. We chose **not to remove** these lines from our dataset, as many of the studies we include in our dataset make use of these lines.
 
-### Removing data duplicates
+### Removing data duplicates and incorrect entries
 
 Some studies report data that has been previously used (in a way that we missed in our initial data collection), leading to perfect or near perfect correlations between traits. We here remove one such duplicate trait. 
 
+Another study includes data that we entered into the database incorrectly: one trait was measured in 10 lines (below our cutoff) but was entered for 99 lines. We remove this error from the dataset.
+
 ```{r}
 all.dgrp.phenos_combined_subset <-
-  all.dgrp.phenos_combined %>% filter(Trait != "rapid.cold.hardening.25C")
+  all.dgrp.phenos_combined %>% filter(Trait != "rapid.cold.hardening.25C",
+                                      Trait != "dopamine.response.to.paraquat.2021.m")
 ```
 
 ### Removing traits that were measured in heterozyogtes
@@ -137,8 +140,7 @@ all.dgrp.phenos_combined_subset <- all.dgrp.phenos_combined_subset %>%
          Trait != "CRISPR.wildtype.rate.m", 
          Trait != "Canton S(B).olfactory.response.benzaldehyde.f", 
          Trait != "neur.olfactory.response.benzaldehyde.f", 
-         Trait != "Sema5c.olfactory.response.benzaldehyde.f",
-         !str_detect(Trait, "dopamine.response.to.paraquat.2021.m")) # data for this trait was entered into the database incorrectly, it was only measured in 10 lines so should not be included in our analysis )
+         Trait != "Sema5c.olfactory.response.benzaldehyde.f") 
 ```
 
 ### Removing lines that have multiple trait values

@@ -14,7 +14,6 @@ $~$
 First load the packages and build helper functions
 
 ```{r load packages}
-
 library(tidyverse) # for tidy coding
 library(MetBrewer) # for many nice colour palettes
 library(rcartocolor) # more cool colours
@@ -28,7 +27,7 @@ library(broom) # convert results of functions into tables
 library(ggtext) # for markdown features in ggplot
 library(ggrepel) # for plot labels in ggplot
 library(ggnewscale) # to reset scales in ggplot 
-library(bigsnpr) 
+#library(bigsnpr) 
 
 # Create a function to build HTML searchable tables
 
@@ -110,29 +109,13 @@ $~$
 **Table S1**. Traits included for organismal-level analysis
 
 ```{r}
-# how many studies did we start with?
+table_data <- 
+  trait_data %>% 
+  distinct(Trait, .keep_all = T) %>% 
+  rename(Phenotyped_sex = Sex) %>% 
+  select(Trait_nice, Trait, Reference, `# lines measured`, Phenotyped_sex, `Trait description`)
 
-table_data <- left_join(
-  DGRP_data %>%
-    distinct(Trait, .keep_all = TRUE) %>% 
-    mutate(Measured_in = case_when(Sex == "Female" ~ "Females",
-                                   Sex == "Male" ~ "Males",
-                                   Sex == "Pooled" ~ "Mixed sex cohorts")) %>% 
-    select(Trait_nice, Trait, Reference, `# lines measured`, Measured_in, `Trait description`),
-  
-  trait_data %>%
-    distinct(Trait) %>% 
-    mutate(Included = "Yes")
-) %>%
-  mutate(Included = if_else(is.na(Included), "No", Included)) %>% 
-  select(-Trait) %>% 
-  rename(Trait = Trait_nice, `Measured in` = Measured_in) %>% 
-  arrange(desc(Included))
-
-# Create a function to build HTML searchable tables
-
-my_data_table(table_data %>% 
-               select(Trait, Reference, `# lines measured`, `Measured in`, Included, `Trait description`))
+my_data_table(table_data)
 ```
 
 $~$
@@ -143,17 +126,17 @@ Find the number of traits and studies included in our analysis.
 
 # how many studies and traits do we have after filtering?
 
-num_unique_traits <- table_data %>% filter(Included == "Yes") %>% nrow()
+num_unique_traits <- table_data %>% nrow()
 # in females
-num_unique_traits_f <- table_data %>% filter(Included == "Yes" & `Measured in` == "Females") %>% nrow()
+num_unique_traits_f <- table_data %>% filter(Phenotyped_sex == "Female") %>% nrow()
 # in males
-num_unique_traits_m <- table_data %>% filter(Included == "Yes" & `Measured in` == "Males") %>% nrow()
+num_unique_traits_m <- table_data %>% filter(Phenotyped_sex == "Male") %>% nrow()
 # how many studies are they measured across in total?
-num_unique_studies <- table_data %>% filter(Included == "Yes") %>%  distinct(Reference) %>% nrow()
+num_unique_studies <- table_data %>%  distinct(Reference) %>% nrow()
 # in females
-num_unique_studies_f <- table_data %>% filter(Included == "Yes" & `Measured in` == "Females") %>% distinct(Reference) %>% nrow()
+num_unique_studies_f <- table_data %>% filter(Phenotyped_sex == "Female") %>% distinct(Reference) %>% nrow()
 # in males
-num_unique_studies_m <- table_data %>% filter(Included == "Yes" & `Measured in` == "Males") %>% distinct(Reference) %>% nrow()
+num_unique_studies_m <- table_data %>% filter(Phenotyped_sex == "Male") %>% distinct(Reference) %>% nrow()
 
 ```
 
