@@ -884,9 +884,9 @@ plot_e <-
 
 **Figure 3**. Triangles show evidence ratios (ERs) for **a** $\Delta R$ ($R$ on females - $R$ on males) and **b** sexual concordance, for all measured traits in the organismal level phenotype dataset. Traits are loosely organised into guilds to aid visualisation. The dashed lines indicate an evidence ratio of 1, where the probability that $\Delta R$ > 0 is equal to the probability that $\Delta R$ < 0, or that a trait is just as likely to have a sexually concordant response to selection (ER > 1) as a sexually antagonistic response (ER < 1). The upper dotted line on each plot indicates an evidence ratio of 39, while the lower dotted line indicates an evidence ratio of 1/39; these correspond strongly with the frequentist $p$ = 0.05. Traits with the most extreme evidence ratios are labelled.
 
-## Table S2
+## Table S2/ Supplementary dataset 2
 
-**Table S2** / **Supplementary dataset S3**: $R$ partitions and associated evidence ratios for the organismal level trait dataset. Trait descriptions are provided in Table S1. Data can be downloaded as a `.csv` file from the [github repository](https://github.com/tomkeaney/DGRP_sexual_conflict) associated with this project.
+**Table S2** / **Supplementary dataset 2**: $R$ partitions and associated evidence ratios for the organismal level trait dataset. Trait descriptions are provided in Table S1. Data can be downloaded as a `.csv` file from the [github repository](https://github.com/tomkeaney/DGRP_sexual_conflict) associated with this project.
 ```{r}
 all_ol_traits_summary <-
   R_all_traits %>% 
@@ -2642,9 +2642,9 @@ plot_transcriptome_e <-
 
 $~$
 
-## Table S3
+## Table S3/ Supplementary dataset 3
 
-**Table S3** / **Supplementary dataset S4**: $R$ partitions and associated evidence ratios for the gene expression trait dataset. Data can be downloaded as a `.csv` file from the [github repository](https://github.com/tomkeaney/DGRP_sexual_conflict) associated with this project.
+**Table S3** / **Supplementary dataset 3**: $R$ partitions and associated evidence ratios for the gene expression trait dataset. Data can be downloaded as a `.csv` file from the [github repository](https://github.com/tomkeaney/DGRP_sexual_conflict) associated with this project.
 ```{r}
 
 all_transcriptome_summary <-
